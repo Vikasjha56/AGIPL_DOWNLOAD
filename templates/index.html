@@ -1,7 +1,20 @@
 {% extends "base.html" %}
 
 
+{% block title %}
+
+AGIPL Home Dashboard
+
+{% endblock %}
+
+
+
+
 {% block content %}
+
+
+
+<div class="home-title">
 
 
 <h1>
@@ -10,31 +23,37 @@ AGIPL Digital Command Center
 
 
 <p>
-Integrated Business Intelligence & Reporting Platform
+Integrated Business Intelligence & Analytics Platform
 </p>
 
 
-
-<div style="
-margin-top:45px;
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
-gap:25px;
-">
+</div>
 
 
 
-<a href="/breakdown" style="text-decoration:none;color:white;">
 
-<div class="card">
 
-<h2>🛠 Breakdown Analysis</h2>
+<div class="modules">
+
+
+
+<a href="/breakdown" class="card">
+
+
+<div class="icon">
+🛠
+</div>
+
+
+<h2>
+Breakdown Analysis
+</h2>
+
 
 <p>
 Machine Breakdown Monitoring Dashboard
 </p>
 
-</div>
 
 </a>
 
@@ -42,17 +61,24 @@ Machine Breakdown Monitoring Dashboard
 
 
 
-<a href="/fuel" style="text-decoration:none;color:white;">
 
-<div class="card">
+<a href="/fuel" class="card">
 
-<h2>⛽ Fuel Analysis</h2>
+
+<div class="icon">
+⛽
+</div>
+
+
+<h2>
+Fuel Analysis
+</h2>
+
 
 <p>
 Fuel Consumption & Tracking System
 </p>
 
-</div>
 
 </a>
 
@@ -60,17 +86,24 @@ Fuel Consumption & Tracking System
 
 
 
-<a href="/hr" style="text-decoration:none;color:white;">
 
-<div class="card">
+<a href="/hr" class="card">
 
-<h2>👥 HR Module</h2>
+
+<div class="icon">
+👥
+</div>
+
+
+<h2>
+HR Module
+</h2>
+
 
 <p>
-Employee Analytics & Reports
+Employee Analytics Dashboard
 </p>
 
-</div>
 
 </a>
 
@@ -78,17 +111,24 @@ Employee Analytics & Reports
 
 
 
-<a href="/purchase" style="text-decoration:none;color:white;">
 
-<div class="card">
+<a href="/purchase" class="card">
 
-<h2>🛒 Purchase Module</h2>
+
+<div class="icon">
+🛒
+</div>
+
+
+<h2>
+Purchase Module
+</h2>
+
 
 <p>
-Purchase Tracking System
+Purchase Tracking & Analysis
 </p>
 
-</div>
 
 </a>
 
@@ -96,17 +136,25 @@ Purchase Tracking System
 
 
 
-<a href="/sales" style="text-decoration:none;color:white;">
 
-<div class="card">
 
-<h2>📈 Sales Module</h2>
+<a href="/sales" class="card">
+
+
+<div class="icon">
+📈
+</div>
+
+
+<h2>
+Sales Module
+</h2>
+
 
 <p>
 Sales Performance Dashboard
 </p>
 
-</div>
 
 </a>
 
@@ -114,17 +162,25 @@ Sales Performance Dashboard
 
 
 
-<a href="/machinery" style="text-decoration:none;color:white;">
 
-<div class="card">
 
-<h2>⚙ Machinery Module</h2>
+<a href="/machinery" class="card">
+
+
+<div class="icon">
+⚙
+</div>
+
+
+<h2>
+Machinery Module
+</h2>
+
 
 <p>
 Equipment Monitoring System
 </p>
 
-</div>
 
 </a>
 
@@ -132,17 +188,24 @@ Equipment Monitoring System
 
 
 
-<a href="/assets" style="text-decoration:none;color:white;">
 
-<div class="card">
+<a href="/assets" class="card">
 
-<h2>🏢 Assets Module</h2>
+
+<div class="icon">
+🏢
+</div>
+
+
+<h2>
+Assets Module
+</h2>
+
 
 <p>
-Asset Management Dashboard
+Asset Management System
 </p>
 
-</div>
 
 </a>
 
@@ -150,24 +213,31 @@ Asset Management Dashboard
 
 
 
-<a href="/it" style="text-decoration:none;color:white;">
 
-<div class="card">
+<a href="/it" class="card">
 
-<h2>💻 IT Module</h2>
+
+<div class="icon">
+💻
+</div>
+
+
+<h2>
+IT Module
+</h2>
+
 
 <p>
 IT Operations Dashboard
 </p>
 
-</div>
 
 </a>
 
 
 
-
 </div>
+
 
 
 
