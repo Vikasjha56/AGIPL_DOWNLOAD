@@ -1,40 +1,336 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>AGIPL Digital Command Center</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 
-{% block content %}
+<style>
+
+*{
+    box-sizing:border-box;
+}
+
+
+body{
+
+    margin:0;
+    min-height:100vh;
+
+    font-family:'Segoe UI',Arial,sans-serif;
+
+    background:
+    radial-gradient(circle at 20% 20%,#0077ff55,transparent 30%),
+    radial-gradient(circle at 80% 80%,#00ffff55,transparent 30%),
+    linear-gradient(135deg,#061426,#123d68);
+
+    color:white;
+
+}
+
+
+
+/* NAVBAR */
+
+.navbar{
+
+    height:75px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    padding:0 50px;
+
+    background:rgba(255,255,255,0.12);
+
+    backdrop-filter:blur(15px);
+
+    border-bottom:1px solid rgba(255,255,255,0.2);
+
+}
+
+
+
+.logo{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:15px;
+
+    font-size:25px;
+
+    font-weight:bold;
+
+}
+
+
+
+.logo-circle{
+
+    width:55px;
+
+    height:55px;
+
+    border-radius:50%;
+
+    background:white;
+
+    color:#063b78;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    font-weight:bold;
+
+    box-shadow:0 10px 25px #0008;
+
+}
+
+
+
+.menu a{
+
+    color:white;
+
+    text-decoration:none;
+
+    margin-left:25px;
+
+    font-size:16px;
+
+}
+
+
+.menu a:hover{
+
+    color:#00ffff;
+
+}
+
+
+
+/* MAIN */
+
+
+.container{
+
+    padding:40px;
+
+    text-align:center;
+
+}
+
+
+
+h1{
+
+    font-size:40px;
+
+    margin-bottom:10px;
+
+}
+
+
+.subtitle{
+
+    opacity:0.8;
+
+    font-size:18px;
+
+}
+
+
+
+/* MODULE GRID */
+
+
+.modules{
+
+    margin-top:45px;
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+
+    gap:25px;
+
+}
+
+
+
+.card{
+
+    padding:30px 20px;
+
+    background:rgba(255,255,255,0.15);
+
+    backdrop-filter:blur(15px);
+
+    border-radius:20px;
+
+    border:1px solid rgba(255,255,255,0.25);
+
+    box-shadow:
+
+    0 20px 40px rgba(0,0,0,0.35);
+
+    transition:0.4s;
+
+    cursor:pointer;
+
+    text-decoration:none;
+
+    color:white;
+
+}
+
+
+
+.card:hover{
+
+    transform:translateY(-12px) scale(1.04);
+
+    background:rgba(255,255,255,0.25);
+
+}
+
+
+
+.icon{
+
+    font-size:45px;
+
+    margin-bottom:15px;
+
+}
+
+
+
+.card h2{
+
+    font-size:21px;
+
+}
+
+
+
+.card p{
+
+    opacity:0.8;
+
+}
+
+
+
+
+.footer{
+
+    margin-top:40px;
+
+    opacity:0.7;
+
+    font-size:14px;
+
+}
+
+
+</style>
+
+
+</head>
+
+
+
+<body>
+
+
+
+<div class="navbar">
+
+
+<div class="logo">
+
+
+<div class="logo-circle">
+
+AG
+
+</div>
+
+
+AGIPL Digital Portal
+
+
+</div>
+
+
+
+<div class="menu">
+
+<a href="/">Home</a>
+
+<a href="/modules">Modules</a>
+
+<a href="/reports">Reports</a>
+
+<a href="#">Support</a>
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+
+<div class="container">
 
 
 <h1>
+
 AGIPL Digital Command Center
+
 </h1>
 
 
-<p>
+<div class="subtitle">
+
 Integrated Business Intelligence & Reporting Platform
-</p>
-
-
-
-<div style="
-margin-top:45px;
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
-gap:25px;
-">
-
-
-
-<a href="/breakdown" style="text-decoration:none;color:white;">
-
-<div class="card">
-
-<h2>🛠 Breakdown Analysis</h2>
-
-<p>
-Machine Breakdown Monitoring Dashboard
-</p>
 
 </div>
+
+
+
+
+
+
+
+<div class="modules">
+
+
+
+<a href="/breakdown" class="card">
+
+<div class="icon">🛠</div>
+
+<h2>Breakdown Analysis</h2>
+
+<p>Machine Breakdown Monitoring Dashboard</p>
 
 </a>
 
@@ -42,17 +338,13 @@ Machine Breakdown Monitoring Dashboard
 
 
 
-<a href="/fuel" style="text-decoration:none;color:white;">
+<a href="/fuel" class="card">
 
-<div class="card">
+<div class="icon">⛽</div>
 
-<h2>⛽ Fuel Analysis</h2>
+<h2>Fuel Analysis</h2>
 
-<p>
-Fuel Consumption & Tracking System
-</p>
-
-</div>
+<p>Fuel Consumption & Tracking System</p>
 
 </a>
 
@@ -60,17 +352,13 @@ Fuel Consumption & Tracking System
 
 
 
-<a href="/hr" style="text-decoration:none;color:white;">
+<a href="/hr" class="card">
 
-<div class="card">
+<div class="icon">👥</div>
 
-<h2>👥 HR Module</h2>
+<h2>HR Module</h2>
 
-<p>
-Employee Analytics & Reports
-</p>
-
-</div>
+<p>Employee Analytics & Reports</p>
 
 </a>
 
@@ -78,17 +366,13 @@ Employee Analytics & Reports
 
 
 
-<a href="/purchase" style="text-decoration:none;color:white;">
+<a href="/purchase" class="card">
 
-<div class="card">
+<div class="icon">🛒</div>
 
-<h2>🛒 Purchase Module</h2>
+<h2>Purchase Module</h2>
 
-<p>
-Purchase Tracking System
-</p>
-
-</div>
+<p>Purchase Tracking & Analysis</p>
 
 </a>
 
@@ -96,17 +380,13 @@ Purchase Tracking System
 
 
 
-<a href="/sales" style="text-decoration:none;color:white;">
+<a href="/sales" class="card">
 
-<div class="card">
+<div class="icon">📈</div>
 
-<h2>📈 Sales Module</h2>
+<h2>Sales Module</h2>
 
-<p>
-Sales Performance Dashboard
-</p>
-
-</div>
+<p>Sales Performance Dashboard</p>
 
 </a>
 
@@ -114,17 +394,13 @@ Sales Performance Dashboard
 
 
 
-<a href="/machinery" style="text-decoration:none;color:white;">
+<a href="/machinery" class="card">
 
-<div class="card">
+<div class="icon">⚙</div>
 
-<h2>⚙ Machinery Module</h2>
+<h2>Machinery Module</h2>
 
-<p>
-Equipment Monitoring System
-</p>
-
-</div>
+<p>Equipment Monitoring System</p>
 
 </a>
 
@@ -132,17 +408,13 @@ Equipment Monitoring System
 
 
 
-<a href="/assets" style="text-decoration:none;color:white;">
+<a href="/assets" class="card">
 
-<div class="card">
+<div class="icon">🏢</div>
 
-<h2>🏢 Assets Module</h2>
+<h2>Assets Module</h2>
 
-<p>
-Asset Management Dashboard
-</p>
-
-</div>
+<p>Asset Management Dashboard</p>
 
 </a>
 
@@ -150,25 +422,34 @@ Asset Management Dashboard
 
 
 
-<a href="/it" style="text-decoration:none;color:white;">
+<a href="/it" class="card">
 
-<div class="card">
+<div class="icon">💻</div>
 
-<h2>💻 IT Module</h2>
+<h2>IT Module</h2>
 
-<p>
-IT Operations Dashboard
-</p>
-
-</div>
+<p>IT Operations Dashboard</p>
 
 </a>
 
 
 
+</div>
+
+
+
+
+<div class="footer">
+
+AGIPL Digital Transformation Platform
 
 </div>
 
 
 
-{% endblock %}
+</div>
+
+
+</body>
+
+</html>
