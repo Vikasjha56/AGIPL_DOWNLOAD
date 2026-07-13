@@ -1,3 +1,13 @@
+import time
+
+MASTER_CACHE = None
+CACHE_TIME = 0
+
+CACHE_DURATION = 300   # 5 minutes
+
+
+
+
 from flask import Flask, send_file, render_template
 import pandas as pd
 
@@ -86,7 +96,30 @@ def breakdown():
 
     try:
 
-        master = get_master_table()
+        global MASTER_CACHE, CACHE_TIME
+
+
+current_time = time.time()
+
+
+if (
+    MASTER_CACHE is None
+    or current_time - CACHE_TIME > CACHE_DURATION
+):
+
+    print("Loading Google Sheets Data...")
+
+    MASTER_CACHE = get_master_table()
+
+    CACHE_TIME = current_time
+
+
+else:
+
+    print("Using Cached Data...")
+
+
+master = MASTER_CACHE
 
         master.columns = master.columns.str.strip()
 
