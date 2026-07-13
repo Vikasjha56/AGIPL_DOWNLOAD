@@ -100,10 +100,6 @@ def breakdown():
         current_time = time.time()
 
 
-        # =========================
-        # DATA CACHE
-        # =========================
-
         if (
             MASTER_CACHE is None
             or current_time - CACHE_TIME > CACHE_DURATION
@@ -128,10 +124,9 @@ def breakdown():
 
 
 
-        # =========================
-        # PENDING CASE FILTER
-        # Resolved = No
-        # =========================
+        # ==========================
+        # ONLY RESOLVED = NO
+        # ==========================
 
         pending = master[
             master["Resolved"]
@@ -143,22 +138,14 @@ def breakdown():
 
 
 
-        # Pending Days Convert
-
         pending["Pending Days"] = pd.to_numeric(
-
             pending["Pending for (no of days)"],
-
             errors="coerce"
-
         )
 
 
 
-        # =========================
         # KPI
-        # =========================
-
 
         pending_count = len(pending)
 
@@ -174,58 +161,53 @@ def breakdown():
 
 
 
-
-        # =========================
-        # PENDING DAYS RANGE
-        # =========================
-
-
-        range_data = {
+        # ==========================
+        # AGEING RANGE
+        # ==========================
 
 
-            "0-7 Days":
+        range_data={
 
-            len(
-                pending[
-                    (pending["Pending Days"] >= 0)
-                    &
-                    (pending["Pending Days"] <= 7)
-                ]
-            ),
+
+        "0-7 Days":
+        len(
+        pending[
+        (pending["Pending Days"]>=0)
+        &
+        (pending["Pending Days"]<=7)
+        ]
+        ),
 
 
 
-            "8-15 Days":
-
-            len(
-                pending[
-                    (pending["Pending Days"] >= 8)
-                    &
-                    (pending["Pending Days"] <= 15)
-                ]
-            ),
-
-
-
-            "16-30 Days":
-
-            len(
-                pending[
-                    (pending["Pending Days"] >= 16)
-                    &
-                    (pending["Pending Days"] <= 30)
-                ]
-            ),
+        "8-15 Days":
+        len(
+        pending[
+        (pending["Pending Days"]>=8)
+        &
+        (pending["Pending Days"]<=15)
+        ]
+        ),
 
 
 
-            "31+ Days":
+        "16-30 Days":
+        len(
+        pending[
+        (pending["Pending Days"]>=16)
+        &
+        (pending["Pending Days"]<=30)
+        ]
+        ),
 
-            len(
-                pending[
-                    pending["Pending Days"] > 30
-                ]
-            )
+
+
+        "31+ Days":
+        len(
+        pending[
+        pending["Pending Days"]>30
+        ]
+        )
 
         }
 
@@ -233,35 +215,17 @@ def breakdown():
 
 
 
-        # =========================
-        # MACHINE WISE >15 DAYS
-        # =========================
+        # Machine Wise >15
 
+        machine_data=(
 
-        machine_data = (
+        pending_15_data["Category"]
 
-            pending_15_data["Category"]
+        .fillna("Not Defined")
 
-            .value_counts()
+        .value_counts()
 
-            .head(10)
-
-        )
-
-
-
-
-
-        # =========================
-        # SITE WISE
-        # =========================
-
-
-        site_data = (
-
-            pending["Site"]
-
-            .value_counts()
+        .head(10)
 
         )
 
@@ -269,40 +233,76 @@ def breakdown():
 
 
 
-        # =========================
-        # SEND DATA TO HTML
-        # =========================
+        # Site Wise
+
+        site_data=(
+
+        pending["Site"]
+
+        .fillna("Not Defined")
+
+        .value_counts()
+
+        )
+
+
+
+
+
+
+        # Reason Wise >15
+
+        reason_data=(
+
+        pending_15_data["Reason for pendency"]
+
+        .fillna("Not Defined")
+
+        .value_counts()
+
+        )
+
+
+
+
+
 
 
         return render_template(
 
-            "breakdown.html",
+        "breakdown.html",
 
 
-            pending_count=pending_count,
+        pending_count=pending_count,
 
 
-            pending_15=pending_15,
-
-
-            range_labels=list(range_data.keys()),
-
-
-            range_values=list(range_data.values()),
+        pending_15=pending_15,
 
 
 
-            machine_labels=machine_data.index.tolist(),
+        range_labels=list(range_data.keys()),
+
+        range_values=list(range_data.values()),
 
 
-            machine_values=machine_data.values.tolist(),
+
+        machine_labels=machine_data.index.tolist(),
+
+        machine_values=machine_data.values.tolist(),
 
 
 
-            site_labels=site_data.index.tolist(),
+        site_labels=site_data.index.tolist(),
+
+        site_values=site_data.values.tolist(),
 
 
-            site_values=site_data.values.tolist()
+
+        reason_labels=reason_data.index.tolist(),
+
+        reason_values=reason_data.values.tolist()
+
+
 
         )
 
@@ -311,10 +311,10 @@ def breakdown():
     except Exception as e:
 
 
-        print("BREAKDOWN ERROR :", e)
+        print("BREAKDOWN ERROR :",e)
 
 
-        return "Breakdown Error : " + str(e)
+        return "Breakdown Error : "+str(e)
 @app.route("/fuel")
 def fuel():
     return render_template("fuel.html")
