@@ -1,101 +1,332 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 
 <title>AGIPL Download System</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
+
 <style>
 
-body {
-    font-family: Arial, sans-serif;
-    background: #f4f6f9;
-    margin: 0;
-    padding: 0;
-}
-
-.container {
-    max-width: 600px;
-    margin: 80px auto;
-    background: white;
-    padding: 40px;
-    text-align: center;
-    border-radius: 15px;
-    box-shadow: 0px 5px 20px rgba(0,0,0,0.15);
-}
-
-h1 {
-    color: #1f4e79;
-    margin-bottom: 10px;
-}
-
-p {
-    color: #555;
-    font-size: 17px;
+*{
+    box-sizing:border-box;
 }
 
 
-.download-btn {
+body{
 
-    display: block;
-    width: 80%;
-    margin: 20px auto;
-    padding: 15px;
+    margin:0;
+    min-height:100vh;
 
-    font-size: 18px;
-    text-decoration: none;
+    font-family:'Segoe UI', Arial, sans-serif;
 
-    border-radius: 8px;
+    background:
+    radial-gradient(circle at top left,#4e9cff,transparent 35%),
+    radial-gradient(circle at bottom right,#00d4ff,transparent 35%),
+    linear-gradient(135deg,#071426,#163b65);
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    overflow:hidden;
+
+}
+
+
+
+/* 3D Background Shapes */
+
+body::before{
+
+    content:"";
+
+    position:absolute;
+
+    width:350px;
+    height:350px;
+
+    background:rgba(255,255,255,0.08);
+
+    border-radius:50%;
+
+    top:-120px;
+    left:-120px;
+
+    filter:blur(5px);
+
+}
+
+
+body::after{
+
+    content:"";
+
+    position:absolute;
+
+    width:400px;
+    height:400px;
+
+    background:rgba(0,200,255,0.12);
+
+    border-radius:40px;
+
+    bottom:-150px;
+    right:-120px;
+
+    transform:rotate(35deg);
+
+}
+
+
+
+
+.container{
+
+
+    width:90%;
+    max-width:600px;
+
+
+    background:rgba(255,255,255,0.15);
+
+    backdrop-filter:blur(15px);
+
+
+    border:1px solid rgba(255,255,255,0.25);
+
+
+    padding:45px;
+
+
+    text-align:center;
+
+
+    border-radius:25px;
+
+
+    box-shadow:
+
+    0 25px 50px rgba(0,0,0,0.35),
+
+    inset 0 0 30px rgba(255,255,255,0.1);
+
+
     color:white;
 
-}
 
+    position:relative;
 
-.excel {
+    z-index:2;
 
-    background:#198754;
-
-}
-
-
-.pdf {
-
-    background:#dc3545;
 
 }
 
 
-.download-btn:hover {
 
-    opacity:0.85;
+
+.logo{
+
+
+    width:100px;
+
+    height:100px;
+
+
+    margin:auto;
+
+
+    border-radius:50%;
+
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+
+    font-size:28px;
+
+    font-weight:bold;
+
+
+    background:
+
+    linear-gradient(145deg,#ffffff,#cfd9ff);
+
+
+    color:#0b3d91;
+
+
+    box-shadow:
+
+    8px 8px 20px rgba(0,0,0,0.3),
+
+    inset -5px -5px 15px rgba(0,0,0,0.15);
+
 
 }
 
 
-.footer {
 
-    margin-top:30px;
+h1{
+
+
+    margin-top:25px;
+
+    font-size:32px;
+
+    letter-spacing:1px;
+
+
+}
+
+
+
+.subtitle{
+
+
+    font-size:17px;
+
+    opacity:0.9;
+
+    margin-bottom:35px;
+
+
+}
+
+
+
+
+
+.download-btn{
+
+
+    display:block;
+
+
+    width:85%;
+
+
+    margin:20px auto;
+
+
+    padding:16px;
+
+
+    border-radius:12px;
+
+
+    color:white;
+
+
+    text-decoration:none;
+
+
+    font-size:18px;
+
+
+    font-weight:600;
+
+
+    transition:0.3s;
+
+
+}
+
+
+
+.excel{
+
+
+    background:
+
+    linear-gradient(135deg,#00b050,#008000);
+
+
+    box-shadow:0 10px 20px rgba(0,128,0,0.4);
+
+
+}
+
+
+
+.pdf{
+
+
+    background:
+
+    linear-gradient(135deg,#ff4b4b,#b30000);
+
+
+    box-shadow:0 10px 20px rgba(255,0,0,0.4);
+
+
+}
+
+
+
+
+.download-btn:hover{
+
+
+    transform:translateY(-5px) scale(1.03);
+
+
+}
+
+
+
+
+#status{
+
+
+    margin-top:20px;
+
+    font-size:15px;
+
+    color:#ffffff;
+
+
+}
+
+
+
+.footer{
+
+
+    margin-top:35px;
+
     font-size:13px;
-    color:#777;
+
+    opacity:0.8;
+
 
 }
+
+
 
 </style>
 
 
 <script>
 
+
 function loading(msg){
 
-    document.getElementById("status").innerHTML = msg;
+document.getElementById("status").innerHTML=msg;
 
 }
+
 
 </script>
 
 
 </head>
+
 
 
 <body>
@@ -104,39 +335,64 @@ function loading(msg){
 <div class="container">
 
 
-<h1>AGIPL Download System</h1>
+<div class="logo">
 
-<p>
-Generate Master Table Report
-</p>
+AGIPL
+
+</div>
+
+
+
+<h1>
+
+AGIPL Download System
+
+</h1>
+
+
+
+<div class="subtitle">
+
+Automated Master Report Generation System
+
+</div>
+
 
 
 <a class="download-btn excel"
+
 onclick="loading('Generating Excel File... Please wait')"
+
 href="/download_excel">
 
-⬇ Download Excel
+⬇ Download Excel Report
 
 </a>
+
 
 
 <a class="download-btn pdf"
+
 onclick="loading('Generating PDF File... Please wait')"
+
 href="/download_pdf">
 
-📄 Download PDF
+📄 Download PDF Report
 
 </a>
+
 
 
 <p id="status"></p>
 
 
+
 <div class="footer">
 
-AGIPL Digital Reporting System
+AGIPL Digital Reporting Platform
 
 </div>
+
 
 
 </div>
