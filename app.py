@@ -83,169 +83,42 @@ def reports():
 @app.route("/breakdown")
 def breakdown():
 
-    import json
+    try:
 
+        master = get_master_table()
 
-    master = get_master_table()
 
+        # Total Pending Cases
+        pending_data = master[
+            master["Resolved"] == "No"
+        ]
 
-    # Pending Only
 
-    pending = master[
-        master["Resolved"].astype(str).str.lower()=="no"
-    ]
+        pending_count = len(pending_data)
 
 
 
-    # Total Pending
+        # Pending > 15 Days
 
-    total_pending = len(pending)
+        pending_15_data = pending_data[
+            pending_data["Pending for (no of days)"] > 15
+        ]
 
 
+        pending_15 = len(pending_15_data)
 
-    # Pending >15 Days
 
-    pending_15 = pending[
-        pending["Pending for (no of days)"] > 15
-    ]
 
+        return render_template(
+            "breakdown.html",
+            pending_count=pending_count,
+            pending_15=pending_15
+        )
 
 
-    pending_15_count = len(pending_15)
+    except Exception as e:
 
-
-
-
-    # Range Function
-
-    def day_range(x):
-
-        if x <=7:
-            return "0-7 Days"
-
-        elif x <=15:
-            return "8-15 Days"
-
-        elif x <=30:
-            return "16-30 Days"
-
-        elif x <=60:
-            return "31-60 Days"
-
-        else:
-            return "60+ Days"
-
-
-
-
-    pending["Range"] = pending[
-        "Pending for (no of days)"
-    ].apply(day_range)
-
-
-
-    # Range Count
-
-    range_data = (
-        pending
-        .groupby("Range")
-        .size()
-    )
-
-
-
-    range_labels = list(range_data.index)
-
-    range_values = list(range_data.values)
-
-
-
-
-    # Machine Wise >15
-
-    machine_data = (
-        pending_15
-        .groupby("Machine")
-        .size()
-        .sort_values(ascending=False)
-        .head(10)
-    )
-
-
-
-    machine_labels=list(machine_data.index)
-
-    machine_values=list(machine_data.values)
-
-
-
-
-    # Site Doughnut
-
-    site_data = (
-        pending
-        .groupby("Site")
-        .size()
-    )
-
-
-
-    site_labels=list(site_data.index)
-
-    site_values=list(site_data.values)
-
-
-
-
-
-    # Pending Distribution >15
-
-
-    dist_data = (
-        pending_15
-        .groupby("Range")
-        .size()
-    )
-
-
-
-    dist_labels=list(dist_data.index)
-
-    dist_values=list(dist_data.values)
-
-
-
-
-    return render_template(
-
-        "breakdown.html",
-
-        total_pending=total_pending,
-
-        pending_15=pending_15_count,
-
-
-        range_labels=json.dumps(range_labels),
-
-        range_values=json.dumps(range_values),
-
-
-        machine_labels=json.dumps(machine_labels),
-
-        machine_values=json.dumps(machine_values),
-
-
-        site_labels=json.dumps(site_labels),
-
-        site_values=json.dumps(site_values),
-
-
-        dist_labels=json.dumps(dist_labels),
-
-        dist_values=json.dumps(dist_values)
-
-    )
-
+        return f"Breakdown Error : {str(e)}"
 
 @app.route("/fuel")
 def fuel():
