@@ -11,89 +11,86 @@
 <style>
 
 *{
-    box-sizing:border-box;
+box-sizing:border-box;
 }
 
 
 body{
 
-    margin:0;
-    min-height:100vh;
+margin:0;
+min-height:100vh;
 
-    font-family:'Segoe UI',Arial,sans-serif;
+font-family:'Segoe UI',Arial,sans-serif;
 
-    background:
-    radial-gradient(circle at 20% 20%,#0077ff55,transparent 30%),
-    radial-gradient(circle at 80% 80%,#00ffff55,transparent 30%),
-    linear-gradient(135deg,#061426,#123d68);
+background:
+radial-gradient(circle at top left,#007bff55,transparent 35%),
+radial-gradient(circle at bottom right,#00ffff44,transparent 35%),
+linear-gradient(135deg,#061426,#123d68);
 
-    color:white;
+color:white;
 
 }
-
 
 
 /* NAVBAR */
 
 .navbar{
 
-    height:75px;
+height:80px;
 
-    display:flex;
+display:flex;
 
-    align-items:center;
+justify-content:space-between;
 
-    justify-content:space-between;
+align-items:center;
 
-    padding:0 50px;
+padding:0 50px;
 
-    background:rgba(255,255,255,0.12);
+background:rgba(255,255,255,0.12);
 
-    backdrop-filter:blur(15px);
-
-    border-bottom:1px solid rgba(255,255,255,0.2);
+backdrop-filter:blur(15px);
 
 }
-
 
 
 .logo{
 
-    display:flex;
+display:flex;
 
-    align-items:center;
+align-items:center;
 
-    gap:15px;
+gap:15px;
 
-    font-size:25px;
+font-size:24px;
 
-    font-weight:bold;
+font-weight:700;
 
 }
 
 
+.logo-box{
 
-.logo-circle{
+width:55px;
 
-    width:55px;
+height:55px;
 
-    height:55px;
+border-radius:50%;
 
-    border-radius:50%;
+background:white;
 
-    background:white;
+color:#083b78;
 
-    color:#063b78;
+display:flex;
 
-    display:flex;
+align-items:center;
 
-    justify-content:center;
+justify-content:center;
 
-    align-items:center;
+font-weight:bold;
 
-    font-weight:bold;
+font-size:20px;
 
-    box-shadow:0 10px 25px #0008;
+box-shadow:0 10px 25px #0008;
 
 }
 
@@ -101,26 +98,21 @@ body{
 
 .menu a{
 
-    color:white;
+color:white;
 
-    text-decoration:none;
+text-decoration:none;
 
-    margin-left:25px;
-
-    font-size:16px;
+margin-left:25px;
 
 }
 
 
 
-/* MAIN */
-
-
 .container{
 
-    padding:40px;
+padding:40px;
 
-    text-align:center;
+text-align:center;
 
 }
 
@@ -128,92 +120,107 @@ body{
 
 h1{
 
-    font-size:40px;
-
-    margin-bottom:10px;
+font-size:42px;
 
 }
+
 
 
 .subtitle{
 
-    opacity:0.8;
+font-size:18px;
 
-    font-size:18px;
+opacity:.85;
 
 }
 
 
 
-/* MODULE GRID */
 
 
 .modules{
 
-    margin-top:45px;
 
-    display:grid;
+margin-top:45px;
 
-    grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
 
-    gap:25px;
+display:grid;
+
+
+grid-template-columns:
+
+repeat(auto-fit,minmax(230px,1fr));
+
+
+gap:25px;
+
 
 }
+
+
 
 
 
 .card{
 
 
-    padding:30px 20px;
+text-decoration:none;
+
+color:white;
 
 
-    background:rgba(255,255,255,0.15);
+background:
+
+rgba(255,255,255,0.15);
 
 
-    backdrop-filter:blur(15px);
+backdrop-filter:blur(15px);
 
 
-    border-radius:20px;
+border-radius:22px;
 
 
-    border:1px solid rgba(255,255,255,0.25);
+padding:30px 20px;
 
 
-    box-shadow:
-
-    0 20px 40px rgba(0,0,0,0.35);
+border:1px solid rgba(255,255,255,.25);
 
 
-    transition:0.4s;
+box-shadow:
+
+0 20px 40px rgba(0,0,0,.35);
 
 
-    cursor:pointer;
+transition:.4s;
 
 
 }
+
 
 
 
 .card:hover{
 
 
-    transform:translateY(-12px) scale(1.04);
+transform:
+
+translateY(-12px) scale(1.05);
 
 
-    background:rgba(255,255,255,0.25);
+background:
+
+rgba(255,255,255,.28);
 
 
 }
 
 
 
+
+
 .icon{
 
-
-    font-size:45px;
-
-    margin-bottom:15px;
+font-size:45px;
 
 }
 
@@ -221,15 +228,14 @@ h1{
 
 .card h2{
 
-    font-size:21px;
+font-size:22px;
 
 }
 
 
-
 .card p{
 
-    opacity:0.8;
+opacity:.8;
 
 }
 
@@ -238,16 +244,11 @@ h1{
 
 .footer{
 
+margin-top:40px;
 
-    margin-top:40px;
-
-    opacity:0.7;
-
-    font-size:14px;
-
+opacity:.7;
 
 }
-
 
 
 
@@ -255,7 +256,6 @@ h1{
 
 
 </head>
-
 
 
 <body>
@@ -267,16 +267,13 @@ h1{
 
 <div class="logo">
 
-
-<div class="logo-circle">
+<div class="logo-box">
 
 AG
 
 </div>
 
-
-AGIPL Digital Portal
-
+AGIPL Portal
 
 </div>
 
@@ -290,13 +287,11 @@ AGIPL Digital Portal
 
 <a href="#">Reports</a>
 
-<a href="#">Support</a>
-
-
 </div>
 
 
 </div>
+
 
 
 
@@ -314,10 +309,9 @@ AGIPL Digital Command Center
 
 <div class="subtitle">
 
-Integrated Business Intelligence & Reporting Platform
+Integrated Business Intelligence Platform
 
 </div>
-
 
 
 
@@ -326,112 +320,132 @@ Integrated Business Intelligence & Reporting Platform
 
 
 
-<div class="card">
+
+
+<a class="card" href="#">
 
 <div class="icon">🛠</div>
 
 <h2>Breakdown Analysis</h2>
 
-<p>Machine Breakdown Monitoring Dashboard</p>
+<p>Machine Breakdown Dashboard</p>
 
-</div>
-
-
+</a>
 
 
-<div class="card">
+
+
+
+
+<a class="card" href="#">
 
 <div class="icon">⛽</div>
 
 <h2>Fuel Analysis</h2>
 
-<p>Fuel Consumption & Tracking System</p>
+<p>Fuel Monitoring Dashboard</p>
 
-</div>
-
-
+</a>
 
 
 
-<div class="card">
+
+
+
+
+<a class="card" href="#">
 
 <div class="icon">👥</div>
 
 <h2>HR Module</h2>
 
-<p>Employee Analytics & Reports</p>
+<p>Employee Analytics</p>
 
-</div>
-
-
+</a>
 
 
 
-<div class="card">
+
+
+
+
+
+<a class="card" href="#">
 
 <div class="icon">🛒</div>
 
 <h2>Purchase Module</h2>
 
-<p>Purchase Tracking & Analysis</p>
+<p>Purchase Reports</p>
 
-</div>
-
-
+</a>
 
 
 
-<div class="card">
+
+
+
+
+<a class="card" href="#">
 
 <div class="icon">📈</div>
 
 <h2>Sales Module</h2>
 
-<p>Sales Performance Dashboard</p>
+<p>Sales Analytics</p>
 
-</div>
-
-
+</a>
 
 
 
-<div class="card">
+
+
+
+
+<a class="card" href="#">
 
 <div class="icon">⚙</div>
 
 <h2>Machinery Module</h2>
 
-<p>Equipment Monitoring System</p>
+<p>Equipment Monitoring</p>
 
-</div>
-
-
+</a>
 
 
 
-<div class="card">
+
+
+
+
+<a class="card" href="#">
 
 <div class="icon">🏢</div>
 
 <h2>Assets Module</h2>
 
-<p>Asset Management Dashboard</p>
+<p>Asset Management</p>
 
-</div>
-
-
+</a>
 
 
 
-<div class="card">
+
+
+
+
+<a class="card" href="#">
 
 <div class="icon">💻</div>
 
 <h2>IT Module</h2>
 
-<p>IT Operations Dashboard</p>
+<p>IT Operations</p>
 
-</div>
+</a>
+
+
+
 
 
 
