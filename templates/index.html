@@ -11,86 +11,89 @@
 <style>
 
 *{
-box-sizing:border-box;
+    box-sizing:border-box;
 }
 
 
 body{
 
-margin:0;
-min-height:100vh;
+    margin:0;
+    min-height:100vh;
 
-font-family:'Segoe UI',Arial,sans-serif;
+    font-family:'Segoe UI',Arial,sans-serif;
 
-background:
-radial-gradient(circle at top left,#007bff55,transparent 35%),
-radial-gradient(circle at bottom right,#00ffff44,transparent 35%),
-linear-gradient(135deg,#061426,#123d68);
+    background:
+    radial-gradient(circle at 20% 20%,#0077ff55,transparent 30%),
+    radial-gradient(circle at 80% 80%,#00ffff55,transparent 30%),
+    linear-gradient(135deg,#061426,#123d68);
 
-color:white;
+    color:white;
 
 }
+
 
 
 /* NAVBAR */
 
 .navbar{
 
-height:80px;
+    height:75px;
 
-display:flex;
+    display:flex;
 
-justify-content:space-between;
+    align-items:center;
 
-align-items:center;
+    justify-content:space-between;
 
-padding:0 50px;
+    padding:0 50px;
 
-background:rgba(255,255,255,0.12);
+    background:rgba(255,255,255,0.12);
 
-backdrop-filter:blur(15px);
+    backdrop-filter:blur(15px);
+
+    border-bottom:1px solid rgba(255,255,255,0.2);
 
 }
+
 
 
 .logo{
 
-display:flex;
+    display:flex;
 
-align-items:center;
+    align-items:center;
 
-gap:15px;
+    gap:15px;
 
-font-size:24px;
+    font-size:25px;
 
-font-weight:700;
+    font-weight:bold;
 
 }
 
 
-.logo-box{
 
-width:55px;
+.logo-circle{
 
-height:55px;
+    width:55px;
 
-border-radius:50%;
+    height:55px;
 
-background:white;
+    border-radius:50%;
 
-color:#083b78;
+    background:white;
 
-display:flex;
+    color:#063b78;
 
-align-items:center;
+    display:flex;
 
-justify-content:center;
+    justify-content:center;
 
-font-weight:bold;
+    align-items:center;
 
-font-size:20px;
+    font-weight:bold;
 
-box-shadow:0 10px 25px #0008;
+    box-shadow:0 10px 25px #0008;
 
 }
 
@@ -98,21 +101,33 @@ box-shadow:0 10px 25px #0008;
 
 .menu a{
 
-color:white;
+    color:white;
 
-text-decoration:none;
+    text-decoration:none;
 
-margin-left:25px;
+    margin-left:25px;
+
+    font-size:16px;
+
+}
+
+
+.menu a:hover{
+
+    color:#00ffff;
 
 }
 
 
 
+/* MAIN */
+
+
 .container{
 
-padding:40px;
+    padding:40px;
 
-text-align:center;
+    text-align:center;
 
 }
 
@@ -120,107 +135,83 @@ text-align:center;
 
 h1{
 
-font-size:42px;
+    font-size:40px;
+
+    margin-bottom:10px;
 
 }
-
 
 
 .subtitle{
 
-font-size:18px;
+    opacity:0.8;
 
-opacity:.85;
+    font-size:18px;
 
 }
 
 
 
+/* MODULE GRID */
 
 
 .modules{
 
+    margin-top:45px;
 
-margin-top:45px;
+    display:grid;
 
+    grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
 
-display:grid;
-
-
-grid-template-columns:
-
-repeat(auto-fit,minmax(230px,1fr));
-
-
-gap:25px;
-
+    gap:25px;
 
 }
-
-
 
 
 
 .card{
 
+    padding:30px 20px;
 
-text-decoration:none;
+    background:rgba(255,255,255,0.15);
 
-color:white;
+    backdrop-filter:blur(15px);
 
+    border-radius:20px;
 
-background:
+    border:1px solid rgba(255,255,255,0.25);
 
-rgba(255,255,255,0.15);
+    box-shadow:
 
+    0 20px 40px rgba(0,0,0,0.35);
 
-backdrop-filter:blur(15px);
+    transition:0.4s;
 
+    cursor:pointer;
 
-border-radius:22px;
+    text-decoration:none;
 
-
-padding:30px 20px;
-
-
-border:1px solid rgba(255,255,255,.25);
-
-
-box-shadow:
-
-0 20px 40px rgba(0,0,0,.35);
-
-
-transition:.4s;
-
+    color:white;
 
 }
-
 
 
 
 .card:hover{
 
+    transform:translateY(-12px) scale(1.04);
 
-transform:
-
-translateY(-12px) scale(1.05);
-
-
-background:
-
-rgba(255,255,255,.28);
-
+    background:rgba(255,255,255,0.25);
 
 }
 
 
 
-
-
 .icon{
 
-font-size:45px;
+    font-size:45px;
+
+    margin-bottom:15px;
 
 }
 
@@ -228,14 +219,15 @@ font-size:45px;
 
 .card h2{
 
-font-size:22px;
+    font-size:21px;
 
 }
 
 
+
 .card p{
 
-opacity:.8;
+    opacity:0.8;
 
 }
 
@@ -244,18 +236,20 @@ opacity:.8;
 
 .footer{
 
-margin-top:40px;
+    margin-top:40px;
 
-opacity:.7;
+    opacity:0.7;
+
+    font-size:14px;
 
 }
-
 
 
 </style>
 
 
 </head>
+
 
 
 <body>
@@ -267,13 +261,16 @@ opacity:.7;
 
 <div class="logo">
 
-<div class="logo-box">
+
+<div class="logo-circle">
 
 AG
 
 </div>
 
-AGIPL Portal
+
+AGIPL Digital Portal
+
 
 </div>
 
@@ -281,16 +278,20 @@ AGIPL Portal
 
 <div class="menu">
 
-<a href="#">Home</a>
+<a href="/">Home</a>
 
-<a href="#">Modules</a>
+<a href="/modules">Modules</a>
 
-<a href="#">Reports</a>
+<a href="/reports">Reports</a>
+
+<a href="#">Support</a>
+
 
 </div>
 
 
 </div>
+
 
 
 
@@ -309,9 +310,12 @@ AGIPL Digital Command Center
 
 <div class="subtitle">
 
-Integrated Business Intelligence Platform
+Integrated Business Intelligence & Reporting Platform
 
 </div>
+
+
+
 
 
 
@@ -320,15 +324,13 @@ Integrated Business Intelligence Platform
 
 
 
-
-
-<a class="card" href="#">
+<a href="/breakdown" class="card">
 
 <div class="icon">🛠</div>
 
 <h2>Breakdown Analysis</h2>
 
-<p>Machine Breakdown Dashboard</p>
+<p>Machine Breakdown Monitoring Dashboard</p>
 
 </a>
 
@@ -336,14 +338,13 @@ Integrated Business Intelligence Platform
 
 
 
-
-<a class="card" href="#">
+<a href="/fuel" class="card">
 
 <div class="icon">⛽</div>
 
 <h2>Fuel Analysis</h2>
 
-<p>Fuel Monitoring Dashboard</p>
+<p>Fuel Consumption & Tracking System</p>
 
 </a>
 
@@ -351,15 +352,13 @@ Integrated Business Intelligence Platform
 
 
 
-
-
-<a class="card" href="#">
+<a href="/hr" class="card">
 
 <div class="icon">👥</div>
 
 <h2>HR Module</h2>
 
-<p>Employee Analytics</p>
+<p>Employee Analytics & Reports</p>
 
 </a>
 
@@ -367,16 +366,13 @@ Integrated Business Intelligence Platform
 
 
 
-
-
-
-<a class="card" href="#">
+<a href="/purchase" class="card">
 
 <div class="icon">🛒</div>
 
 <h2>Purchase Module</h2>
 
-<p>Purchase Reports</p>
+<p>Purchase Tracking & Analysis</p>
 
 </a>
 
@@ -384,15 +380,13 @@ Integrated Business Intelligence Platform
 
 
 
-
-
-<a class="card" href="#">
+<a href="/sales" class="card">
 
 <div class="icon">📈</div>
 
 <h2>Sales Module</h2>
 
-<p>Sales Analytics</p>
+<p>Sales Performance Dashboard</p>
 
 </a>
 
@@ -400,15 +394,13 @@ Integrated Business Intelligence Platform
 
 
 
-
-
-<a class="card" href="#">
+<a href="/machinery" class="card">
 
 <div class="icon">⚙</div>
 
 <h2>Machinery Module</h2>
 
-<p>Equipment Monitoring</p>
+<p>Equipment Monitoring System</p>
 
 </a>
 
@@ -416,15 +408,13 @@ Integrated Business Intelligence Platform
 
 
 
-
-
-<a class="card" href="#">
+<a href="/assets" class="card">
 
 <div class="icon">🏢</div>
 
 <h2>Assets Module</h2>
 
-<p>Asset Management</p>
+<p>Asset Management Dashboard</p>
 
 </a>
 
@@ -432,24 +422,20 @@ Integrated Business Intelligence Platform
 
 
 
-
-
-<a class="card" href="#">
+<a href="/it" class="card">
 
 <div class="icon">💻</div>
 
 <h2>IT Module</h2>
 
-<p>IT Operations</p>
+<p>IT Operations Dashboard</p>
 
 </a>
 
 
 
-
-
-
 </div>
+
 
 
 
