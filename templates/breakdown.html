@@ -2,9 +2,7 @@
 
 
 {% block title %}
-
 Breakdown Analysis Dashboard
-
 {% endblock %}
 
 
@@ -27,12 +25,9 @@ Live Machine Breakdown Monitoring System
 
 
 
-
-
-<!-- KPI SECTION -->
+<!-- KPI -->
 
 <div class="kpi-container">
-
 
 
 <div class="kpi-card">
@@ -46,11 +41,10 @@ Total Pending Cases
 </h1>
 
 <p>
-Resolved Status : No
+Resolved : No
 </p>
 
 </div>
-
 
 
 
@@ -65,134 +59,32 @@ Pending Cases > 15 Days
 </h1>
 
 <p>
-Critical Pending Cases
+Critical Pending
 </p>
 
 </div>
 
 
-
 </div>
 
 
 
 
 
-
-
-<!-- FILTER AREA -->
-
-
-<div class="filter-box">
-
-
-<h2>
-Filters
-</h2>
-
-
-<form>
-
-
-<label>
-Site
-</label>
-
-<select>
-
-<option>
-All Sites
-</option>
-
-</select>
-
-
-
-
-<label>
-Machine Category
-</label>
-
-<select>
-
-<option>
-All Machines
-</option>
-
-</select>
-
-
-
-<label>
-Date Range
-</label>
-
-<input type="date">
-
-
-<label>
-Vehicle No
-</label>
-
-<select>
-
-<option>
-All Vehicles
-</option>
-
-</select>
-
-
-
-
-<label>
-Owned / Hired
-</label>
-
-<select>
-
-<option>
-All
-</option>
-
-</select>
-
-
-</form>
-
-
-
-</div>
-
-
-
-
-
-
-
-<!-- CHART AREA -->
-
+<!-- CHARTS -->
 
 <div class="chart-grid">
 
 
-
 <div class="chart-card">
 
 <h2>
-Machine Count Pending Days Range
+Pending Days Range
 </h2>
 
-
-<div id="rangeChart">
-
-Chart Area
+<canvas id="rangeChart"></canvas>
 
 </div>
-
-
-</div>
-
 
 
 
@@ -200,19 +92,12 @@ Chart Area
 <div class="chart-card">
 
 <h2>
-Machine Wise Pending Cases >15 Days
+Machine Wise Pending >15 Days
 </h2>
 
-
-<div id="machineChart">
-
-Chart Area
+<canvas id="machineChart"></canvas>
 
 </div>
-
-
-</div>
-
 
 
 
@@ -221,20 +106,12 @@ Chart Area
 <div class="chart-card">
 
 <h2>
-Breakdown Machine Count By Site
+Breakdown Count By Site
 </h2>
 
-
-<div id="siteChart">
-
-Chart Area
+<canvas id="siteChart"></canvas>
 
 </div>
-
-
-</div>
-
-
 
 
 
@@ -246,13 +123,7 @@ Chart Area
 Pending Distribution >15 Days
 </h2>
 
-
-<div id="pendingChart">
-
-Chart Area
-
-</div>
-
+<canvas id="pendingChart"></canvas>
 
 </div>
 
@@ -261,6 +132,148 @@ Chart Area
 </div>
 
 
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+
+<script>
+
+
+// Range Chart
+
+new Chart(
+document.getElementById('rangeChart'),
+{
+
+type:'bar',
+
+data:{
+
+labels: {{ range_labels | safe }},
+
+datasets:[{
+
+label:'Machines',
+
+data: {{ range_values | safe }}
+
+}]
+
+}
+
+});
+
+
+
+
+
+
+// Machine Chart
+
+
+new Chart(
+
+document.getElementById('machineChart'),
+
+{
+
+type:'bar',
+
+data:{
+
+labels: {{ machine_labels | safe }},
+
+datasets:[{
+
+label:'Pending Cases',
+
+data: {{ machine_values | safe }}
+
+}]
+
+}
+
+}
+
+);
+
+
+
+
+
+
+// Site Doughnut
+
+
+new Chart(
+
+document.getElementById('siteChart'),
+
+{
+
+type:'doughnut',
+
+data:{
+
+labels: {{ site_labels | safe }},
+
+datasets:[{
+
+data: {{ site_values | safe }}
+
+}]
+
+}
+
+}
+
+}
+
+);
+
+
+
+
+
+// Pending Distribution
+
+
+new Chart(
+
+document.getElementById('pendingChart'),
+
+{
+
+type:'doughnut',
+
+data:{
+
+labels:['0-15 Days','15+ Days'],
+
+datasets:[{
+
+data:[
+
+{{ pending_count - pending_15 }},
+
+{{ pending_15 }}
+
+]
+
+}]
+
+}
+
+}
+
+);
+
+
+
+</script>
 
 
 
