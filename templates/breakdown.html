@@ -3,7 +3,7 @@
 
 {% block title %}
 
-Breakdown Analysis
+Breakdown Analysis Dashboard
 
 {% endblock %}
 
@@ -13,26 +13,254 @@ Breakdown Analysis
 
 
 
+<div class="dashboard-header">
+
 <h1>
 🛠 Breakdown Analysis Dashboard
 </h1>
 
+<p>
+Live Machine Breakdown Monitoring System
+</p>
 
-<div class="card">
+</div>
 
-<h2>
-Live Breakdown Dashboard Coming Here
-</h2>
 
+
+
+
+<!-- KPI SECTION -->
+
+<div class="kpi-container">
+
+
+
+<div class="kpi-card">
+
+<h3>
+Total Pending Cases
+</h3>
+
+<h1>
+{{ pending_count }}
+</h1>
 
 <p>
-
-Google Sheet Master Table Integration
-
+Resolved Status : No
 </p>
+
+</div>
+
+
+
+
+<div class="kpi-card">
+
+<h3>
+Pending Cases > 15 Days
+</h3>
+
+<h1>
+{{ pending_15 }}
+</h1>
+
+<p>
+Critical Pending Cases
+</p>
+
+</div>
+
 
 
 </div>
+
+
+
+
+
+
+
+<!-- FILTER AREA -->
+
+
+<div class="filter-box">
+
+
+<h2>
+Filters
+</h2>
+
+
+<form>
+
+
+<label>
+Site
+</label>
+
+<select>
+
+<option>
+All Sites
+</option>
+
+</select>
+
+
+
+
+<label>
+Machine Category
+</label>
+
+<select>
+
+<option>
+All Machines
+</option>
+
+</select>
+
+
+
+<label>
+Date Range
+</label>
+
+<input type="date">
+
+
+<label>
+Vehicle No
+</label>
+
+<select>
+
+<option>
+All Vehicles
+</option>
+
+</select>
+
+
+
+
+<label>
+Owned / Hired
+</label>
+
+<select>
+
+<option>
+All
+</option>
+
+</select>
+
+
+</form>
+
+
+
+</div>
+
+
+
+
+
+
+
+<!-- CHART AREA -->
+
+
+<div class="chart-grid">
+
+
+
+<div class="chart-card">
+
+<h2>
+Machine Count Pending Days Range
+</h2>
+
+
+<div id="rangeChart">
+
+Chart Area
+
+</div>
+
+
+</div>
+
+
+
+
+
+<div class="chart-card">
+
+<h2>
+Machine Wise Pending Cases >15 Days
+</h2>
+
+
+<div id="machineChart">
+
+Chart Area
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+<div class="chart-card">
+
+<h2>
+Breakdown Machine Count By Site
+</h2>
+
+
+<div id="siteChart">
+
+Chart Area
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+
+<div class="chart-card">
+
+<h2>
+Pending Distribution >15 Days
+</h2>
+
+
+<div id="pendingChart">
+
+Chart Area
+
+</div>
+
+
+</div>
+
+
+
+</div>
+
+
 
 
 
