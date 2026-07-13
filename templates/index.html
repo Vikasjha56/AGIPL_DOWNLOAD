@@ -1,61 +1,147 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>AGIPL Download System</title>
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin-top: 80px;
-        }
+<title>AGIPL Download System</title>
 
-        h1 {
-            font-size: 32px;
-        }
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-        button {
-            padding: 15px 30px;
-            margin: 20px;
-            font-size: 18px;
-            cursor: pointer;
-        }
+<style>
 
-        .excel {
-            background: green;
-            color: white;
-            border: none;
-        }
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f6f9;
+    margin: 0;
+    padding: 0;
+}
 
-        .pdf {
-            background: red;
-            color: white;
-            border: none;
-        }
-    </style>
+.container {
+    max-width: 600px;
+    margin: 80px auto;
+    background: white;
+    padding: 40px;
+    text-align: center;
+    border-radius: 15px;
+    box-shadow: 0px 5px 20px rgba(0,0,0,0.15);
+}
+
+h1 {
+    color: #1f4e79;
+    margin-bottom: 10px;
+}
+
+p {
+    color: #555;
+    font-size: 17px;
+}
+
+
+.download-btn {
+
+    display: block;
+    width: 80%;
+    margin: 20px auto;
+    padding: 15px;
+
+    font-size: 18px;
+    text-decoration: none;
+
+    border-radius: 8px;
+    color:white;
+
+}
+
+
+.excel {
+
+    background:#198754;
+
+}
+
+
+.pdf {
+
+    background:#dc3545;
+
+}
+
+
+.download-btn:hover {
+
+    opacity:0.85;
+
+}
+
+
+.footer {
+
+    margin-top:30px;
+    font-size:13px;
+    color:#777;
+
+}
+
+</style>
+
+
+<script>
+
+function loading(msg){
+
+    document.getElementById("status").innerHTML = msg;
+
+}
+
+</script>
+
 
 </head>
 
+
 <body>
+
+
+<div class="container">
+
 
 <h1>AGIPL Download System</h1>
 
-<p>Download Master Table Data</p>
+<p>
+Generate Master Table Report
+</p>
 
 
-<a href="/download_excel">
-    <button class="excel">
-        Download Excel
-    </button>
+<a class="download-btn excel"
+onclick="loading('Generating Excel File... Please wait')"
+href="/download_excel">
+
+⬇ Download Excel
+
 </a>
 
 
-<a href="/download_pdf">
-    <button class="pdf">
-        Download PDF
-    </button>
+<a class="download-btn pdf"
+onclick="loading('Generating PDF File... Please wait')"
+href="/download_pdf">
+
+📄 Download PDF
+
 </a>
+
+
+<p id="status"></p>
+
+
+<div class="footer">
+
+AGIPL Digital Reporting System
+
+</div>
+
+
+</div>
 
 
 </body>
+
 </html>
