@@ -2,13 +2,13 @@
 
 
 {% block title %}
-Breakdown Analysis Dashboard
+Breakdown Analysis
 {% endblock %}
 
 
 
-{% block content %}
 
+{% block content %}
 
 
 <div class="dashboard-header">
@@ -25,7 +25,6 @@ Live Machine Breakdown Monitoring System
 
 
 
-<!-- KPI -->
 
 <div class="kpi-container">
 
@@ -36,44 +35,54 @@ Live Machine Breakdown Monitoring System
 Total Pending Cases
 </h3>
 
+
 <h1>
-{{ pending_count }}
+{{pending_count}}
 </h1>
 
+
 <p>
-Resolved : No
+Resolved Status : No
 </p>
 
+
 </div>
+
 
 
 
 <div class="kpi-card">
 
+
 <h3>
-Pending Cases > 15 Days
+Pending Cases >15 Days
 </h3>
 
+
 <h1>
-{{ pending_15 }}
+{{pending_15}}
 </h1>
+
 
 <p>
 Critical Pending
 </p>
 
-</div>
-
 
 </div>
 
 
 
+</div>
 
 
-<!-- CHARTS -->
+
+
+
+
 
 <div class="chart-grid">
+
 
 
 <div class="chart-card">
@@ -85,6 +94,7 @@ Pending Days Range
 <canvas id="rangeChart"></canvas>
 
 </div>
+
 
 
 
@@ -106,7 +116,7 @@ Machine Wise Pending >15 Days
 <div class="chart-card">
 
 <h2>
-Breakdown Count By Site
+Breakdown Machine Count By Site
 </h2>
 
 <canvas id="siteChart"></canvas>
@@ -120,10 +130,12 @@ Breakdown Count By Site
 <div class="chart-card">
 
 <h2>
-Pending Distribution >15 Days
+Pending Distribution
 </h2>
 
+
 <canvas id="pendingChart"></canvas>
+
 
 </div>
 
@@ -142,8 +154,6 @@ Pending Distribution >15 Days
 <script>
 
 
-// Range Chart
-
 new Chart(
 document.getElementById('rangeChart'),
 {
@@ -152,13 +162,13 @@ type:'bar',
 
 data:{
 
-labels: {{ range_labels | safe }},
+labels:{{range_labels|safe}},
 
 datasets:[{
 
-label:'Machines',
+label:"Cases",
 
-data: {{ range_values | safe }}
+data:{{range_values|safe}}
 
 }]
 
@@ -171,9 +181,6 @@ data: {{ range_values | safe }}
 
 
 
-// Machine Chart
-
-
 new Chart(
 
 document.getElementById('machineChart'),
@@ -184,13 +191,14 @@ type:'bar',
 
 data:{
 
-labels: {{ machine_labels | safe }},
+labels:{{machine_labels|safe}},
+
 
 datasets:[{
 
-label:'Pending Cases',
+label:"Pending",
 
-data: {{ machine_values | safe }}
+data:{{machine_values|safe}}
 
 }]
 
@@ -203,9 +211,6 @@ data: {{ machine_values | safe }}
 
 
 
-
-
-// Site Doughnut
 
 
 new Chart(
@@ -218,15 +223,14 @@ type:'doughnut',
 
 data:{
 
-labels: {{ site_labels | safe }},
+labels:{{site_labels|safe}},
+
 
 datasets:[{
 
-data: {{ site_values | safe }}
+data:{{site_values|safe}}
 
 }]
-
-}
 
 }
 
@@ -238,7 +242,6 @@ data: {{ site_values | safe }}
 
 
 
-// Pending Distribution
 
 
 new Chart(
@@ -251,15 +254,22 @@ type:'doughnut',
 
 data:{
 
-labels:['0-15 Days','15+ Days'],
+labels:[
+
+"0-15 Days",
+
+"15+ Days"
+
+],
+
 
 datasets:[{
 
 data:[
 
-{{ pending_count - pending_15 }},
+{{pending_count-pending_15}},
 
-{{ pending_15 }}
+{{pending_15}}
 
 ]
 
