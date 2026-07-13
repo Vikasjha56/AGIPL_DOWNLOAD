@@ -93,37 +93,41 @@ def reports():
 @app.route("/breakdown")
 def breakdown():
 
+    global MASTER_CACHE, CACHE_TIME
+
     try:
 
-        global MASTER_CACHE, CACHE_TIME
+        current_time = time.time()
 
 
-current_time = time.time()
+        # CACHE SYSTEM
+
+        if (
+            MASTER_CACHE is None
+            or current_time - CACHE_TIME > CACHE_DURATION
+        ):
+
+            print("Loading Google Sheets Data...")
+
+            MASTER_CACHE = get_master_table()
+
+            CACHE_TIME = current_time
 
 
-if (
-    MASTER_CACHE is None
-    or current_time - CACHE_TIME > CACHE_DURATION
-):
+        else:
 
-    print("Loading Google Sheets Data...")
-
-    MASTER_CACHE = get_master_table()
-
-    CACHE_TIME = current_time
+            print("Using Cached Data...")
 
 
-else:
+        master = MASTER_CACHE
 
-    print("Using Cached Data...")
-
-
-master = MASTER_CACHE
 
         master.columns = master.columns.str.strip()
 
 
-        # Pending Data
+
+        # Pending Cases
+
         pending = master[
             master["Resolved"]
             .astype(str)
@@ -134,16 +138,12 @@ master = MASTER_CACHE
 
 
 
-        # Pending Days Numeric
-
         pending["Pending Days"] = pd.to_numeric(
             pending["Pending for (no of days)"],
             errors="coerce"
         )
 
 
-
-        # KPI
 
         pending_count = len(pending)
 
@@ -157,119 +157,18 @@ master = MASTER_CACHE
 
 
 
-        # Machine Pending Days Range
-
-        range_data = {
-
-            "0-7 Days":
-            len(
-                pending[
-                    (pending["Pending Days"] >=0)
-                    &
-                    (pending["Pending Days"] <=7)
-                ]
-            ),
-
-
-            "8-15 Days":
-            len(
-                pending[
-                    (pending["Pending Days"] >=8)
-                    &
-                    (pending["Pending Days"] <=15)
-                ]
-            ),
-
-
-            "16-30 Days":
-            len(
-                pending[
-                    (pending["Pending Days"] >=16)
-                    &
-                    (pending["Pending Days"] <=30)
-                ]
-            ),
-
-
-            "31+ Days":
-            len(
-                pending[
-                    pending["Pending Days"] >30
-                ]
-            )
-
-        }
-
-
-
-        # Machine Wise >15 Days
-
-        machine_data = (
-
-            pending[
-                pending["Pending Days"] >15
-            ]
-
-            ["Category"]
-
-            .value_counts()
-
-            .head(10)
-
-            .to_dict()
-
-        )
-
-
-
-        # Site Wise
-
-        site_data = (
-
-            pending
-
-            ["Site"]
-
-            .value_counts()
-
-            .to_dict()
-
-        )
-
-
-
         return render_template(
-
             "breakdown.html",
-
             pending_count=pending_count,
-
-            pending_15=pending_15,
-
-
-            range_labels=list(range_data.keys()),
-
-            range_values=list(range_data.values()),
-
-
-            machine_labels=list(machine_data.keys()),
-
-            machine_values=list(machine_data.values()),
-
-
-            site_labels=list(site_data.keys()),
-
-            site_values=list(site_data.values())
-
+            pending_15=pending_15
         )
-
 
 
     except Exception as e:
 
-        print("BREAKDOWN ERROR :",e)
+        print("BREAKDOWN ERROR :", e)
 
-        return "Breakdown Error : "+str(e)
+        return "Breakdown Error : " + str(e)
 @app.route("/fuel")
 def fuel():
     return render_template("fuel.html")
