@@ -7,25 +7,25 @@ font-family:'Segoe UI',Arial,sans-serif;
 body{
 
 margin:0;
-min-height:100vh;
 
 color:white;
 
-background:#061426;
+min-height:100vh;
 
 overflow-x:hidden;
+
+background:#061426;
 
 }
 
 
 
-/* =====================
-5D ANIMATED BACKGROUND
-===================== */
+/* =========================
+5D BACKGROUND
+========================= */
 
 
 .background-animation{
-
 
 position:fixed;
 
@@ -36,83 +36,89 @@ z-index:-1;
 
 background:
 
-radial-gradient(circle at 20% 20%,#00ffff55,transparent 30%),
+radial-gradient(circle at 20% 20%,#00ffff66,transparent 30%),
 
-radial-gradient(circle at 80% 80%,#0077ff77,transparent 35%),
+radial-gradient(circle at 80% 70%,#0077ff88,transparent 35%),
 
 linear-gradient(135deg,#020b18,#123d68);
 
 
-animation:bgAnimation 12s infinite alternate;
+animation:
 
+moveBackground 12s infinite alternate;
 
 }
 
 
 
-@keyframes bgAnimation{
+@keyframes moveBackground{
 
 
-0%{
+from{
 
 transform:scale(1);
 
 }
 
 
-100%{
+to{
 
-transform:scale(1.2);
-
-}
+transform:scale(1.18);
 
 }
 
 
-
-/* =====================
-SIDEBAR
-===================== */
+}
 
 
-.sidebar{
 
 
-position:fixed;
 
-top:0;
-
-left:0;
-
-width:260px;
-
-height:100vh;
+/* =========================
+TOP NAVBAR
+========================= */
 
 
-padding:25px;
+.navbar{
+
+
+height:80px;
+
+display:flex;
+
+align-items:center;
+
+justify-content:space-between;
+
+
+padding:0 45px;
 
 
 background:
 
-rgba(255,255,255,0.12);
+rgba(255,255,255,.12);
 
 
 backdrop-filter:blur(20px);
 
 
-border-right:1px solid rgba(255,255,255,.25);
+border-bottom:
+
+1px solid rgba(255,255,255,.25);
 
 
 box-shadow:
 
-10px 0 40px #0008;
+0 10px 40px #0008;
 
 
 }
 
 
 
+
 .brand{
+
 
 display:flex;
 
@@ -120,13 +126,13 @@ align-items:center;
 
 gap:15px;
 
-margin-bottom:35px;
 
 }
 
 
 
-.logo{
+
+.logo-circle{
 
 
 width:60px;
@@ -155,12 +161,15 @@ font-size:25px;
 font-weight:bold;
 
 
+
 box-shadow:
 
-0 0 30px #00ffff;
+0 0 35px cyan;
 
 
-animation:pulse 3s infinite;
+animation:
+
+pulse 3s infinite;
 
 
 }
@@ -174,25 +183,129 @@ animation:pulse 3s infinite;
 
 box-shadow:
 
-0 0 50px #00ffff;
+0 0 60px cyan;
 
 }
 
+
 }
 
 
+
+
+.brand-text{
+
+
+font-size:24px;
+
+font-weight:bold;
+
+
+}
+
+
+
+
+
+.menu a{
+
+
+color:white;
+
+text-decoration:none;
+
+
+margin-left:30px;
+
+
+font-size:17px;
+
+
+transition:.3s;
+
+
+}
+
+
+
+.menu a:hover{
+
+
+color:#00ffff;
+
+
+text-shadow:
+
+0 0 15px cyan;
+
+
+}
+
+
+
+
+
+
+
+/* =========================
+SIDEBAR
+========================= */
+
+
+.sidebar{
+
+
+position:fixed;
+
+
+top:100px;
+
+
+left:20px;
+
+
+width:240px;
+
+
+padding:25px;
+
+
+border-radius:25px;
+
+
+background:
+
+rgba(255,255,255,.12);
+
+
+backdrop-filter:blur(20px);
+
+
+box-shadow:
+
+0 20px 50px #0008;
+
+
+}
+
+
+
+
+.sidebar h3{
+
+margin-top:0;
+
+}
 
 
 
 .sidebar a{
 
 
-display:flex;
-
-align-items:center;
+display:block;
 
 
-padding:14px 18px;
+padding:14px;
 
 
 margin:10px 0;
@@ -203,16 +316,15 @@ border-radius:15px;
 
 color:white;
 
+
 text-decoration:none;
 
 
 transition:.4s;
 
 
-font-size:16px;
-
-
 }
+
 
 
 
@@ -221,28 +333,19 @@ font-size:16px;
 
 background:
 
-linear-gradient(
-
-135deg,
-
-rgba(0,255,255,.35),
-
-rgba(0,120,255,.35)
-
-);
+rgba(0,255,255,.25);
 
 
 transform:
 
 translateX(12px)
-
 scale(1.05);
+
 
 
 box-shadow:
 
-
-0 0 25px #00ffff;
+0 0 25px cyan;
 
 
 }
@@ -250,18 +353,21 @@ box-shadow:
 
 
 
-/* =====================
-MAIN AREA
-===================== */
+
+
+
+/* =========================
+MAIN
+========================= */
 
 
 .main{
 
-margin-left:260px;
+
+margin-left:290px;
+
 
 }
-
-
 
 
 
@@ -281,24 +387,19 @@ align-items:center;
 padding:0 40px;
 
 
-background:
-
-rgba(255,255,255,.12);
-
-
-backdrop-filter:blur(20px);
-
-
-border-bottom:
-
-1px solid #ffffff33;
-
 
 }
 
 
 
-.profile{
+
+
+.status{
+
+
+background:
+
+rgba(0,255,120,.25);
 
 
 padding:12px 25px;
@@ -307,18 +408,14 @@ padding:12px 25px;
 border-radius:30px;
 
 
-background:
-
-rgba(0,255,120,.25);
-
-
 box-shadow:
-
 
 0 0 25px #00ff88;
 
 
 }
+
+
 
 
 
@@ -334,12 +431,38 @@ padding:40px;
 
 
 
-/* =====================
-MODULE CARDS
-===================== */
+
+
+
+/* MODULE CARDS */
+
+
+.modules{
+
+
+display:grid;
+
+
+grid-template-columns:
+
+repeat(auto-fit,minmax(230px,1fr));
+
+
+gap:25px;
+
+
+}
+
+
 
 
 .card{
+
+
+padding:30px;
+
+
+border-radius:25px;
 
 
 background:
@@ -347,41 +470,31 @@ background:
 rgba(255,255,255,.15);
 
 
-backdrop-filter:
-
-blur(20px);
-
-
-
-border-radius:25px;
-
+backdrop-filter:blur(20px);
 
 
 border:
 
-1px solid rgba(255,255,255,.25);
+1px solid rgba(255,255,255,.3);
 
 
 
-padding:30px;
+text-decoration:none;
 
 
-
-box-shadow:
-
-
-0 20px 50px rgba(0,0,0,.45);
-
+color:white;
 
 
 transition:.5s;
 
 
+box-shadow:
 
-cursor:pointer;
+0 20px 50px #0007;
 
 
 }
+
 
 
 
@@ -389,7 +502,6 @@ cursor:pointer;
 
 
 transform:
-
 
 translateY(-15px)
 
@@ -410,12 +522,10 @@ box-shadow:
 
 0 30px 70px #000,
 
-0 0 40px #00ffff;
-
+0 0 40px cyan;
 
 
 }
-
 
 
 
@@ -423,24 +533,6 @@ box-shadow:
 
 
 font-size:45px;
-
-
-transition:.4s;
-
-
-}
-
-
-
-.card:hover .icon{
-
-
-transform:
-
-scale(1.3)
-
-rotate(10deg);
-
 
 }
 
@@ -453,7 +545,7 @@ footer{
 
 text-align:center;
 
-padding:20px;
+padding:25px;
 
 opacity:.7;
 
