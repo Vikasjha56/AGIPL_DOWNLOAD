@@ -87,38 +87,15 @@ def breakdown():
 
         master = get_master_table()
 
-
-        # Total Pending Cases
-        pending_data = master[
-            master["Resolved"] == "No"
-        ]
+        print(master.columns.tolist())
 
 
-        pending_count = len(pending_data)
-
-
-
-        # Pending > 15 Days
-
-        pending_15_data = pending_data[
-            pending_data["Pending for (no of days)"] > 15
-        ]
-
-
-        pending_15 = len(pending_15_data)
-
-
-
-        return render_template(
-            "breakdown.html",
-            pending_count=pending_count,
-            pending_15=pending_15
-        )
+        return str(master.columns.tolist())
 
 
     except Exception as e:
 
-        return f"Breakdown Error : {str(e)}"
+        return "ERROR : " + str(e)
 
 @app.route("/fuel")
 def fuel():
