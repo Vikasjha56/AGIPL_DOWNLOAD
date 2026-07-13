@@ -4,557 +4,106 @@
 <head>
 
 <title>
+{% block title %}
 AGIPL Digital Command Center
+{% endblock %}
 </title>
+
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 
-<style>
-
-
-*{
-box-sizing:border-box;
-}
-
-
-
-body{
-
-margin:0;
-
-min-height:100vh;
-
-font-family:'Segoe UI',Arial,sans-serif;
-
-color:white;
-
-
-background:
-
-radial-gradient(circle at 20% 20%,#0077ff55,transparent 30%),
-
-radial-gradient(circle at 80% 80%,#00ffff55,transparent 30%),
-
-linear-gradient(135deg,#061426,#123d68);
-
-
-overflow-x:hidden;
-
-}
-
-
-
-
-/* Animated 5D Background */
-
-
-body::before{
-
-content:"";
-
-position:fixed;
-
-width:350px;
-
-height:350px;
-
-background:#00ffff55;
-
-border-radius:50%;
-
-filter:blur(90px);
-
-top:10%;
-
-left:5%;
-
-animation:move1 8s infinite alternate;
-
-z-index:-1;
-
-}
-
-
-
-
-body::after{
-
-content:"";
-
-position:fixed;
-
-width:400px;
-
-height:400px;
-
-background:#0077ff55;
-
-border-radius:50%;
-
-filter:blur(100px);
-
-bottom:5%;
-
-right:5%;
-
-animation:move2 10s infinite alternate;
-
-z-index:-1;
-
-}
-
-
-
-
-
-@keyframes move1{
-
-from{
-
-transform:translate(0,0);
-
-}
-
-
-to{
-
-transform:translate(250px,150px);
-
-}
-
-}
-
-
-
-
-@keyframes move2{
-
-from{
-
-transform:translate(0,0);
-
-}
-
-
-to{
-
-transform:translate(-200px,-120px);
-
-}
-
-}
-
-
-
-
-
-
-/* HEADER */
-
-
-.navbar{
-
-
-height:75px;
-
-
-display:flex;
-
-
-align-items:center;
-
-
-justify-content:space-between;
-
-
-padding:0 50px;
-
-
-background:rgba(255,255,255,0.12);
-
-
-backdrop-filter:blur(15px);
-
-
-border-bottom:
-
-1px solid rgba(255,255,255,0.25);
-
-
-}
-
-
-
-
-.logo{
-
-
-display:flex;
-
-
-align-items:center;
-
-
-gap:15px;
-
-
-font-size:25px;
-
-
-font-weight:bold;
-
-
-}
-
-
-
-
-.logo-circle{
-
-
-width:55px;
-
-
-height:55px;
-
-
-border-radius:50%;
-
-
-background:white;
-
-
-color:#063b78;
-
-
-display:flex;
-
-
-justify-content:center;
-
-
-align-items:center;
-
-
-font-weight:bold;
-
-
-box-shadow:
-
-0 10px 25px #0008;
-
-
-}
-
-
-
-
-
-.menu a{
-
-
-color:white;
-
-
-text-decoration:none;
-
-
-margin-left:25px;
-
-
-font-size:16px;
-
-
-transition:.3s;
-
-
-}
-
-
-
-.menu a:hover{
-
-
-color:#00ffff;
-
-
-}
-
-
-
-
-/* PAGE CONTENT */
-
-
-.container{
-
-
-padding:40px;
-
-
-text-align:center;
-
-
-}
-
-
-
-
-h1{
-
-
-font-size:40px;
-
-
-}
-
-
-
-p{
-
-
-font-size:18px;
-
-opacity:.85;
-
-}
-
-
-
-
-
-/* CARD DESIGN */
-
-
-.card{
-
-
-padding:30px;
-
-
-background:
-
-rgba(255,255,255,0.15);
-
-
-backdrop-filter:blur(15px);
-
-
-border-radius:20px;
-
-
-border:
-
-1px solid rgba(255,255,255,0.25);
-
-
-
-box-shadow:
-
-
-0 20px 40px rgba(0,0,0,0.35);
-
-
-
-transition:.4s ease;
-
-
-position:relative;
-
-
-overflow:hidden;
-
-
-text-decoration:none;
-
-
-color:white;
-
-
-}
-
-
-
-
-.card:hover{
-
-
-transform:
-
-
-translateY(-12px) scale(1.05);
-
-
-
-background:
-
-rgba(255,255,255,0.28);
-
-
-
-box-shadow:
-
-
-0 30px 60px rgba(0,255,255,0.35);
-
-
-
-border:
-
-1px solid rgba(255,255,255,0.6);
-
-
-}
-
-
-
-
-
-
-/* Shine Animation */
-
-
-.card::before{
-
-
-content:"";
-
-
-position:absolute;
-
-
-top:-100%;
-
-
-left:-100%;
-
-
-width:200%;
-
-
-height:200%;
-
-
-
-background:
-
-
-linear-gradient(
-
-120deg,
-
-transparent,
-
-rgba(255,255,255,.35),
-
-transparent
-
-);
-
-
-
-transform:rotate(25deg);
-
-
-transition:.6s;
-
-
-}
-
-
-
-
-.card:hover::before{
-
-
-top:100%;
-
-
-left:100%;
-
-
-}
-
-
-
-
-.icon{
-
-
-font-size:45px;
-
-
-transition:.4s;
-
-
-}
-
-
-
-.card:hover .icon{
-
-
-transform:
-
-
-rotateY(360deg) scale(1.2);
-
-
-}
-
-
-
-
-
-
-.footer{
-
-
-margin-top:40px;
-
-
-text-align:center;
-
-
-opacity:.7;
-
-
-font-size:14px;
-
-
-}
-
-
-
-</style>
+<link rel="stylesheet" href="{{ url_for('static',filename='style.css') }}">
 
 
 </head>
 
 
-
 <body>
 
 
+<div class="background-animation"></div>
 
 
-<div class="navbar">
+
+<!-- SIDEBAR -->
+
+<div class="sidebar">
 
 
+<div class="brand">
 
 <div class="logo">
-
-
-<div class="logo-circle">
-
 AG
+</div>
+
+<h2>AGIPL</h2>
 
 </div>
 
 
 
-AGIPL Digital Portal
+<a href="/">
+🏠 Home
+</a>
+
+
+<a href="/modules">
+📊 Modules
+</a>
+
+
+<a href="/reports">
+📑 Reports
+</a>
+
+
+
+<hr>
+
+
+<h3>Modules</h3>
+
+
+<a href="/breakdown">
+🛠 Breakdown
+</a>
+
+
+<a href="/fuel">
+⛽ Fuel
+</a>
+
+
+<a href="/hr">
+👥 HR
+</a>
+
+
+<a href="/purchase">
+🛒 Purchase
+</a>
+
+
+<a href="/sales">
+📈 Sales
+</a>
+
+
+<a href="/machinery">
+⚙ Machinery
+</a>
+
+
+<a href="/assets">
+🏢 Assets
+</a>
+
+
+<a href="/it">
+💻 IT
+</a>
+
 
 
 </div>
@@ -563,61 +112,58 @@ AGIPL Digital Portal
 
 
 
-<div class="menu">
+<!-- MAIN AREA -->
 
 
-<a href="/">Home</a>
+<div class="main">
 
 
-<a href="/modules">Modules</a>
+
+<header>
 
 
-<a href="/reports">Reports</a>
-
-
-<a href="#">Support</a>
-
-
+<div>
+<h1>AGIPL Digital Command Center</h1>
 </div>
 
 
 
+<div class="profile">
+
+🟢 Live System
+
 </div>
 
 
+</header>
 
 
 
 
-<div class="container">
+<section class="content">
 
 
 {% block content %}
 
-
 {% endblock %}
 
 
-</div>
+</section>
 
 
 
 
-
-
-<div class="footer">
-
+<footer>
 
 AGIPL Digital Transformation Platform
 
+</footer>
+
 
 </div>
-
-
 
 
 
 </body>
-
 
 </html>
