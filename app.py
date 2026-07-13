@@ -2,7 +2,7 @@ from flask import Flask, send_file
 from google_reader import get_master_table
 from excel_export import create_excel
 from pdf_export import create_pdf
-from flask import Flask, render_template
+from flask import Flask, send_file, render_template
 
 app = Flask(__name__)
 
@@ -64,6 +64,60 @@ def download_pdf():
     except Exception as e:
 
         return f"PDF Error : {str(e)}"
+
+
+# ===============================
+# AGIPL MODULE PAGES
+# ===============================
+
+@app.route("/modules")
+def modules():
+    return render_template("modules.html")
+
+
+@app.route("/reports")
+def reports():
+    return render_template("reports.html")
+
+
+@app.route("/breakdown")
+def breakdown():
+    return render_template("breakdown.html")
+
+
+@app.route("/fuel")
+def fuel():
+    return render_template("fuel.html")
+
+
+@app.route("/hr")
+def hr():
+    return render_template("hr.html")
+
+
+@app.route("/purchase")
+def purchase():
+    return render_template("purchase.html")
+
+
+@app.route("/sales")
+def sales():
+    return render_template("sales.html")
+
+
+@app.route("/machinery")
+def machinery():
+    return render_template("machinery.html")
+
+
+@app.route("/assets")
+def assets():
+    return render_template("assets.html")
+
+
+@app.route("/it")
+def it():
+    return render_template("it.html")
 
 
 
