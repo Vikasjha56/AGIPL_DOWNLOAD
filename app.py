@@ -88,44 +88,147 @@ def breakdown():
 
         master = get_master_table()
 
-
-        # Remove blank spaces from column names
         master.columns = master.columns.str.strip()
 
 
-
-        # Resolved = No pending cases
-
-        pending_data = master[
-            master["Resolved"].astype(str).str.strip().str.upper() == "NO"
-        ]
-
-
-
-        # Total Pending Cases
-
-        pending_count = len(pending_data)
+        # Pending Data
+        pending = master[
+            master["Resolved"]
+            .astype(str)
+            .str.strip()
+            .str.upper()
+            == "NO"
+        ].copy()
 
 
 
-        # Pending > 15 Days
+        # Pending Days Numeric
 
-        pending_15_data = pending_data[
-            pd.to_numeric(
-                pending_data["Pending for (no of days)"],
-                errors="coerce"
-            ) > 15
-        ]
+        pending["Pending Days"] = pd.to_numeric(
+            pending["Pending for (no of days)"],
+            errors="coerce"
+        )
 
 
-        pending_15 = len(pending_15_data)
+
+        # KPI
+
+        pending_count = len(pending)
+
+
+
+        pending_15 = len(
+            pending[
+                pending["Pending Days"] > 15
+            ]
+        )
+
+
+
+        # Machine Pending Days Range
+
+        range_data = {
+
+            "0-7 Days":
+            len(
+                pending[
+                    (pending["Pending Days"] >=0)
+                    &
+                    (pending["Pending Days"] <=7)
+                ]
+            ),
+
+
+            "8-15 Days":
+            len(
+                pending[
+                    (pending["Pending Days"] >=8)
+                    &
+                    (pending["Pending Days"] <=15)
+                ]
+            ),
+
+
+            "16-30 Days":
+            len(
+                pending[
+                    (pending["Pending Days"] >=16)
+                    &
+                    (pending["Pending Days"] <=30)
+                ]
+            ),
+
+
+            "31+ Days":
+            len(
+                pending[
+                    pending["Pending Days"] >30
+                ]
+            )
+
+        }
+
+
+
+        # Machine Wise >15 Days
+
+        machine_data = (
+
+            pending[
+                pending["Pending Days"] >15
+            ]
+
+            ["Category"]
+
+            .value_counts()
+
+            .head(10)
+
+            .to_dict()
+
+        )
+
+
+
+        # Site Wise
+
+        site_data = (
+
+            pending
+
+            ["Site"]
+
+            .value_counts()
+
+            .to_dict()
+
+        )
 
 
 
         return render_template(
+
             "breakdown.html",
+
             pending_count=pending_count,
-            pending_15=pending_15
+
+            pending_15=pending_15,
+
+
+            range_labels=list(range_data.keys()),
+
+            range_values=list(range_data.values()),
+
+
+            machine_labels=list(machine_data.keys()),
+
+            machine_values=list(machine_data.values()),
+
+
+            site_labels=list(site_data.keys()),
+
+            site_values=list(site_data.values())
+
         )
 
 
@@ -134,7 +237,7 @@ def breakdown():
 
         print("BREAKDOWN ERROR :",e)
 
-        return "Breakdown Error : " + str(e)
+        return "Breakdown Error : "+str(e)
 @app.route("/fuel")
 def fuel():
     return render_template("fuel.html")
