@@ -2,13 +2,60 @@
 <html>
 <head>
     <title>AGIPL Download System</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 80px;
+        }
+
+        h1 {
+            font-size: 32px;
+        }
+
+        button {
+            padding: 15px 30px;
+            margin: 20px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .excel {
+            background: green;
+            color: white;
+            border: none;
+        }
+
+        .pdf {
+            background: red;
+            color: white;
+            border: none;
+        }
+    </style>
+
 </head>
 
 <body>
 
 <h1>AGIPL Download System</h1>
 
-<p>System is running successfully.</p>
+<p>Download Master Table Data</p>
+
+
+<a href="/download_excel">
+    <button class="excel">
+        Download Excel
+    </button>
+</a>
+
+
+<a href="/download_pdf">
+    <button class="pdf">
+        Download PDF
+    </button>
+</a>
+
 
 </body>
 </html>
