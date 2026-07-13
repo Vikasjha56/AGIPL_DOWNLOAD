@@ -2,7 +2,7 @@ from flask import Flask, send_file
 from google_reader import get_master_table
 from excel_export import create_excel
 from pdf_export import create_pdf
-
+from flask import Flask, render_template
 
 app = Flask(__name__)
 
@@ -10,7 +10,7 @@ app = Flask(__name__)
 @app.route("/")
 def home():
 
-    return "AGIPL Download System is Running Successfully."
+    return render_template("index.html")
 
 
 
