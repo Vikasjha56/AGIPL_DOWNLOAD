@@ -3,7 +3,7 @@
 
 <head>
 
-<title>AGIPL Download System</title>
+<title>AGIPL Digital Command Center</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -20,153 +20,107 @@ body{
     margin:0;
     min-height:100vh;
 
-    font-family:'Segoe UI', Arial, sans-serif;
+    font-family:'Segoe UI',Arial,sans-serif;
 
     background:
-    radial-gradient(circle at top left,#4e9cff,transparent 35%),
-    radial-gradient(circle at bottom right,#00d4ff,transparent 35%),
-    linear-gradient(135deg,#071426,#163b65);
-
-    display:flex;
-    justify-content:center;
-    align-items:center;
-
-    overflow:hidden;
-
-}
-
-
-
-/* 3D Background Shapes */
-
-body::before{
-
-    content:"";
-
-    position:absolute;
-
-    width:350px;
-    height:350px;
-
-    background:rgba(255,255,255,0.08);
-
-    border-radius:50%;
-
-    top:-120px;
-    left:-120px;
-
-    filter:blur(5px);
-
-}
-
-
-body::after{
-
-    content:"";
-
-    position:absolute;
-
-    width:400px;
-    height:400px;
-
-    background:rgba(0,200,255,0.12);
-
-    border-radius:40px;
-
-    bottom:-150px;
-    right:-120px;
-
-    transform:rotate(35deg);
-
-}
-
-
-
-
-.container{
-
-
-    width:90%;
-    max-width:600px;
-
-
-    background:rgba(255,255,255,0.15);
-
-    backdrop-filter:blur(15px);
-
-
-    border:1px solid rgba(255,255,255,0.25);
-
-
-    padding:45px;
-
-
-    text-align:center;
-
-
-    border-radius:25px;
-
-
-    box-shadow:
-
-    0 25px 50px rgba(0,0,0,0.35),
-
-    inset 0 0 30px rgba(255,255,255,0.1);
-
+    radial-gradient(circle at 20% 20%,#0077ff55,transparent 30%),
+    radial-gradient(circle at 80% 80%,#00ffff55,transparent 30%),
+    linear-gradient(135deg,#061426,#123d68);
 
     color:white;
 
-
-    position:relative;
-
-    z-index:2;
-
-
 }
 
+
+
+/* NAVBAR */
+
+.navbar{
+
+    height:75px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    padding:0 50px;
+
+    background:rgba(255,255,255,0.12);
+
+    backdrop-filter:blur(15px);
+
+    border-bottom:1px solid rgba(255,255,255,0.2);
+
+}
 
 
 
 .logo{
 
-
-    width:100px;
-
-    height:100px;
-
-
-    margin:auto;
-
-
-    border-radius:50%;
-
-
     display:flex;
 
     align-items:center;
 
-    justify-content:center;
+    gap:15px;
 
-
-    font-size:28px;
+    font-size:25px;
 
     font-weight:bold;
 
-
-    background:
-
-    linear-gradient(145deg,#ffffff,#cfd9ff);
+}
 
 
-    color:#0b3d91;
+
+.logo-circle{
+
+    width:55px;
+
+    height:55px;
+
+    border-radius:50%;
+
+    background:white;
+
+    color:#063b78;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    font-weight:bold;
+
+    box-shadow:0 10px 25px #0008;
+
+}
 
 
-    box-shadow:
 
-    8px 8px 20px rgba(0,0,0,0.3),
+.menu a{
 
-    inset -5px -5px 15px rgba(0,0,0,0.15);
+    color:white;
 
+    text-decoration:none;
+
+    margin-left:25px;
+
+    font-size:16px;
+
+}
+
+
+
+/* MAIN */
+
+
+.container{
+
+    padding:40px;
+
+    text-align:center;
 
 }
 
@@ -174,155 +128,130 @@ body::after{
 
 h1{
 
+    font-size:40px;
 
-    margin-top:25px;
-
-    font-size:32px;
-
-    letter-spacing:1px;
-
+    margin-bottom:10px;
 
 }
-
 
 
 .subtitle{
 
-
-    font-size:17px;
-
-    opacity:0.9;
-
-    margin-bottom:35px;
-
-
-}
-
-
-
-
-
-.download-btn{
-
-
-    display:block;
-
-
-    width:85%;
-
-
-    margin:20px auto;
-
-
-    padding:16px;
-
-
-    border-radius:12px;
-
-
-    color:white;
-
-
-    text-decoration:none;
-
+    opacity:0.8;
 
     font-size:18px;
 
+}
 
-    font-weight:600;
 
 
-    transition:0.3s;
+/* MODULE GRID */
+
+
+.modules{
+
+    margin-top:45px;
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+
+    gap:25px;
+
+}
+
+
+
+.card{
+
+
+    padding:30px 20px;
+
+
+    background:rgba(255,255,255,0.15);
+
+
+    backdrop-filter:blur(15px);
+
+
+    border-radius:20px;
+
+
+    border:1px solid rgba(255,255,255,0.25);
+
+
+    box-shadow:
+
+    0 20px 40px rgba(0,0,0,0.35);
+
+
+    transition:0.4s;
+
+
+    cursor:pointer;
 
 
 }
 
 
 
-.excel{
+.card:hover{
 
 
-    background:
-
-    linear-gradient(135deg,#00b050,#008000);
+    transform:translateY(-12px) scale(1.04);
 
 
-    box-shadow:0 10px 20px rgba(0,128,0,0.4);
-
-
-}
-
-
-
-.pdf{
-
-
-    background:
-
-    linear-gradient(135deg,#ff4b4b,#b30000);
-
-
-    box-shadow:0 10px 20px rgba(255,0,0,0.4);
+    background:rgba(255,255,255,0.25);
 
 
 }
 
 
 
+.icon{
 
-.download-btn:hover{
+
+    font-size:45px;
+
+    margin-bottom:15px;
+
+}
 
 
-    transform:translateY(-5px) scale(1.03);
 
+.card h2{
+
+    font-size:21px;
 
 }
 
 
 
+.card p{
 
-#status{
-
-
-    margin-top:20px;
-
-    font-size:15px;
-
-    color:#ffffff;
-
+    opacity:0.8;
 
 }
+
 
 
 
 .footer{
 
 
-    margin-top:35px;
+    margin-top:40px;
 
-    font-size:13px;
+    opacity:0.7;
 
-    opacity:0.8;
+    font-size:14px;
 
 
 }
+
 
 
 
 </style>
-
-
-<script>
-
-
-function loading(msg){
-
-document.getElementById("status").innerHTML=msg;
-
-}
-
-
-</script>
 
 
 </head>
@@ -332,64 +261,187 @@ document.getElementById("status").innerHTML=msg;
 <body>
 
 
-<div class="container">
+
+<div class="navbar">
 
 
 <div class="logo">
 
-AGIPL
+
+<div class="logo-circle">
+
+AG
 
 </div>
 
+
+AGIPL Digital Portal
+
+
+</div>
+
+
+
+<div class="menu">
+
+<a href="#">Home</a>
+
+<a href="#">Modules</a>
+
+<a href="#">Reports</a>
+
+<a href="#">Support</a>
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+<div class="container">
 
 
 <h1>
 
-AGIPL Download System
+AGIPL Digital Command Center
 
 </h1>
 
 
-
 <div class="subtitle">
 
-Automated Master Report Generation System
+Integrated Business Intelligence & Reporting Platform
 
 </div>
 
 
 
-<a class="download-btn excel"
 
-onclick="loading('Generating Excel File... Please wait')"
 
-href="/download_excel">
-
-⬇ Download Excel Report
-
-</a>
+<div class="modules">
 
 
 
-<a class="download-btn pdf"
+<div class="card">
 
-onclick="loading('Generating PDF File... Please wait')"
+<div class="icon">🛠</div>
 
-href="/download_pdf">
+<h2>Breakdown Analysis</h2>
 
-📄 Download PDF Report
+<p>Machine Breakdown Monitoring Dashboard</p>
 
-</a>
+</div>
 
 
 
-<p id="status"></p>
+
+<div class="card">
+
+<div class="icon">⛽</div>
+
+<h2>Fuel Analysis</h2>
+
+<p>Fuel Consumption & Tracking System</p>
+
+</div>
+
+
+
+
+
+<div class="card">
+
+<div class="icon">👥</div>
+
+<h2>HR Module</h2>
+
+<p>Employee Analytics & Reports</p>
+
+</div>
+
+
+
+
+
+<div class="card">
+
+<div class="icon">🛒</div>
+
+<h2>Purchase Module</h2>
+
+<p>Purchase Tracking & Analysis</p>
+
+</div>
+
+
+
+
+
+<div class="card">
+
+<div class="icon">📈</div>
+
+<h2>Sales Module</h2>
+
+<p>Sales Performance Dashboard</p>
+
+</div>
+
+
+
+
+
+<div class="card">
+
+<div class="icon">⚙</div>
+
+<h2>Machinery Module</h2>
+
+<p>Equipment Monitoring System</p>
+
+</div>
+
+
+
+
+
+<div class="card">
+
+<div class="icon">🏢</div>
+
+<h2>Assets Module</h2>
+
+<p>Asset Management Dashboard</p>
+
+</div>
+
+
+
+
+
+<div class="card">
+
+<div class="icon">💻</div>
+
+<h2>IT Module</h2>
+
+<p>IT Operations Dashboard</p>
+
+</div>
+
+
+
+</div>
 
 
 
 <div class="footer">
 
-AGIPL Digital Reporting Platform
+AGIPL Digital Transformation Platform
 
 </div>
 
