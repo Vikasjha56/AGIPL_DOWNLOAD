@@ -124,15 +124,14 @@ def breakdown():
         master = MASTER_CACHE.copy()
 
 
-
         master.columns = master.columns.str.strip()
 
 
 
         # =========================
-        # PENDING DATA
+        # PENDING CASE FILTER
+        # Resolved = No
         # =========================
-
 
         pending = master[
             master["Resolved"]
@@ -144,9 +143,14 @@ def breakdown():
 
 
 
+        # Pending Days Convert
+
         pending["Pending Days"] = pd.to_numeric(
+
             pending["Pending for (no of days)"],
+
             errors="coerce"
+
         )
 
 
@@ -171,50 +175,55 @@ def breakdown():
 
 
 
-
         # =========================
-        # AGEING RANGE
+        # PENDING DAYS RANGE
         # =========================
 
 
         range_data = {
 
+
             "0-7 Days":
+
             len(
                 pending[
-                    (pending["Pending Days"] >=0)
+                    (pending["Pending Days"] >= 0)
                     &
-                    (pending["Pending Days"] <=7)
+                    (pending["Pending Days"] <= 7)
                 ]
             ),
 
 
+
             "8-15 Days":
+
             len(
                 pending[
-                    (pending["Pending Days"] >=8)
+                    (pending["Pending Days"] >= 8)
                     &
-                    (pending["Pending Days"] <=15)
+                    (pending["Pending Days"] <= 15)
                 ]
             ),
 
 
 
             "16-30 Days":
+
             len(
                 pending[
-                    (pending["Pending Days"] >=16)
+                    (pending["Pending Days"] >= 16)
                     &
-                    (pending["Pending Days"] <=30)
+                    (pending["Pending Days"] <= 30)
                 ]
             ),
 
 
 
             "31+ Days":
+
             len(
                 pending[
-                    pending["Pending Days"] >30
+                    pending["Pending Days"] > 30
                 ]
             )
 
@@ -223,8 +232,9 @@ def breakdown():
 
 
 
+
         # =========================
-        # MACHINE WISE
+        # MACHINE WISE >15 DAYS
         # =========================
 
 
@@ -259,6 +269,11 @@ def breakdown():
 
 
 
+        # =========================
+        # SEND DATA TO HTML
+        # =========================
+
+
         return render_template(
 
             "breakdown.html",
@@ -272,33 +287,34 @@ def breakdown():
 
             range_labels=list(range_data.keys()),
 
+
             range_values=list(range_data.values()),
 
 
 
-            machine_labels=list(machine_data.index),
-
-            machine_values=list(machine_data.values()),
+            machine_labels=machine_data.index.tolist(),
 
 
+            machine_values=machine_data.values.tolist(),
 
-            site_labels=list(site_data.index),
 
-            site_values=list(site_data.values())
 
+            site_labels=site_data.index.tolist(),
+
+
+            site_values=site_data.values.tolist()
 
         )
-
 
 
 
     except Exception as e:
 
 
-        print("BREAKDOWN ERROR :",e)
+        print("BREAKDOWN ERROR :", e)
 
 
-        return "Breakdown Error : "+str(e)
+        return "Breakdown Error : " + str(e)
 @app.route("/fuel")
 def fuel():
     return render_template("fuel.html")
