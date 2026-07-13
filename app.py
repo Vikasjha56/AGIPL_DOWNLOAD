@@ -2,8 +2,7 @@ import time
 
 MASTER_CACHE = None
 CACHE_TIME = 0
-
-CACHE_DURATION = 300   # 5 minutes
+CACHE_DURATION = 300
 
 
 
