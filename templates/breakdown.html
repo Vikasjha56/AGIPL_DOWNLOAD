@@ -2,13 +2,13 @@
 
 
 {% block title %}
-Breakdown Analysis
+Breakdown Analysis Dashboard
 {% endblock %}
 
 
 
-
 {% block content %}
+
 
 
 <div class="dashboard-header">
@@ -26,6 +26,7 @@ Live Machine Breakdown Monitoring System
 
 
 
+
 <div class="kpi-container">
 
 
@@ -35,16 +36,13 @@ Live Machine Breakdown Monitoring System
 Total Pending Cases
 </h3>
 
-
 <h1>
 {{pending_count}}
 </h1>
 
-
 <p>
-Resolved Status : No
+Resolved : No
 </p>
-
 
 </div>
 
@@ -53,24 +51,19 @@ Resolved Status : No
 
 <div class="kpi-card">
 
-
 <h3>
 Pending Cases >15 Days
 </h3>
-
 
 <h1>
 {{pending_15}}
 </h1>
 
-
 <p>
 Critical Pending
 </p>
 
-
 </div>
-
 
 
 </div>
@@ -94,7 +87,6 @@ Pending Days Range
 <canvas id="rangeChart"></canvas>
 
 </div>
-
 
 
 
@@ -130,12 +122,10 @@ Breakdown Machine Count By Site
 <div class="chart-card">
 
 <h2>
-Pending Distribution
+Reason For Pendency >15 Days
 </h2>
 
-
-<canvas id="pendingChart"></canvas>
-
+<canvas id="reasonChart"></canvas>
 
 </div>
 
@@ -149,32 +139,154 @@ Pending Distribution
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+
+
+
 
 
 <script>
 
 
-new Chart(
-document.getElementById('rangeChart'),
-{
 
-type:'bar',
+const centerText={
 
-data:{
 
-labels:{{range_labels|safe}},
+id:'centerText',
 
-datasets:[{
 
-label:"Cases",
+beforeDraw(chart){
 
-data:{{range_values|safe}}
 
-}]
+let ctx=chart.ctx;
+
+
+let width=chart.width;
+
+let height=chart.height;
+
+
+
+ctx.save();
+
+
+
+ctx.fillStyle="white";
+
+
+ctx.font="22px Segoe UI";
+
+
+ctx.textAlign="center";
+
+
+ctx.fillText(
+
+"Total",
+
+width/2,
+
+height/2-15
+
+);
+
+
+
+
+let total=
+
+chart.data.datasets[0].data
+
+.reduce((a,b)=>a+b,0);
+
+
+
+ctx.font="bold 30px Segoe UI";
+
+
+ctx.fillText(
+
+total,
+
+width/2,
+
+height/2+25
+
+);
+
+
+
+ctx.restore();
+
 
 }
 
-});
+};
+
+
+
+
+
+
+
+function chartOption(){
+
+
+return{
+
+
+responsive:true,
+
+maintainAspectRatio:false,
+
+
+plugins:{
+
+
+legend:{
+
+
+labels:{
+
+
+color:"white"
+
+
+}
+
+
+},
+
+
+datalabels:{
+
+
+color:"white",
+
+
+font:{
+
+
+weight:"bold"
+
+
+}
+
+
+}
+
+
+}
+
+
+
+}
+
+
+
+}
+
+
 
 
 
@@ -183,26 +295,83 @@ data:{{range_values|safe}}
 
 new Chart(
 
-document.getElementById('machineChart'),
+document.getElementById("rangeChart"),
 
 {
 
-type:'bar',
+
+type:"bar",
+
 
 data:{
+
+
+labels:{{range_labels|safe}},
+
+
+datasets:[{
+
+
+label:"Cases",
+
+
+data:{{range_values|safe}}
+
+
+}]
+
+
+},
+
+
+options:chartOption()
+
+
+
+}
+
+);
+
+
+
+
+
+
+
+new Chart(
+
+document.getElementById("machineChart"),
+
+{
+
+
+type:"bar",
+
+
+data:{
+
 
 labels:{{machine_labels|safe}},
 
 
 datasets:[{
 
+
 label:"Pending",
+
 
 data:{{machine_values|safe}}
 
+
 }]
 
-}
+
+},
+
+
+options:chartOption()
+
+
 
 }
 
@@ -213,30 +382,50 @@ data:{{machine_values|safe}}
 
 
 
+
+
+
 new Chart(
 
-document.getElementById('siteChart'),
+document.getElementById("siteChart"),
+
 
 {
 
-type:'doughnut',
+
+type:"doughnut",
+
+
+plugins:[centerText],
+
 
 data:{
+
 
 labels:{{site_labels|safe}},
 
 
 datasets:[{
 
+
 data:{{site_values|safe}}
+
 
 }]
 
-}
+
+},
+
+
+options:chartOption()
+
+
 
 }
 
 );
+
+
 
 
 
@@ -246,40 +435,45 @@ data:{{site_values|safe}}
 
 new Chart(
 
-document.getElementById('pendingChart'),
+document.getElementById("reasonChart"),
+
 
 {
 
-type:'doughnut',
+
+type:"doughnut",
+
+
+plugins:[centerText],
+
 
 data:{
 
-labels:[
 
-"0-15 Days",
-
-"15+ Days"
-
-],
+labels:{{reason_labels|safe}},
 
 
 datasets:[{
 
-data:[
 
-{{pending_count-pending_15}},
+data:{{reason_values|safe}}
 
-{{pending_15}}
-
-]
 
 }]
 
-}
+
+},
+
+
+options:chartOption()
+
+
 
 }
 
 );
+
+
 
 
 
