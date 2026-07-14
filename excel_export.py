@@ -97,6 +97,7 @@ def create_excel(master_df):
                 inplace=True
             )
 
+ 
 
 
     # ===============================
@@ -108,7 +109,14 @@ def create_excel(master_df):
         .astype(str)
         .str.strip()
         .str.upper()
-        == "NO"
+        == "NO")
+        &
+        (master_df["Owned/Hired"]
+         .astype(str)
+         .str.strip()
+         .str.upper() == "OWNED")
+    ].copy()
+
     ].copy()
 
 
