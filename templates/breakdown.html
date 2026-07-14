@@ -2,7 +2,7 @@
 
 
 {% block title %}
-Breakdown Analysis Dashboard
+AGIPL Breakdown Analysis
 {% endblock %}
 
 
@@ -26,7 +26,6 @@ Live Machine Breakdown Monitoring System
 
 
 
-
 <div class="kpi-container">
 
 
@@ -40,9 +39,9 @@ Total Pending Cases
 {{pending_count}}
 </h1>
 
-<p>
-Resolved : No
-</p>
+<span>
+Resolved : NO
+</span>
 
 </div>
 
@@ -52,23 +51,22 @@ Resolved : No
 <div class="kpi-card">
 
 <h3>
-Pending Cases >15 Days
+Critical Pending > 15 Days
 </h3>
 
 <h1>
 {{pending_15}}
 </h1>
 
-<p>
-Critical Pending
-</p>
+<span>
+Pending Ageing
+</span>
 
 </div>
 
 
+
 </div>
-
-
 
 
 
@@ -81,12 +79,18 @@ Critical Pending
 <div class="chart-card">
 
 <h2>
-Pending Days Range
+Pending Ageing Range
 </h2>
+
+<div class="chart-box">
 
 <canvas id="rangeChart"></canvas>
 
 </div>
+
+</div>
+
+
 
 
 
@@ -97,7 +101,13 @@ Pending Days Range
 Machine Wise Pending >15 Days
 </h2>
 
+
+<div class="chart-box">
+
 <canvas id="machineChart"></canvas>
+
+</div>
+
 
 </div>
 
@@ -105,33 +115,53 @@ Machine Wise Pending >15 Days
 
 
 
+
 <div class="chart-card">
+
 
 <h2>
 Breakdown Machine Count By Site
 </h2>
+
+
+<div class="chart-box">
 
 <canvas id="siteChart"></canvas>
 
 </div>
 
 
+</div>
+
+
+
+
 
 
 
 <div class="chart-card">
 
+
 <h2>
 Reason For Pendency >15 Days
 </h2>
+
+
+<div class="chart-box">
 
 <canvas id="reasonChart"></canvas>
 
 </div>
 
 
+</div>
+
+
+
 
 </div>
+
+
 
 
 
@@ -144,15 +174,150 @@ Reason For Pendency >15 Days
 
 
 
-
 <script>
 
 
+Chart.register(ChartDataLabels);
 
-const centerText={
 
 
-id:'centerText',
+const commonOptions = {
+
+
+responsive:true,
+
+
+maintainAspectRatio:false,
+
+
+
+plugins:{
+
+
+legend:{
+
+
+labels:{
+
+
+color:"#ffffff",
+
+
+font:{
+
+
+size:14,
+
+weight:"bold"
+
+
+}
+
+
+}
+
+
+},
+
+
+
+
+datalabels:{
+
+
+color:"#ffffff",
+
+
+font:{
+
+
+size:14,
+
+weight:"bold"
+
+
+},
+
+
+formatter:(value)=>value
+
+
+
+}
+
+
+
+},
+
+
+
+
+scales:{
+
+
+
+x:{
+
+
+ticks:{
+
+
+color:"#ffffff"
+
+},
+
+
+grid:{
+
+
+color:"rgba(255,255,255,0.15)"
+
+}
+
+
+},
+
+
+
+y:{
+
+
+ticks:{
+
+
+color:"#ffffff"
+
+},
+
+
+grid:{
+
+
+color:"rgba(255,255,255,0.15)"
+
+}
+
+
+}
+
+
+}
+
+
+};
+
+
+
+
+
+
+
+
+
+const centerTotal = {
+
+
+id:"centerTotal",
 
 
 beforeDraw(chart){
@@ -163,7 +328,18 @@ let ctx=chart.ctx;
 
 let width=chart.width;
 
+
 let height=chart.height;
+
+
+
+let total =
+chart.data.datasets[0]
+.data
+.reduce(
+(a,b)=>a+b,
+0
+);
 
 
 
@@ -171,18 +347,19 @@ ctx.save();
 
 
 
-ctx.fillStyle="white";
-
-
-ctx.font="22px Segoe UI";
+ctx.fillStyle="#ffffff";
 
 
 ctx.textAlign="center";
 
 
+
+ctx.font="bold 18px Segoe UI";
+
+
 ctx.fillText(
 
-"Total",
+"TOTAL",
 
 width/2,
 
@@ -193,15 +370,8 @@ height/2-15
 
 
 
-let total=
 
-chart.data.datasets[0].data
-
-.reduce((a,b)=>a+b,0);
-
-
-
-ctx.font="bold 30px Segoe UI";
+ctx.font="bold 32px Segoe UI";
 
 
 ctx.fillText(
@@ -221,70 +391,9 @@ ctx.restore();
 
 }
 
+
 };
 
-
-
-
-
-
-
-function chartOption(){
-
-
-return{
-
-
-responsive:true,
-
-maintainAspectRatio:false,
-
-
-plugins:{
-
-
-legend:{
-
-
-labels:{
-
-
-color:"white"
-
-
-}
-
-
-},
-
-
-datalabels:{
-
-
-color:"white",
-
-
-font:{
-
-
-weight:"bold"
-
-
-}
-
-
-}
-
-
-}
-
-
-
-}
-
-
-
-}
 
 
 
@@ -315,7 +424,23 @@ datasets:[{
 label:"Cases",
 
 
-data:{{range_values|safe}}
+data:{{range_values|safe}},
+
+
+backgroundColor:[
+
+"#00ffff",
+
+"#00ff88",
+
+"#ffaa00",
+
+"#ff0055"
+
+],
+
+
+borderRadius:15
 
 
 }]
@@ -324,13 +449,15 @@ data:{{range_values|safe}}
 },
 
 
-options:chartOption()
+options:commonOptions
 
 
 
 }
 
 );
+
+
 
 
 
@@ -357,10 +484,16 @@ labels:{{machine_labels|safe}},
 datasets:[{
 
 
-label:"Pending",
+label:"Machines",
 
 
-data:{{machine_values|safe}}
+data:{{machine_values|safe}},
+
+
+backgroundColor:"#00ffff",
+
+
+borderRadius:15
 
 
 }]
@@ -369,7 +502,7 @@ data:{{machine_values|safe}}
 },
 
 
-options:chartOption()
+options:commonOptions
 
 
 
@@ -389,14 +522,14 @@ new Chart(
 
 document.getElementById("siteChart"),
 
-
 {
 
 
 type:"doughnut",
 
 
-plugins:[centerText],
+plugins:[centerTotal],
+
 
 
 data:{
@@ -408,7 +541,22 @@ labels:{{site_labels|safe}},
 datasets:[{
 
 
-data:{{site_values|safe}}
+data:{{site_values|safe}},
+
+
+backgroundColor:[
+
+"#00ffff",
+
+"#0077ff",
+
+"#00ff88",
+
+"#ffaa00",
+
+"#ff0055"
+
+]
 
 
 }]
@@ -417,7 +565,8 @@ data:{{site_values|safe}}
 },
 
 
-options:chartOption()
+
+options:commonOptions
 
 
 
@@ -437,14 +586,14 @@ new Chart(
 
 document.getElementById("reasonChart"),
 
-
 {
 
 
 type:"doughnut",
 
 
-plugins:[centerText],
+plugins:[centerTotal],
+
 
 
 data:{
@@ -456,7 +605,22 @@ labels:{{reason_labels|safe}},
 datasets:[{
 
 
-data:{{reason_values|safe}}
+data:{{reason_values|safe}},
+
+
+backgroundColor:[
+
+"#ff0055",
+
+"#ffaa00",
+
+"#00ffff",
+
+"#00ff88",
+
+"#0077ff"
+
+]
 
 
 }]
@@ -465,15 +629,14 @@ data:{{reason_values|safe}}
 },
 
 
-options:chartOption()
+
+options:commonOptions
 
 
 
 }
 
 );
-
-
 
 
 
