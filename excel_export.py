@@ -68,305 +68,49 @@ normal_font = Font(
 
 
 # ===============================
-# AGIPL CREATE WORKBOOK
+# AGIPL CREATE DATA WITH TIME REQUESTS
 # ===============================
 
 def create_excel(master_df):
 
     wb = Workbook()
-
     ws = wb.active
-
     ws.title = "Breakdown Report"
 
+    # Report Header
+    ws.merge_cells("A1:I1")
 
+    cell = ws["A1"]
+    cell.value = "AGIPL BREAKDOWN PENDING REPORT"
+    cell.font = title_font
+    cell.alignment = Alignment(horizontal="center", vertical="center")
+    cell.fill = PatternFill(fill_type="solid", fgColor=HEADER_COLOR)
 
+    ws["A2"] = "Report Generated"
+    ws["B2"] = datetime.now().strftime("%d-%m-%Y %I:%M %p")
+    ws["A2"].font = Font(bold=True)
 
-# ===============================
-# AGIPL REPORT HEADER
-# ===============================
+    ws.freeze_panes = "A6"
 
+    for i in range(1, 500):
+        ws.row_dimensions[i].height = 22
 
-ws.merge_cells("A1:J1")
+    center = Alignment(horizontal="center", vertical="center")
+    left = Alignment(horizontal="left", vertical="center")
 
-cell = ws["A1"]
+master_df.columns = master_df.columns.str.strip()
 
-cell.value = "AGIPL BREAKDOWN PENDING REPORT"
+master_df = master_df[
+    master_df["Resolved"]
+    .astype(str)
+    .str.strip()
+    .str.upper() == "NO"
+].copy()
 
-cell.font = title_font
 
-cell.alignment = Alignment(
-    horizontal="center",
-    vertical="center"
-)
 
-cell.fill = PatternFill(
-    fill_type="solid",
-    fgColor=HEADER_COLOR
-)
+file_path = "AGIPL_Breakdown_Report.xlsx"
 
+wb.save(file_path)
 
-# ===============================
-# AGIPL REPORT DATE
-# ===============================
-
-
-
-ws["A2"] = "Report Generated"
-
-ws["B2"] = datetime.now().strftime("%d-%m-%Y %I:%M %p")
-
-ws["A2"].font = Font(bold=True)
-
-
-
-# ===============================
-# AGIPL FREEZE PANES
-# ===============================
-
-ws.freeze_panes = "A6"
-
-
-# ===============================
-# AGIPL DEFAULT ROW HEIGHT
-# ===============================
-
-
-for i in range(1,500):
-
-    ws.row_dimensions[i].height = 22
-
-
-
-# ===============================
-# AGIPL DEFAULT ALIGNMENT
-# ===============================
-
-center = Alignment(
-    horizontal="center",
-    vertical="center"
-)
-
-left = Alignment(
-    horizontal="left",
-    vertical="center"
-)
-
-# ===============================
-# AGIPL THIS IS MAIN CODE
-# ===============================
-
-
-
-
-def create_excel(master_df):
-
-    # ==========================================
-    # ONLY PENDING (Resolved = No)
-    # ==========================================
-
-    master_df.columns = master_df.columns.str.strip()
-
-    master_df = master_df[
-        master_df["Resolved"]
-        .astype(str)
-        .str.strip()
-        .str.upper() == "NO"
-    ].copy()
-
-
-    # ==========================================
-    # Fresh Index Number
-    # ==========================================
-
-    master_df.reset_index(drop=True, inplace=True)
-
-    master_df["Index Number"] = range(
-        1,
-        len(master_df) + 1
-    )
-
-
-    # ==========================================
-    # Pending Days
-    # ==========================================
-
-    master_df["Pending for (no of days)"] = pd.to_numeric(
-        master_df["Pending for (no of days)"],
-        errors="coerce"
-    ).fillna(0)
-
-
-    # ==========================================
-    # Alert Level
-    # ==========================================
-
-    def alert(days):
-
-        if days >= 31:
-            return "HIGH"
-
-        elif days >= 16:
-            return "MEDIUM"
-
-        elif days >= 1:
-            return "LOW"
-
-        return "NO BREAKDOWN"
-
-
-    master_df["Alert Level"] = master_df[
-        "Pending for (no of days)"
-    ].apply(alert)
-
-
-    # ==========================================
-    # Same Columns as PDF
-    # ==========================================
-
-    final_df = master_df[
-        [
-            "Index Number",
-            "Site",
-            "Date of breakdown",
-            "Category",
-            "Vehcile No",
-            "Breakdown Details",
-            "Reason for pendency",
-            "Pending for (no of days)",
-            "Alert Level"
-        ]
-    ].copy()
-
-
-
-
-
-# ==========================================
-# FOR HEADER
-# ==========================================
-
-
-    start_row = 5
-
-    headers = list(final_df.columns)
-
-    for col, value in enumerate(headers, 1):
-
-        cell = ws.cell(
-            row=start_row,
-            column=col
-        )
-
-        cell.value = value
-
-        cell.font = header_font
-
-        cell.alignment = center
-
-        cell.border = border
-
-        cell.fill = PatternFill(
-            "solid",
-            fgColor=TITLE_COLOR
-        )
-
-
-
-
-
-
-# ==========================================
-# DATA FILL
-# ==========================================
-
-
-
-    row_no = start_row + 1
-
-    for r in final_df.itertuples(index=False):
-
-        for col_no, value in enumerate(r, 1):
-
-            c = ws.cell(
-                row=row_no,
-                column=col_no
-            )
-
-            c.value = value
-
-            c.font = normal_font
-
-            c.border = border
-
-            if col_no in [1, 8]:
-                c.alignment = center
-            else:
-                c.alignment = left
-
-
-
-
-
-
-
-# ==========================================
-# ZEBRA FORMATTING
-# ==========================================
-
-
-        if row_no % 2 == 0:
-
-            for x in range(1, 10):
-
-                ws.cell(
-                    row=row_no,
-                    column=x
-                ).fill = PatternFill(
-                    "solid",
-                    fgColor="F8FBFF"
-                )
-
-        row_no += 1
-
-
-
-    # ==========================================
-    # AUTO COLUMN WIDTH
-    # ==========================================
-
-    for column_cells in ws.columns:
-
-        length = 0
-        column = column_cells[0].column_letter
-
-        for cell in column_cells:
-
-            try:
-
-                if cell.value:
-
-                    length = max(length, len(str(cell.value)))
-
-            except:
-                pass
-
-        ws.column_dimensions[column].width = min(length + 3, 35)
-
-
-    # ==========================================
-    # AUTO FILTER
-    # ==========================================
-
-    ws.auto_filter.ref = ws.dimensions
-
-
-    # ==========================================
-    # SAVE FILE
-    # ==========================================
-
-    file_path = "AGIPL_Breakdown_Report.xlsx"
-
-    wb.save(file_path)
-
-    return file_path
+return file_path
