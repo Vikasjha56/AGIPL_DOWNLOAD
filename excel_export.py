@@ -117,7 +117,7 @@ def create_excel(master_df):
          .str.upper() == "OWNED")
     ].copy()
 
-    ].copy()
+   
 
 
 
