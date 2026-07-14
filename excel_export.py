@@ -105,130 +105,130 @@ def create_excel(master_df):
     center = Alignment(horizontal="center", vertical="center")
     left = Alignment(horizontal="left", vertical="center")
 
-   # Filter Pending Data
+       # Filter Pending Data
 
-master_df.columns = master_df.columns.str.strip()
+    master_df.columns = master_df.columns.str.strip()
 
-master_df = master_df[
-    master_df["Resolved"]
-    .astype(str)
-    .str.strip()
-    .str.upper() == "NO"
-].copy()
-
-
-# Remove Blank Site Rows (if required)
-
-if "Site" in master_df.columns:
     master_df = master_df[
-        master_df["Site"]
+        master_df["Resolved"]
         .astype(str)
         .str.strip()
-        .ne("")
+        .str.upper() == "NO"
     ].copy()
-
-
-# Reset Index Sequence
-
-master_df.reset_index(drop=True, inplace=True)
-
-# Create Serial Number Column
-
-master_df.insert(
-    0,
-    "No",
-    range(1, len(master_df) + 1)
-)
-
-
-# Create Excel File
-
-from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-from openpyxl.utils import get_column_letter
-
-
-output_file = "Pending_Breakdown_Report.xlsx"
-
-
-with pd.ExcelWriter(
-    output_file,
-    engine="openpyxl"
-) as writer:
-
-    master_df.to_excel(
-        writer,
-        index=False,
-        sheet_name="Pending Data"
+    
+    
+    # Remove Blank Site Rows (if required)
+    
+    if "Site" in master_df.columns:
+        master_df = master_df[
+            master_df["Site"]
+            .astype(str)
+            .str.strip()
+            .ne("")
+        ].copy()
+    
+    
+    # Reset Index Sequence
+    
+    master_df.reset_index(drop=True, inplace=True)
+    
+    # Create Serial Number Column
+    
+    master_df.insert(
+        0,
+        "No",
+        range(1, len(master_df) + 1)
     )
-
-
-    workbook = writer.book
-    worksheet = writer.sheets["Pending Data"]
-
-
-    # Header Formatting
-
-    header_fill = PatternFill(
-        start_color="1F4E78",
-        end_color="1F4E78",
-        fill_type="solid"
-    )
-
-    header_font = Font(
-        bold=True,
-        color="FFFFFF"
-    )
-
-
-    for cell in worksheet[1]:
-        cell.fill = header_fill
-        cell.font = header_font
-        cell.alignment = Alignment(
-            horizontal="center"
+    
+    
+    # Create Excel File
+    
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
+    
+    
+    output_file = "Pending_Breakdown_Report.xlsx"
+    
+    
+    with pd.ExcelWriter(
+        output_file,
+        engine="openpyxl"
+    ) as writer:
+    
+        master_df.to_excel(
+            writer,
+            index=False,
+            sheet_name="Pending Data"
         )
-
-
-    # Border
-
-    thin_border = Border(
-        left=Side(style="thin"),
-        right=Side(style="thin"),
-        top=Side(style="thin"),
-        bottom=Side(style="thin")
-    )
-
-
-    for row in worksheet.iter_rows():
-
-        for cell in row:
-            cell.border = thin_border
+    
+    
+        workbook = writer.book
+        worksheet = writer.sheets["Pending Data"]
+    
+    
+        # Header Formatting
+    
+        header_fill = PatternFill(
+            start_color="1F4E78",
+            end_color="1F4E78",
+            fill_type="solid"
+        )
+    
+        header_font = Font(
+            bold=True,
+            color="FFFFFF"
+        )
+    
+    
+        for cell in worksheet[1]:
+            cell.fill = header_fill
+            cell.font = header_font
             cell.alignment = Alignment(
-                vertical="center"
+                horizontal="center"
             )
-
-
-    # Auto Column Width
-
-    for column_cells in worksheet.columns:
-
-        max_length = 0
-
-        column_letter = get_column_letter(
-            column_cells[0].column
+    
+    
+        # Border
+    
+        thin_border = Border(
+            left=Side(style="thin"),
+            right=Side(style="thin"),
+            top=Side(style="thin"),
+            bottom=Side(style="thin")
         )
-
-        for cell in column_cells:
-
-            if cell.value:
-                max_length = max(
-                    max_length,
-                    len(str(cell.value))
+    
+    
+        for row in worksheet.iter_rows():
+    
+            for cell in row:
+                cell.border = thin_border
+                cell.alignment = Alignment(
+                    vertical="center"
                 )
-
-        worksheet.column_dimensions[
-            column_letter
-        ].width = max_length + 3
-
-
-print("Pending Excel Report Created Successfully")
+    
+    
+        # Auto Column Width
+    
+        for column_cells in worksheet.columns:
+    
+            max_length = 0
+    
+            column_letter = get_column_letter(
+                column_cells[0].column
+            )
+    
+            for cell in column_cells:
+    
+                if cell.value:
+                    max_length = max(
+                        max_length,
+                        len(str(cell.value))
+                    )
+    
+            worksheet.column_dimensions[
+                column_letter
+            ].width = max_length + 3
+    
+    
+    print("Pending Excel Report Created Successfully")
