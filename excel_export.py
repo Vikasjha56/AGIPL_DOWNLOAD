@@ -100,16 +100,17 @@ def create_excel(master_df):
  
 
 
-    # ===============================
-    # FILTER PENDING DATA
-    # ===============================
+# ===============================
+# FILTER PENDING + OWNED DATA
+# ===============================
+
+if "Owned/Hired" in master_df.columns:
 
     master_df = master_df[
-        master_df["Resolved"]
-        .astype(str)
-        .str.strip()
-        .str.upper()
-        == "NO")
+        (master_df["Resolved"]
+         .astype(str)
+         .str.strip()
+         .str.upper() == "NO")
         &
         (master_df["Owned/Hired"]
          .astype(str)
@@ -117,6 +118,14 @@ def create_excel(master_df):
          .str.upper() == "OWNED")
     ].copy()
 
+else:
+
+    master_df = master_df[
+        master_df["Resolved"]
+        .astype(str)
+        .str.strip()
+        .str.upper() == "NO"
+    ].copy()
    
 
 
