@@ -71,13 +71,15 @@ normal_font = Font(
 # AGIPL CREATE WORKBOOK
 # ===============================
 
+def create_excel(master_df):
+
+    wb = Workbook()
+
+    ws = wb.active
+
+    ws.title = "Breakdown Report"
 
 
-wb = Workbook()
-
-ws = wb.active
-
-ws.title = "Breakdown Report"
 
 
 # ===============================
@@ -326,3 +328,45 @@ def create_excel(master_df):
                 )
 
         row_no += 1
+
+
+
+    # ==========================================
+    # AUTO COLUMN WIDTH
+    # ==========================================
+
+    for column_cells in ws.columns:
+
+        length = 0
+        column = column_cells[0].column_letter
+
+        for cell in column_cells:
+
+            try:
+
+                if cell.value:
+
+                    length = max(length, len(str(cell.value)))
+
+            except:
+                pass
+
+        ws.column_dimensions[column].width = min(length + 3, 35)
+
+
+    # ==========================================
+    # AUTO FILTER
+    # ==========================================
+
+    ws.auto_filter.ref = ws.dimensions
+
+
+    # ==========================================
+    # SAVE FILE
+    # ==========================================
+
+    file_path = "AGIPL_Breakdown_Report.xlsx"
+
+    wb.save(file_path)
+
+    return file_path
