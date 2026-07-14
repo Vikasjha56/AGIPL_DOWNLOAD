@@ -11,12 +11,12 @@ from openpyxl.styles import (
 
 from openpyxl.utils import get_column_letter
 from datetime import datetime
+import pytz
 
 
 # ===============================
 # AGIPL THEME
 # ===============================
-
 HEADER_COLOR = "0B3B6F"
 WHITE = "FFFFFF"
 
@@ -43,7 +43,6 @@ border = Border(
 # ===============================
 # FONT
 # ===============================
-
 title_font = Font(
     size=18,
     bold=True,
@@ -72,6 +71,28 @@ def create_excel(master_df):
         master_df.columns
         .str.strip()
     )
+
+
+    # ===============================
+    # REMOVE UNWANTED COLUMNS
+    # ===============================
+
+    remove_columns = [
+        "No",
+        "Source Sheet"
+    ]
+
+
+    for col in remove_columns:
+
+        if col in master_df.columns:
+
+            master_df.drop(
+                columns=[col],
+                inplace=True
+            )
+
+
 
 
     master_df = master_df[
@@ -173,17 +194,27 @@ def create_excel(master_df):
 
 
 
-    # Report Date
+    # ===============================
+    # REPORT DATE TIME
+    # ===============================
+
+
+    india_time = datetime.now(
+        pytz.timezone("Asia/Kolkata")
+    )
+
 
     ws["A2"] = "Report Generated"
 
-    ws["B2"] = datetime.now().strftime(
-        "%d-%m-%Y %I:%M %p"
+    ws["B2"] = india_time.strftime(
+        "%d-%m-%Y %I:%M:%S %p"
     )
+
 
     ws["A2"].font = Font(
         bold=True
     )
+
 
 
 
@@ -225,7 +256,7 @@ def create_excel(master_df):
 
 
     # ===============================
-    # INSERT DATA
+    # DATA INSERT
     # ===============================
 
 
@@ -249,8 +280,10 @@ def create_excel(master_df):
             cell.border = border
 
             cell.alignment = Alignment(
-                vertical="center"
+                vertical="top",
+                wrap_text=True
             )
+
 
 
 
@@ -271,34 +304,52 @@ def create_excel(master_df):
 
 
     # ===============================
-    # AUTO COLUMN WIDTH
+    # COLUMN WIDTH
     # ===============================
 
 
     for column_cells in ws.columns:
-
-        max_length = 0
-
 
         column_letter = get_column_letter(
             column_cells[0].column
         )
 
 
-        for cell in column_cells:
-
-            if cell.value:
-
-                max_length = max(
-                    max_length,
-                    len(str(cell.value))
-                )
+        header = ws.cell(
+            row=start_row,
+            column=column_cells[0].column
+        ).value
 
 
-        ws.column_dimensions[
-            column_letter
-        ].width = max_length + 3
+        # Corrective Action Special Width
 
+        if header == "Corrective Action":
+
+            ws.column_dimensions[
+                column_letter
+            ].width = 35
+
+
+        else:
+
+            max_length = 0
+
+            for cell in column_cells:
+
+                if cell.value:
+
+                    max_length = max(
+                        max_length,
+                        len(str(cell.value))
+                    )
+
+
+            ws.column_dimensions[
+                column_letter
+            ].width = min(
+                max_length + 3,
+                25
+            )
 
 
     # ===============================
