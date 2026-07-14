@@ -14,6 +14,7 @@ from datetime import datetime
 import pytz
 
 
+
 # ===============================
 # AGIPL THEME
 # ===============================
@@ -22,6 +23,7 @@ HEADER_COLOR = "0B3B6F"
 WHITE = "FFFFFF"
 
 BORDER_COLOR = "C9C9C9"
+
 
 
 # ===============================
@@ -39,6 +41,7 @@ border = Border(
     top=thin,
     bottom=thin
 )
+
 
 
 # ===============================
@@ -76,6 +79,7 @@ def create_excel(master_df):
     )
 
 
+
     # ===============================
     # REMOVE UNWANTED COLUMNS
     # ===============================
@@ -97,36 +101,34 @@ def create_excel(master_df):
                 inplace=True
             )
 
- 
 
 
-# ===============================
-# FILTER PENDING + OWNED DATA
-# ===============================
+    # ===============================
+    # FILTER PENDING + OWNED DATA
+    # ===============================
 
-if "Owned/Hired" in master_df.columns:
+    if "Owned/Hired" in master_df.columns:
 
-    master_df = master_df[
-        (master_df["Resolved"]
-         .astype(str)
-         .str.strip()
-         .str.upper() == "NO")
-        &
-        (master_df["Owned/Hired"]
-         .astype(str)
-         .str.strip()
-         .str.upper() == "OWNED")
-    ].copy()
+        master_df = master_df[
+            (master_df["Resolved"]
+             .astype(str)
+             .str.strip()
+             .str.upper() == "NO")
+            &
+            (master_df["Owned/Hired"]
+             .astype(str)
+             .str.strip()
+             .str.upper() == "OWNED")
+        ].copy()
 
-else:
+    else:
 
-    master_df = master_df[
-        master_df["Resolved"]
-        .astype(str)
-        .str.strip()
-        .str.upper() == "NO"
-    ].copy()
-   
+        master_df = master_df[
+            master_df["Resolved"]
+            .astype(str)
+            .str.strip()
+            .str.upper() == "NO"
+        ].copy()
 
 
 
@@ -146,7 +148,7 @@ else:
 
 
     # ===============================
-    # CREATE SERIAL INDEX
+    # CREATE INDEX NUMBER
     # ===============================
 
     master_df.reset_index(
@@ -160,7 +162,7 @@ else:
         "Index Number",
         range(
             1,
-            len(master_df)+1
+            len(master_df) + 1
         )
     )
 
@@ -188,6 +190,7 @@ else:
     )
 
 
+
     title_cell = ws["A1"]
 
     title_cell.value = (
@@ -205,6 +208,7 @@ else:
         fill_type="solid",
         fgColor=HEADER_COLOR
     )
+
 
 
     ws.row_dimensions[1].height = 30
@@ -270,7 +274,7 @@ else:
 
 
     # ===============================
-    # DATA
+    # INSERT DATA
     # ===============================
 
     for row_num, row in enumerate(
@@ -318,6 +322,7 @@ else:
         ).value
 
 
+
         if header == "Index Number":
 
             ws.column_dimensions[
@@ -325,11 +330,13 @@ else:
             ].width = 12
 
 
+
         elif header == "Corrective Action":
 
             ws.column_dimensions[
                 column_letter
             ].width = 35
+
 
 
         else:
