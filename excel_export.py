@@ -17,6 +17,7 @@ import pytz
 # ===============================
 # AGIPL THEME
 # ===============================
+
 HEADER_COLOR = "0B3B6F"
 WHITE = "FFFFFF"
 
@@ -43,6 +44,7 @@ border = Border(
 # ===============================
 # FONT
 # ===============================
+
 title_font = Font(
     size=18,
     bold=True,
@@ -56,6 +58,7 @@ header_font = Font(
 )
 
 
+
 # ===============================
 # CREATE EXCEL
 # ===============================
@@ -64,7 +67,7 @@ def create_excel(master_df):
 
 
     # ===============================
-    # FILTER PENDING DATA
+    # CLEAN COLUMN NAME
     # ===============================
 
     master_df.columns = (
@@ -79,6 +82,8 @@ def create_excel(master_df):
 
     remove_columns = [
         "No",
+        "Index",
+        "Index Number",
         "Source Sheet"
     ]
 
@@ -94,6 +99,9 @@ def create_excel(master_df):
 
 
 
+    # ===============================
+    # FILTER PENDING DATA
+    # ===============================
 
     master_df = master_df[
         master_df["Resolved"]
@@ -105,7 +113,9 @@ def create_excel(master_df):
 
 
 
-    # Remove Blank Site
+    # ===============================
+    # REMOVE BLANK SITE
+    # ===============================
 
     if "Site" in master_df.columns:
 
@@ -118,7 +128,9 @@ def create_excel(master_df):
 
 
 
-    # Reset Sequence
+    # ===============================
+    # CREATE SERIAL INDEX
+    # ===============================
 
     master_df.reset_index(
         drop=True,
@@ -126,18 +138,9 @@ def create_excel(master_df):
     )
 
 
-    # Create Serial Number
-
-    if "No" in master_df.columns:
-        master_df.drop(
-            columns=["No"],
-            inplace=True
-        )
-
-
     master_df.insert(
         0,
-        "No",
+        "Index Number",
         range(
             1,
             len(master_df)+1
@@ -150,7 +153,6 @@ def create_excel(master_df):
     # CREATE WORKBOOK
     # ===============================
 
-
     wb = Workbook()
 
     ws = wb.active
@@ -158,8 +160,6 @@ def create_excel(master_df):
     ws.title = "Breakdown Report"
 
 
-
-    # Dynamic Merge
 
     last_column = get_column_letter(
         len(master_df.columns)
@@ -198,7 +198,6 @@ def create_excel(master_df):
     # REPORT DATE TIME
     # ===============================
 
-
     india_time = datetime.now(
         pytz.timezone("Asia/Kolkata")
     )
@@ -217,11 +216,9 @@ def create_excel(master_df):
 
 
 
-
     # ===============================
-    # TABLE HEADER
+    # HEADER
     # ===============================
-
 
     start_row = 5
 
@@ -247,18 +244,17 @@ def create_excel(master_df):
 
         cell.alignment = Alignment(
             horizontal="center",
-            vertical="center"
+            vertical="center",
+            wrap_text=True
         )
 
         cell.border = border
 
 
 
-
     # ===============================
-    # DATA INSERT
+    # DATA
     # ===============================
-
 
     for row_num, row in enumerate(
         master_df.values,
@@ -286,44 +282,33 @@ def create_excel(master_df):
 
 
 
-
-    # Freeze Header
-
-    ws.freeze_panes = "A6"
-
-
-
-    # Row Height
-
-    for row in ws.iter_rows():
-
-        for cell in row:
-
-            cell.border = border
-
-
-
     # ===============================
     # COLUMN WIDTH
     # ===============================
 
-
     for column_cells in ws.columns:
 
+        column_number = column_cells[0].column
+
         column_letter = get_column_letter(
-            column_cells[0].column
+            column_number
         )
 
 
         header = ws.cell(
             row=start_row,
-            column=column_cells[0].column
+            column=column_number
         ).value
 
 
-        # Corrective Action Special Width
+        if header == "Index Number":
 
-        if header == "Corrective Action":
+            ws.column_dimensions[
+                column_letter
+            ].width = 12
+
+
+        elif header == "Corrective Action":
 
             ws.column_dimensions[
                 column_letter
@@ -333,6 +318,7 @@ def create_excel(master_df):
         else:
 
             max_length = 0
+
 
             for cell in column_cells:
 
@@ -352,10 +338,26 @@ def create_excel(master_df):
             )
 
 
+
+    # ===============================
+    # ROW SETTINGS
+    # ===============================
+
+    ws.freeze_panes = "A6"
+
+
+    for row in range(
+        start_row + 1,
+        ws.max_row + 1
+    ):
+
+        ws.row_dimensions[row].height = 45
+
+
+
     # ===============================
     # SAVE FILE
     # ===============================
-
 
     output_file = (
         "Pending_Breakdown_Report.xlsx"
