@@ -5,3 +5,4 @@ reportlab==5.0.0
 requests==2.32.4
 python-dotenv==1.2.2
 gunicorn==21.2.0
+pytz==2026.2
