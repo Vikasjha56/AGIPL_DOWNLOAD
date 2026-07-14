@@ -71,13 +71,17 @@ normal_font = Font(
 # AGIPL CREATE DATA WITH TIME REQUESTS
 # ===============================
 
+# ===============================
+# CREATE EXCEL
+# ===============================
+
 def create_excel(master_df):
 
     wb = Workbook()
     ws = wb.active
     ws.title = "Breakdown Report"
 
-    # Report Header
+    # Header
     ws.merge_cells("A1:I1")
 
     cell = ws["A1"]
@@ -86,31 +90,36 @@ def create_excel(master_df):
     cell.alignment = Alignment(horizontal="center", vertical="center")
     cell.fill = PatternFill(fill_type="solid", fgColor=HEADER_COLOR)
 
+    # Report Date
     ws["A2"] = "Report Generated"
     ws["B2"] = datetime.now().strftime("%d-%m-%Y %I:%M %p")
     ws["A2"].font = Font(bold=True)
 
+    # Freeze Pane
     ws.freeze_panes = "A6"
 
+    # Row Height
     for i in range(1, 500):
         ws.row_dimensions[i].height = 22
 
     center = Alignment(horizontal="center", vertical="center")
     left = Alignment(horizontal="left", vertical="center")
 
-master_df.columns = master_df.columns.str.strip()
+    # Filter Pending Data
+    master_df.columns = master_df.columns.str.strip()
 
-master_df = master_df[
-    master_df["Resolved"]
-    .astype(str)
-    .str.strip()
-    .str.upper() == "NO"
-].copy()
+    master_df = master_df[
+        master_df["Resolved"]
+        .astype(str)
+        .str.strip()
+        .str.upper() == "NO"
+    ].copy()
 
+    # Yahan se apna remaining code continue karo
+    # (Index Number, Alert Level, Header, Data Writing, Formatting...)
 
+    # Save Excel
+    file_path = "AGIPL_Breakdown_Report.xlsx"
+    wb.save(file_path)
 
-file_path = "AGIPL_Breakdown_Report.xlsx"
-
-wb.save(file_path)
-
-return file_path
+    return file_path
