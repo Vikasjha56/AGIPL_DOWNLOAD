@@ -156,71 +156,173 @@ left = Alignment(
 
 
 
+
 def create_excel(master_df):
 
-    file_path = "AGIPL_Master_Table.xlsx"
+    # ==========================================
+    # ONLY PENDING (Resolved = No)
+    # ==========================================
 
-    with pd.ExcelWriter(
-        file_path,
-        engine="openpyxl"
-    ) as writer:
+    master_df.columns = master_df.columns.str.strip()
 
-        master_df.to_excel(
-            writer,
-            index=False,
-            sheet_name="Master Table"
+    master_df = master_df[
+        master_df["Resolved"]
+        .astype(str)
+        .str.strip()
+        .str.upper() == "NO"
+    ].copy()
+
+
+    # ==========================================
+    # Fresh Index Number
+    # ==========================================
+
+    master_df.reset_index(drop=True, inplace=True)
+
+    master_df["Index Number"] = range(
+        1,
+        len(master_df) + 1
+    )
+
+
+    # ==========================================
+    # Pending Days
+    # ==========================================
+
+    master_df["Pending for (no of days)"] = pd.to_numeric(
+        master_df["Pending for (no of days)"],
+        errors="coerce"
+    ).fillna(0)
+
+
+    # ==========================================
+    # Alert Level
+    # ==========================================
+
+    def alert(days):
+
+        if days >= 31:
+            return "HIGH"
+
+        elif days >= 16:
+            return "MEDIUM"
+
+        elif days >= 1:
+            return "LOW"
+
+        return "NO BREAKDOWN"
+
+
+    master_df["Alert Level"] = master_df[
+        "Pending for (no of days)"
+    ].apply(alert)
+
+
+    # ==========================================
+    # Same Columns as PDF
+    # ==========================================
+
+    final_df = master_df[
+        [
+            "Index Number",
+            "Site",
+            "Date of breakdown",
+            "Category",
+            "Vehcile No",
+            "Breakdown Details",
+            "Reason for pendency",
+            "Pending for (no of days)",
+            "Alert Level"
+        ]
+    ].copy()
+
+
+
+fOR hEADER
+
+# ==========================================
+# FOR HEADER
+# ==========================================
+
+
+    start_row = 5
+
+    headers = list(final_df.columns)
+
+    for col, value in enumerate(headers, 1):
+
+        cell = ws.cell(
+            row=start_row,
+            column=col
+        )
+
+        cell.value = value
+
+        cell.font = header_font
+
+        cell.alignment = center
+
+        cell.border = border
+
+        cell.fill = PatternFill(
+            "solid",
+            fgColor=TITLE_COLOR
         )
 
 
-        workbook = writer.book
-
-        worksheet = writer.sheets["Master Table"]
 
 
-        # Header Formatting
 
-        for cell in worksheet[1]:
 
-            cell.font = Font(
-                bold=True
+# ==========================================
+# DATA FILL
+# ==========================================
+
+
+
+    row_no = start_row + 1
+
+    for r in final_df.itertuples(index=False):
+
+        for col_no, value in enumerate(r, 1):
+
+            c = ws.cell(
+                row=row_no,
+                column=col_no
             )
 
-            cell.alignment = Alignment(
-                horizontal="center"
-            )
+            c.value = value
 
+            c.font = normal_font
 
-        # Auto Column Width
+            c.border = border
 
-        for column in worksheet.columns:
-
-            max_length = 0
-
-            column_letter = get_column_letter(
-                column[0].column
-            )
-
-            for cell in column:
-
-                try:
-
-                    if len(str(cell.value)) > max_length:
-                        max_length = len(str(cell.value))
-
-                except:
-                    pass
-
-
-            worksheet.column_dimensions[
-                column_letter
-            ].width = max_length + 3
+            if col_no in [1, 8]:
+                c.alignment = center
+            else:
+                c.alignment = left
 
 
 
-        # Freeze Header
-
-        worksheet.freeze_panes = "A2"
 
 
 
-    return file_path
+
+# ==========================================
+# ZEBRA FORMATTING
+# ==========================================
+
+
+        if row_no % 2 == 0:
+
+            for x in range(1, 10):
+
+                ws.cell(
+                    row=row_no,
+                    column=x
+                ).fill = PatternFill(
+                    "solid",
+                    fgColor="F8FBFF"
+                )
+
+        row_no += 1
