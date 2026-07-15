@@ -203,7 +203,7 @@ header{
   flex:0 0 auto;
   display:flex;
   align-items:center;
-  justify-content:flex-start;
+  justify-content:space-between;
   flex-wrap:wrap;
   gap:12px;
   padding:10px 18px;
@@ -213,20 +213,12 @@ header{
   box-shadow:0 10px 25px #0007;
 }
 .toolbar-group{display:flex;align-items:center;gap:10px;}
-.toolbar-group label{font-size:12.5px;font-weight:600;opacity:.85;white-space:nowrap;}
+.toolbar-group label{font-size:12.5px;font-weight:600;opacity:.85;}
 select.slicer{
   padding:7px 12px;border-radius:9px;border:1px solid rgba(0,255,255,.5);
   background:rgba(255,255,255,.1);color:#fff;font-size:13px;outline:none;
 }
 select.slicer option{color:#000;}
-
-/* date inputs styled to match the other slicers */
-input.date-slicer{
-  padding:6px 10px;border-radius:9px;border:1px solid rgba(0,255,255,.5);
-  background:rgba(255,255,255,.1);color:#fff;font-size:12.5px;outline:none;
-  color-scheme:dark;
-}
-
 .tabs{display:flex;gap:6px;background:rgba(255,255,255,.08);padding:4px;border-radius:11px;}
 .tab-btn{
   border:none;padding:7px 16px;border-radius:8px;font-size:12.5px;font-weight:600;
@@ -237,7 +229,6 @@ input.date-slicer{
 .clear-filters{
   border:1px solid rgba(255,80,80,.6);background:rgba(255,60,60,.15);color:#fff;
   padding:7px 13px;border-radius:9px;font-size:12px;cursor:pointer;display:none;
-  margin-left:auto;
 }
 .clear-filters.show{display:inline-block;}
 
@@ -331,41 +322,271 @@ input.date-slicer{
 .mini-kpi h4{margin:0;font-size:11px;opacity:.8;font-weight:600;}
 .mini-kpi p{margin:4px 0 0;font-size:17px;font-weight:bold;text-shadow:0 0 8px cyan;}
 
-/* ---- BD Details tab ---- */
-.details-card{flex:1 1 auto;min-height:0;}
+/* ===============================
+   BREAKDOWN DETAILS TABLE FINAL
+================================*/
+
+
+.details-panel{
+
+flex:1;
+min-height:0;
+
+display:flex;
+flex-direction:column;
+
+background:rgba(255,255,255,.08);
+
+border-radius:18px;
+
+padding:18px;
+
+backdrop-filter:blur(15px);
+
+overflow:hidden;
+
+}
+
+
 .details-header{
-  flex:0 0 auto;
-  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;
-  margin-bottom:4px;
-}
-.details-header h2{margin:0;}
-.export-btns{display:flex;gap:8px;}
-.export-btns button{
-  border:1px solid rgba(0,255,255,.6);background:rgba(0,255,255,.12);color:#fff;
-  padding:6px 14px;border-radius:9px;font-size:12px;cursor:pointer;font-weight:600;transition:.25s;
-}
-.export-btns button:hover{background:rgba(0,255,255,.35);box-shadow:0 0 12px cyan;}
 
-.details-wrap{flex:1 1 auto;min-height:0;overflow:auto;border-radius:10px;}
-.details-table{width:100%;border-collapse:collapse;font-size:12.5px;}
-.details-table th,.details-table td{
-  padding:8px 10px;text-align:left;border-bottom:1px solid rgba(255,255,255,.15);
-  white-space:nowrap;
-}
-.details-table th{
-  background:rgba(0,255,255,.15);position:sticky;top:0;cursor:pointer;user-select:none;
-}
-.details-table th:hover{background:rgba(0,255,255,.28);}
+flex:0 0 auto;
 
-/* alert pill — white text on colored background, icon-style */
-.alert-pill{
-  display:inline-block;padding:3px 11px;border-radius:12px;
-  font-size:10.5px;font-weight:700;color:#fff;text-shadow:0 1px 2px #0006;
-}
-.alert-high{background:#ff2d55;box-shadow:0 0 8px #ff2d5599;}
-.alert-medium{background:#ffaa00;box-shadow:0 0 8px #ffaa0099;}
-.alert-low{background:#00c07a;box-shadow:0 0 8px #00c07a99;}
+display:flex;
 
+justify-content:space-between;
+
+align-items:center;
+
+margin-bottom:12px;
+
+}
+
+
+.details-header h2{
+
+margin:0;
+
+font-size:20px;
+
+color:#00ffff;
+
+text-shadow:0 0 10px cyan;
+
+}
+
+
+/* TABLE SCROLL AREA */
+
+.table-container{
+
+flex:1;
+
+min-height:0;
+
+width:100%;
+
+overflow:auto;
+
+border-radius:12px;
+
+}
+
+
+.table-container::-webkit-scrollbar{
+
+width:8px;
+height:8px;
+
+}
+
+
+.table-container::-webkit-scrollbar-thumb{
+
+background:#00ffff;
+
+border-radius:20px;
+
+}
+
+
+
+/* TABLE */
+
+#bdTable{
+
+width:100%;
+
+border-collapse:collapse;
+
+font-size:13px;
+
+color:white;
+
+}
+
+
+
+#bdTable thead{
+
+position:sticky;
+
+top:0;
+
+z-index:20;
+
+}
+
+
+
+#bdTable th{
+
+background:
+
+linear-gradient(
+135deg,
+#063b78,
+#00aaff
+);
+
+color:white;
+
+padding:12px;
+
+text-align:center;
+
+white-space:nowrap;
+
+border-bottom:2px solid cyan;
+
+}
+
+
+
+#bdTable td{
+
+padding:10px;
+
+text-align:center;
+
+white-space:nowrap;
+
+border-bottom:1px solid rgba(255,255,255,.15);
+
+}
+
+
+
+#bdTable tbody tr:hover{
+
+background:rgba(0,255,255,.15);
+
+}
+
+
+/* BREAKDOWN DETAILS COLUMN */
+
+.details-cell{
+
+max-width:300px;
+
+white-space:normal !important;
+
+text-align:left !important;
+
+line-height:1.4;
+
+}
+
+
+
+/* ALERT BADGE */
+
+
+.alert-high{
+
+background:#ff2d55;
+
+color:white;
+
+padding:5px 12px;
+
+border-radius:20px;
+
+font-size:11px;
+
+font-weight:bold;
+
+}
+
+
+
+.alert-medium{
+
+background:#ffaa00;
+
+color:black;
+
+padding:5px 12px;
+
+border-radius:20px;
+
+font-size:11px;
+
+font-weight:bold;
+
+}
+
+
+
+.alert-low{
+
+background:#00e05a;
+
+color:#003b1c;
+
+padding:5px 12px;
+
+border-radius:20px;
+
+font-size:11px;
+
+font-weight:bold;
+
+}
+
+
+
+/* EXPORT BUTTON */
+
+.export-buttons button{
+
+background:linear-gradient(135deg,#00ffff,#0077ff);
+
+border:none;
+
+color:white;
+
+padding:9px 16px;
+
+border-radius:20px;
+
+font-weight:bold;
+
+cursor:pointer;
+
+margin-left:8px;
+
+}
+
+
+.export-buttons button:hover{
+
+box-shadow:0 0 15px cyan;
+
+transform:scale(1.05);
+
+}
 /* =========================
    RESPONSIVE — below 900px, allow page scroll instead of squeezing everything
 ========================= */
@@ -384,5 +605,4 @@ input.date-slicer{
   .chart-grid-bottom{grid-template-columns:1fr;flex:none;}
   .footer-kpis{grid-template-columns:repeat(2,1fr);}
   .modules{overflow-y:visible;}
-  .clear-filters{margin-left:0;}
 }
