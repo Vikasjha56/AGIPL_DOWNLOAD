@@ -309,70 +309,46 @@ function renderDetails(){
 
   const data = getBase(null);
 
-  const body = document.getElementById("detailsBody");
-
+  const body = document.getElementById("bdBody");
 
   body.innerHTML = data.map((r,index)=>{
-
 
     let alertClass="";
     let alertText="";
 
-
     if(r.days > 30){
-
       alertClass="alert-high";
       alertText="High";
-
     }
-
     else if(r.days >= 6){
-
       alertClass="alert-medium";
       alertText="Medium";
-
     }
-
     else{
-
       alertClass="alert-low";
       alertText="Low";
-
     }
 
-
     return `
-
     <tr>
 
-    <td>${index+1}</td>
+      <td>${index+1}</td>
+      <td>${r.site}</td>
+      <td>${r.date}</td>
+      <td>${r.category}</td>
+      <td>${r.vehicle || "-"}</td>
+      <td>${r.details || "-"}</td>
+      <td>${r.reason || "-"}</td>
+      <td>${r.days}</td>
 
-    <td>${r.site}</td>
-
-    <td>${r.date}</td>
-
-    <td>${r.category}</td>
-
-    <td>${r.vehicle || "-"}</td>
-
-    <td>${r.details || "-"}</td>
-
-    <td>${r.reason || "-"}</td>
-
-    <td>${r.days}</td>
-
-
-    <td>
-      <span class="${alertClass}">
-        ${alertText}
-      </span>
-    </td>
-
+      <td>
+        <span class="${alertClass}">
+          ${alertText}
+        </span>
+      </td>
 
     </tr>
-
     `;
-
 
   }).join("");
 
