@@ -322,103 +322,179 @@ select.slicer option{color:#000;}
 .mini-kpi h4{margin:0;font-size:11px;opacity:.8;font-weight:600;}
 .mini-kpi p{margin:4px 0 0;font-size:17px;font-weight:bold;text-shadow:0 0 8px cyan;}
 
-/* =========================
-   BD DETAILS TABLE SYSTEM
-========================= */
+/* ===============================
+   BREAKDOWN DETAILS TABLE FINAL
+================================*/
 
-.details-card{
-  flex:1 1 auto;
-  min-height:0;
-  display:flex;
-  flex-direction:column;
+
+.details-panel{
+
+flex:1;
+min-height:0;
+
+display:flex;
+flex-direction:column;
+
+background:rgba(255,255,255,.08);
+
+border-radius:18px;
+
+padding:18px;
+
+backdrop-filter:blur(15px);
+
+overflow:hidden;
+
 }
 
 
-.details-wrap{
-  flex:1;
-  min-height:0;
-  overflow:auto;
-  border-radius:12px;
-  background:rgba(255,255,255,.08);
-  border:1px solid rgba(0,255,255,.25);
+.details-header{
+
+flex:0 0 auto;
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+margin-bottom:12px;
+
 }
+
+
+.details-header h2{
+
+margin:0;
+
+font-size:20px;
+
+color:#00ffff;
+
+text-shadow:0 0 10px cyan;
+
+}
+
+
+/* TABLE SCROLL AREA */
+
+.table-container{
+
+flex:1;
+
+min-height:0;
+
+width:100%;
+
+overflow:auto;
+
+border-radius:12px;
+
+}
+
+
+.table-container::-webkit-scrollbar{
+
+width:8px;
+height:8px;
+
+}
+
+
+.table-container::-webkit-scrollbar-thumb{
+
+background:#00ffff;
+
+border-radius:20px;
+
+}
+
 
 
 /* TABLE */
 
-.details-table{
-  width:100%;
-  border-collapse:collapse;
-  font-size:12px;
-}
+#bdTable{
 
+width:100%;
 
-/* HEADER */
+border-collapse:collapse;
 
-.details-table th{
+font-size:13px;
 
-  position:sticky;
-  top:0;
-  z-index:10;
-
-  background:
-  linear-gradient(
-    135deg,
-    rgba(0,255,255,.35),
-    rgba(0,119,255,.35)
-  );
-
-  color:white;
-
-  padding:10px 12px;
-
-  text-align:left;
-
-  font-size:12px;
-
-  border-bottom:
-  1px solid rgba(255,255,255,.4);
-
-  white-space:nowrap;
+color:white;
 
 }
 
 
-/* ROW DATA */
 
-.details-table td{
+#bdTable thead{
 
- padding:8px 12px;
+position:sticky;
 
- border-bottom:
- 1px solid rgba(255,255,255,.12);
+top:0;
 
- color:#eaf6ff;
-
- white-space:nowrap;
+z-index:20;
 
 }
 
 
-/* ALTERNATE ROW */
 
-.details-table tbody tr:nth-child(even){
+#bdTable th{
 
- background:
- rgba(255,255,255,.05);
+background:
+
+linear-gradient(
+135deg,
+#063b78,
+#00aaff
+);
+
+color:white;
+
+padding:12px;
+
+text-align:center;
+
+white-space:nowrap;
+
+border-bottom:2px solid cyan;
 
 }
 
 
-/* HOVER EFFECT */
 
-.details-table tbody tr:hover{
+#bdTable td{
 
- background:
- rgba(0,255,255,.15);
+padding:10px;
 
- box-shadow:
- inset 0 0 15px rgba(0,255,255,.3);
+text-align:center;
+
+white-space:nowrap;
+
+border-bottom:1px solid rgba(255,255,255,.15);
+
+}
+
+
+
+#bdTable tbody tr:hover{
+
+background:rgba(0,255,255,.15);
+
+}
+
+
+/* BREAKDOWN DETAILS COLUMN */
+
+.details-cell{
+
+max-width:300px;
+
+white-space:normal !important;
+
+text-align:left !important;
+
+line-height:1.4;
 
 }
 
@@ -426,107 +502,91 @@ select.slicer option{color:#000;}
 
 /* ALERT BADGE */
 
+
 .alert-high{
 
- background:#ff2d55;
- color:white;
+background:#ff2d55;
 
- padding:4px 10px;
+color:white;
 
- border-radius:15px;
+padding:5px 12px;
 
- font-size:11px;
+border-radius:20px;
 
- font-weight:700;
+font-size:11px;
+
+font-weight:bold;
 
 }
+
 
 
 .alert-medium{
 
- background:#ffaa00;
+background:#ffaa00;
 
- color:#111;
+color:black;
 
- padding:4px 10px;
+padding:5px 12px;
 
- border-radius:15px;
+border-radius:20px;
 
- font-size:11px;
+font-size:11px;
 
- font-weight:700;
+font-weight:bold;
 
 }
+
 
 
 .alert-low{
 
- background:#00e05a;
+background:#00e05a;
 
- color:#041;
+color:#003b1c;
 
- padding:4px 10px;
+padding:5px 12px;
 
- border-radius:15px;
+border-radius:20px;
 
- font-size:11px;
+font-size:11px;
 
- font-weight:700;
-
-}
-
-
-
-/* EXPORT BUTTON AREA */
-
-.table-actions{
-
- display:flex;
-
- justify-content:flex-end;
-
- gap:10px;
-
- margin-bottom:8px;
+font-weight:bold;
 
 }
 
 
-.table-actions button{
 
- padding:7px 14px;
+/* EXPORT BUTTON */
 
- border-radius:8px;
+.export-buttons button{
 
- border:1px solid cyan;
+background:linear-gradient(135deg,#00ffff,#0077ff);
 
- background:
- rgba(0,255,255,.15);
+border:none;
 
- color:white;
+color:white;
 
- cursor:pointer;
+padding:9px 16px;
 
- font-size:12px;
+border-radius:20px;
 
- font-weight:600;
+font-weight:bold;
 
- transition:.3s;
+cursor:pointer;
 
-}
-
-
-.table-actions button:hover{
-
- background:#00ffff;
-
- color:#001;
-
- box-shadow:
- 0 0 15px cyan;
+margin-left:8px;
 
 }
 
+
+.export-buttons button:hover{
+
+box-shadow:0 0 15px cyan;
+
+transform:scale(1.05);
+
+}
 /* =========================
    RESPONSIVE — below 900px, allow page scroll instead of squeezing everything
 ========================= */
