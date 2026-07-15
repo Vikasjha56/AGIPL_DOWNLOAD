@@ -322,14 +322,210 @@ select.slicer option{color:#000;}
 .mini-kpi h4{margin:0;font-size:11px;opacity:.8;font-weight:600;}
 .mini-kpi p{margin:4px 0 0;font-size:17px;font-weight:bold;text-shadow:0 0 8px cyan;}
 
-/* ---- BD Details tab ---- */
-.details-card{flex:1 1 auto;min-height:0;}
-.details-wrap{flex:1 1 auto;min-height:0;overflow:auto;border-radius:10px;}
-.details-table{width:100%;border-collapse:collapse;font-size:12.5px;}
-.details-table th,.details-table td{
-  padding:8px 10px;text-align:left;border-bottom:1px solid rgba(255,255,255,.15);
+/* =========================
+   BD DETAILS TABLE SYSTEM
+========================= */
+
+.details-card{
+  flex:1 1 auto;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
 }
-.details-table th{background:rgba(0,255,255,.15);position:sticky;top:0;}
+
+
+.details-wrap{
+  flex:1;
+  min-height:0;
+  overflow:auto;
+  border-radius:12px;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(0,255,255,.25);
+}
+
+
+/* TABLE */
+
+.details-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:12px;
+}
+
+
+/* HEADER */
+
+.details-table th{
+
+  position:sticky;
+  top:0;
+  z-index:10;
+
+  background:
+  linear-gradient(
+    135deg,
+    rgba(0,255,255,.35),
+    rgba(0,119,255,.35)
+  );
+
+  color:white;
+
+  padding:10px 12px;
+
+  text-align:left;
+
+  font-size:12px;
+
+  border-bottom:
+  1px solid rgba(255,255,255,.4);
+
+  white-space:nowrap;
+
+}
+
+
+/* ROW DATA */
+
+.details-table td{
+
+ padding:8px 12px;
+
+ border-bottom:
+ 1px solid rgba(255,255,255,.12);
+
+ color:#eaf6ff;
+
+ white-space:nowrap;
+
+}
+
+
+/* ALTERNATE ROW */
+
+.details-table tbody tr:nth-child(even){
+
+ background:
+ rgba(255,255,255,.05);
+
+}
+
+
+/* HOVER EFFECT */
+
+.details-table tbody tr:hover{
+
+ background:
+ rgba(0,255,255,.15);
+
+ box-shadow:
+ inset 0 0 15px rgba(0,255,255,.3);
+
+}
+
+
+
+/* ALERT BADGE */
+
+.alert-high{
+
+ background:#ff2d55;
+ color:white;
+
+ padding:4px 10px;
+
+ border-radius:15px;
+
+ font-size:11px;
+
+ font-weight:700;
+
+}
+
+
+.alert-medium{
+
+ background:#ffaa00;
+
+ color:#111;
+
+ padding:4px 10px;
+
+ border-radius:15px;
+
+ font-size:11px;
+
+ font-weight:700;
+
+}
+
+
+.alert-low{
+
+ background:#00e05a;
+
+ color:#041;
+
+ padding:4px 10px;
+
+ border-radius:15px;
+
+ font-size:11px;
+
+ font-weight:700;
+
+}
+
+
+
+/* EXPORT BUTTON AREA */
+
+.table-actions{
+
+ display:flex;
+
+ justify-content:flex-end;
+
+ gap:10px;
+
+ margin-bottom:8px;
+
+}
+
+
+.table-actions button{
+
+ padding:7px 14px;
+
+ border-radius:8px;
+
+ border:1px solid cyan;
+
+ background:
+ rgba(0,255,255,.15);
+
+ color:white;
+
+ cursor:pointer;
+
+ font-size:12px;
+
+ font-weight:600;
+
+ transition:.3s;
+
+}
+
+
+.table-actions button:hover{
+
+ background:#00ffff;
+
+ color:#001;
+
+ box-shadow:
+ 0 0 15px cyan;
+
+}
 
 /* =========================
    RESPONSIVE — below 900px, allow page scroll instead of squeezing everything
