@@ -1,244 +1,60 @@
 {% extends "base.html" %}
 
-
-{% block title %}
-
-AGIPL Home Dashboard
-
+{% block page_title %}
+AGIPL Digital Command Center
 {% endblock %}
 
-
-
+{% block page_subtitle %}
+{% endblock %}
 
 {% block content %}
 
-
-
 <div class="home-title">
-
-
-<h1>
-AGIPL Digital Command Center
-</h1>
-
-
-<p>
-Integrated Business Intelligence & Analytics Platform
-</p>
-
-
+  <h1>AGIPL Digital Command Center</h1>
+  <p>Integrated Business Intelligence &amp; Analytics Platform</p>
 </div>
-
-
-
-
 
 <div class="modules">
-
-
-
-<a href="/breakdown" class="card">
-
-
-<div class="icon">
-🛠
+  <a href="/breakdown" class="card">
+    <div class="icon">🛠</div>
+    <h2>Breakdown Analysis</h2>
+    <p>Machine Breakdown Monitoring Dashboard</p>
+  </a>
+  <a href="/fuel" class="card">
+    <div class="icon">⛽</div>
+    <h2>Fuel Analysis</h2>
+    <p>Fuel Consumption &amp; Tracking System</p>
+  </a>
+  <a href="/hr" class="card">
+    <div class="icon">👥</div>
+    <h2>HR Module</h2>
+    <p>Employee Analytics Dashboard</p>
+  </a>
+  <a href="/purchase" class="card">
+    <div class="icon">🛒</div>
+    <h2>Purchase Module</h2>
+    <p>Purchase Tracking &amp; Analysis</p>
+  </a>
+  <a href="/sales" class="card">
+    <div class="icon">📈</div>
+    <h2>Sales Module</h2>
+    <p>Sales Performance Dashboard</p>
+  </a>
+  <a href="/machinery" class="card">
+    <div class="icon">⚙</div>
+    <h2>Machinery Module</h2>
+    <p>Machinery Utilization Tracking</p>
+  </a>
+  <a href="/assets" class="card">
+    <div class="icon">🏢</div>
+    <h2>Assets Module</h2>
+    <p>Asset Register &amp; Tracking</p>
+  </a>
+  <a href="/it" class="card">
+    <div class="icon">💻</div>
+    <h2>IT Module</h2>
+    <p>IT Assets &amp; Support Tracking</p>
+  </a>
 </div>
-
-
-<h2>
-Breakdown Analysis
-</h2>
-
-
-<p>
-Machine Breakdown Monitoring Dashboard
-</p>
-
-
-</a>
-
-
-
-
-
-
-<a href="/fuel" class="card">
-
-
-<div class="icon">
-⛽
-</div>
-
-
-<h2>
-Fuel Analysis
-</h2>
-
-
-<p>
-Fuel Consumption & Tracking System
-</p>
-
-
-</a>
-
-
-
-
-
-
-<a href="/hr" class="card">
-
-
-<div class="icon">
-👥
-</div>
-
-
-<h2>
-HR Module
-</h2>
-
-
-<p>
-Employee Analytics Dashboard
-</p>
-
-
-</a>
-
-
-
-
-
-
-<a href="/purchase" class="card">
-
-
-<div class="icon">
-🛒
-</div>
-
-
-<h2>
-Purchase Module
-</h2>
-
-
-<p>
-Purchase Tracking & Analysis
-</p>
-
-
-</a>
-
-
-
-
-
-
-
-<a href="/sales" class="card">
-
-
-<div class="icon">
-📈
-</div>
-
-
-<h2>
-Sales Module
-</h2>
-
-
-<p>
-Sales Performance Dashboard
-</p>
-
-
-</a>
-
-
-
-
-
-
-
-<a href="/machinery" class="card">
-
-
-<div class="icon">
-⚙
-</div>
-
-
-<h2>
-Machinery Module
-</h2>
-
-
-<p>
-Equipment Monitoring System
-</p>
-
-
-</a>
-
-
-
-
-
-
-<a href="/assets" class="card">
-
-
-<div class="icon">
-🏢
-</div>
-
-
-<h2>
-Assets Module
-</h2>
-
-
-<p>
-Asset Management System
-</p>
-
-
-</a>
-
-
-
-
-
-
-<a href="/it" class="card">
-
-
-<div class="icon">
-💻
-</div>
-
-
-<h2>
-IT Module
-</h2>
-
-
-<p>
-IT Operations Dashboard
-</p>
-
-
-</a>
-
-
-
-</div>
-
-
-
 
 {% endblock %}
