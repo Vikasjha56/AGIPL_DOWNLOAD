@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block page_title %}
@@ -6,9 +5,7 @@
 {% endblock %}
 
 {% block page_subtitle %}
-
-
-<h3> Live Machine Breakdown Monitoring System </h3>
+<h3>Live Machine Breakdown Monitoring System</h3>
 {% endblock %}
 
 {% block content %}
@@ -128,17 +125,42 @@ const centerTotal = {
   id:"centerTotal",
   beforeDraw(chart){
     let ctx=chart.ctx;
-    let width=chart.width;
-    let height=chart.height;
+    let {left,right,top,bottom}=chart.chartArea;
+    let centerX=(left+right)/2;
+    let centerY=(top+bottom)/2;
     let total = chart.data.datasets[0].data.reduce((a,b)=>a+b,0);
     ctx.save();
     ctx.fillStyle="#ffffff";
     ctx.textAlign="center";
-    ctx.font="bold 12px Segoe UI";
-    ctx.fillText("TOTAL", width/2, height/2-10);
-    ctx.font="bold 22px Segoe UI";
-    ctx.fillText(total, width/2, height/2+16);
+    ctx.textBaseline="middle";
+    ctx.font="bold 11px Segoe UI";
+    ctx.fillText("TOTAL", centerX, centerY-10);
+    ctx.font="bold 20px Segoe UI";
+    ctx.fillText(total, centerX, centerY+10);
     ctx.restore();
+  }
+};
+
+const donutOptions = {
+  responsive:true,
+  maintainAspectRatio:false,
+  cutout:"65%",
+  plugins:{
+    legend:{
+      position:"bottom",
+      labels:{
+        color:"#ffffff",
+        boxWidth:10,
+        padding:8,
+        font:{
+          size:11,
+          weight:"bold"
+        }
+      }
+    },
+    datalabels:{
+      display:false
+    }
   }
 };
 
@@ -199,7 +221,7 @@ new Chart(
         ]
       }]
     },
-    options:commonOptions
+    options:donutOptions
   }
 );
 
@@ -221,7 +243,7 @@ new Chart(
         ]
       }]
     },
-    options:commonOptions
+    options:donutOptions
   }
 );
 </script>
