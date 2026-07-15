@@ -667,9 +667,9 @@ font-size:38px;
 
     grid-template-columns:repeat(auto-fit,minmax(50px,1fr));
 
-    gap:10px;
+    gap:20px;
 
-    width:15%;
+    width:40%;
 
     margin-bottom:10px;
 
@@ -837,9 +837,9 @@ grid-template-columns:1fr;
 
     grid-template-columns:repeat(auto-fit,minmax(50px,1fr));
 
-    gap:10px;
+    gap:20px;
 
-    width:15%;
+    width:40%;
 
     margin-bottom:10px;
 
@@ -907,13 +907,14 @@ opacity:.8;
 
     grid-template-columns:repeat(auto-fit,minmax(50px,1fr));
 
-    gap:10px;
+    gap:20px;
 
-    width:15%;
+    width:40%;
 
     margin-bottom:10px;
 
 }
+
 
 
 
