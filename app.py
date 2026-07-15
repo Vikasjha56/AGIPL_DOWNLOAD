@@ -108,18 +108,28 @@ def breakdown():
         master = MASTER_CACHE.copy()
         master.columns = master.columns.astype(str).str.strip()
 
-        # ---- DEBUG: prints exact column names + row count so you can
-        # see immediately in the terminal what the sheet actually gave us ----
-        print("DEBUG total rows in master:", len(master))
-        print("DEBUG columns found:", list(master.columns))
-        if "Resolved" in master.columns:
-            print("DEBUG unique Resolved values:", master["Resolved"].astype(str).str.strip().unique().tolist())
+        # ---- DEBUG INFO shown directly on the page (top banner) so no
+        # terminal access is needed to diagnose an empty dashboard ----
+        debug_info = {
+            "total_rows": len(master),
+            "columns": list(master.columns),
+            "resolved_values": [],
+            "resolved_no_count": 0,
+            "dropped_non_numeric": 0,
+        }
 
         if "Resolved" not in master.columns:
-            return (
-                "Breakdown Error : 'Resolved' column not found in sheet. "
-                "Columns available: " + ", ".join(master.columns)
+            debug_info["error"] = "'Resolved' column NOT FOUND in sheet."
+            return render_template(
+                "breakdown.html",
+                pending_records=[],
+                resolved_records=[],
+                debug_info=debug_info,
             )
+
+        debug_info["resolved_values"] = (
+            master["Resolved"].astype(str).str.strip().unique().tolist()
+        )
 
         # ======================
         # RESOLVED = NO FILTER (pending set)
@@ -127,12 +137,15 @@ def breakdown():
         resolved_col = master["Resolved"].astype(str).str.strip().str.upper()
         pending = master[resolved_col == "NO"].copy()
         resolved = master[resolved_col == "YES"].copy()
-        print("DEBUG rows where Resolved == NO:", len(pending))
+        debug_info["resolved_no_count"] = len(pending)
 
         if "Pending for (no of days)" not in master.columns:
-            return (
-                "Breakdown Error : 'Pending for (no of days)' column not found in sheet. "
-                "Columns available: " + ", ".join(master.columns)
+            debug_info["error"] = "'Pending for (no of days)' column NOT FOUND in sheet."
+            return render_template(
+                "breakdown.html",
+                pending_records=[],
+                resolved_records=[],
+                debug_info=debug_info,
             )
 
         pending["Pending Days"] = pd.to_numeric(
@@ -140,7 +153,7 @@ def breakdown():
         )
         before_drop = len(pending)
         pending = pending.dropna(subset=["Pending Days"])
-        print("DEBUG rows dropped (non-numeric Pending Days):", before_drop - len(pending))
+        debug_info["dropped_non_numeric"] = before_drop - len(pending)
         pending["Pending Days"] = pending["Pending Days"].astype(int)
 
         # ======================
@@ -173,10 +186,12 @@ def breakdown():
             for _, row in resolved.iterrows()
         ]
 
+        debug_info["final_pending_records"] = len(pending_records)
         return render_template(
             "breakdown.html",
             pending_records=pending_records,
             resolved_records=resolved_records,
+            debug_info=debug_info,
         )
 
     except Exception as e:
