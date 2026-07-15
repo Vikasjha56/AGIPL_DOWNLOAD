@@ -117,7 +117,7 @@
             <tr>
               <th data-key="no">No</th>
               <th data-key="site">Site</th>
-              <th data-key="date">Date of breakdown</th>
+              
               <th data-key="category">Category</th>
               <th data-key="vehicleNo">Vehicle No</th>
               <th data-key="details">Breakdown Details</th>
@@ -201,10 +201,6 @@ const ownedSel = document.getElementById("ownedSlicer");
 ownedVals.forEach(s=>{ const o=document.createElement("option"); o.value=s; o.textContent=s; ownedSel.appendChild(o); });
 ownedSel.addEventListener("change", ()=>{ filters.ownedHired = ownedSel.value; renderAll(); });
 
-const dateFromEl = document.getElementById("dateFrom");
-const dateToEl = document.getElementById("dateTo");
-dateFromEl.addEventListener("change", ()=>{ filters.dateFrom = dateFromEl.value ? new Date(dateFromEl.value) : null; renderAll(); });
-dateToEl.addEventListener("change", ()=>{ filters.dateTo = dateToEl.value ? new Date(dateToEl.value) : null; renderAll(); });
 
 document.getElementById("clearFiltersBtn").addEventListener("click", ()=>{
   filters.machine=null; filters.reason=null; filters.range=null; filters.site="All"; filters.ownedHired="All";
