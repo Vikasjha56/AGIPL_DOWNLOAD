@@ -20,19 +20,13 @@ CACHE_TIME = 0
 CACHE_DURATION = 300
 
 
-
-
 # ==========================
 # HOME
 # ==========================
 
 @app.route("/")
 def home():
-
     return render_template("index.html")
-
-
-
 
 
 # ==========================
@@ -41,34 +35,14 @@ def home():
 
 @app.route("/download_excel")
 def download_excel():
-
     try:
-
         print("Creating Master Table for Excel...")
-
         master = get_master_table()
-
-
         print("Generating Excel...")
-
-
         file_path = create_excel(master)
-
-
-        return send_file(
-            file_path,
-            as_attachment=True
-        )
-
-
+        return send_file(file_path, as_attachment=True)
     except Exception as e:
-
         return f"Excel Error : {str(e)}"
-
-
-
-
-
 
 
 # ==========================
@@ -77,35 +51,14 @@ def download_excel():
 
 @app.route("/download_pdf")
 def download_pdf():
-
     try:
-
         print("Creating Master Table for PDF...")
-
-
         master = get_master_table()
-
-
         print("Generating PDF...")
-
-
         file_path = create_pdf(master)
-
-
-        return send_file(
-            file_path,
-            as_attachment=True
-        )
-
-
+        return send_file(file_path, as_attachment=True)
     except Exception as e:
-
         return f"PDF Error : {str(e)}"
-
-
-
-
-
 
 
 # ==========================
@@ -114,432 +67,123 @@ def download_pdf():
 
 @app.route("/modules")
 def modules():
-
     return render_template("modules.html")
-
-
 
 
 @app.route("/reports")
 def reports():
-
     return render_template("reports.html")
-
-
-
-
 
 
 # ==========================
 # BREAKDOWN DASHBOARD
+# (now sends ROW-LEVEL data as JSON so the client can cross-filter
+#  KPIs + all 4 charts together on every click / slicer change)
 # ==========================
 
 @app.route("/breakdown")
 def breakdown():
-
     global MASTER_CACHE, CACHE_TIME
 
-
     try:
-
-
         current_time = time.time()
-
-
 
         # ======================
         # LOAD DATA WITH CACHE
         # ======================
-
-
-        if (
-            MASTER_CACHE is None
-            or current_time - CACHE_TIME > CACHE_DURATION
-        ):
-
-
+        if MASTER_CACHE is None or current_time - CACHE_TIME > CACHE_DURATION:
             print("Loading Google Sheets Data...")
-
-
             try:
-
                 MASTER_CACHE = get_master_table()
-
-
                 CACHE_TIME = current_time
-
-
             except Exception as err:
-
-
-                print(
-                    "GOOGLE SHEET ERROR:",
-                    err
-                )
-
-
-                return (
-                    "Google Sheet Loading Error : "
-                    + str(err)
-                )
-
-
-
+                print("GOOGLE SHEET ERROR:", err)
+                return "Google Sheet Loading Error : " + str(err)
         else:
-
-
             print("Using Cached Data...")
 
-
-
-
         master = MASTER_CACHE.copy()
-
-
-
-        master.columns = (
-            master.columns
-            .astype(str)
-            .str.strip()
-        )
-
-
-
-        print(
-            "Columns:",
-            master.columns.tolist()
-        )
-
-
-
-
-
+        master.columns = master.columns.astype(str).str.strip()
 
         # ======================
-        # RESOLVED = NO FILTER
+        # RESOLVED = NO FILTER (pending set)
         # ======================
-
-
-        pending = master[
-
-            master["Resolved"]
-            .astype(str)
-            .str.strip()
-            .str.upper()
-            ==
-            "NO"
-
-        ].copy()
-
-
-
-
+        resolved_col = master["Resolved"].astype(str).str.strip().str.upper()
+        pending = master[resolved_col == "NO"].copy()
+        resolved = master[resolved_col == "YES"].copy()
 
         pending["Pending Days"] = pd.to_numeric(
-
-            pending["Pending for (no of days)"],
-
-            errors="coerce"
-
+            pending["Pending for (no of days)"], errors="coerce"
         )
-
-
-
-
-
+        pending = pending.dropna(subset=["Pending Days"])
+        pending["Pending Days"] = pending["Pending Days"].astype(int)
 
         # ======================
-        # KPI
+        # ROW-LEVEL RECORDS FOR CLIENT-SIDE FILTERING
         # ======================
-
-
-        pending_count = len(pending)
-
-
-
-        pending_15_data = pending[
-
-            pending["Pending Days"] > 15
-
+        pending_records = [
+            {
+                "category": str(row.get("Category", "Not Defined") or "Not Defined"),
+                "site": str(row.get("Site", "Not Defined") or "Not Defined"),
+                "days": int(row["Pending Days"]),
+                "reason": str(row.get("Reason for pendency", "Not Defined") or "Not Defined"),
+            }
+            for _, row in pending.iterrows()
         ]
 
-
-
-        pending_15 = len(
-            pending_15_data
-        )
-
-
-
-
-
-
-        # ======================
-        # AGE RANGE
-        # ======================
-
-
-        range_data = {
-
-
-            "0-7 Days":
-
-            len(
-                pending[
-                    (pending["Pending Days"] >=0)
-                    &
-                    (pending["Pending Days"] <=7)
-                ]
-            ),
-
-
-
-            "8-15 Days":
-
-            len(
-                pending[
-                    (pending["Pending Days"] >=8)
-                    &
-                    (pending["Pending Days"] <=15)
-                ]
-            ),
-
-
-
-            "16-30 Days":
-
-            len(
-                pending[
-                    (pending["Pending Days"] >=16)
-                    &
-                    (pending["Pending Days"] <=30)
-                ]
-            ),
-
-
-
-            "31+ Days":
-
-            len(
-                pending[
-                    pending["Pending Days"] >30
-                ]
-            )
-
-        }
-
-
-
-
-
-
-
-        # ======================
-        # MACHINE WISE
-        # ======================
-
-
-        machine_data = (
-
-            pending_15_data["Category"]
-
-            .fillna("Not Defined")
-
-            .value_counts()
-
-            .head(10)
-
-        )
-
-
-
-
-
-
-        # ======================
-        # SITE WISE
-        # ======================
-
-
-        site_data = (
-
-            pending["Site"]
-
-            .fillna("Not Defined")
-
-            .value_counts()
-
-        )
-
-
-
-
-
-
-
-        # ======================
-        # REASON WISE
-        # ======================
-
-
-        reason_data = (
-
-            pending_15_data["Reason for pendency"]
-
-            .fillna("Not Defined")
-
-            .value_counts()
-
-        )
-
-
-
-
-
-
-
+        resolved_records = [
+            {"site": str(row.get("Site", "Not Defined") or "Not Defined")}
+            for _, row in resolved.iterrows()
+        ]
 
         return render_template(
-
-
             "breakdown.html",
-
-
-
-            pending_count=pending_count,
-
-
-
-            pending_15=pending_15,
-
-
-
-
-            range_labels=list(
-                range_data.keys()
-            ),
-
-
-            range_values=list(
-                range_data.values()
-            ),
-
-
-
-
-            machine_labels=
-            machine_data.index.tolist(),
-
-
-
-            machine_values=
-            machine_data.values.tolist(),
-
-
-
-
-
-            site_labels=
-            site_data.index.tolist(),
-
-
-
-            site_values=
-            site_data.values.tolist(),
-
-
-
-
-
-            reason_labels=
-            reason_data.index.tolist(),
-
-
-
-            reason_values=
-            reason_data.values.tolist()
-
+            pending_records=pending_records,
+            resolved_records=resolved_records,
         )
-
-
-
-
 
     except Exception as e:
-
-
-        print(
-            "BREAKDOWN ERROR:",
-            e
-        )
-
-
-        return (
-            "Breakdown Error : "
-            + str(e)
-        )
-
-
-
-
-
-
+        print("BREAKDOWN ERROR:", e)
+        return "Breakdown Error : " + str(e)
 
 
 # ==========================
 # OTHER MODULES
 # ==========================
 
-
 @app.route("/fuel")
 def fuel():
-
     return render_template("fuel.html")
-
 
 
 @app.route("/hr")
 def hr():
-
     return render_template("hr.html")
-
 
 
 @app.route("/purchase")
 def purchase():
-
     return render_template("purchase.html")
-
 
 
 @app.route("/sales")
 def sales():
-
     return render_template("sales.html")
-
 
 
 @app.route("/machinery")
 def machinery():
-
     return render_template("machinery.html")
-
 
 
 @app.route("/assets")
 def assets():
-
     return render_template("assets.html")
-
 
 
 @app.route("/it")
 def it():
-
     return render_template("it.html")
-
-
-
 
 
 # ==========================
@@ -547,5 +191,4 @@ def it():
 # ==========================
 
 if __name__ == "__main__":
-
     app.run()
