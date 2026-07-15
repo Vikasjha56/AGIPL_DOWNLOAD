@@ -77,80 +77,17 @@
     </div>
   </div>
 
-  <!-- ================= BD DETAILS TABLE ================= -->
-
-<div id="tab-details" class="tab-panel" style="display:none;">
-
-<div class="details-panel">
-
-<div class="details-header">
-
-<h2>
-📋 Machine Breakdown Details
-</h2>
-
-
-<div class="export-buttons">
-
-<button id="exportExcel">
-⬇ Export Excel
-</button>
-
-
-<button id="exportPdf">
-⬇ Export PDF
-</button>
-
-</div>
-
-</div>
-
-
-<div class="table-container">
-
-<table id="bdTable">
-
-<thead>
-
-<tr>
-
-<th data-key="no">No</th>
-
-<th data-key="site">Site</th>
-
-<th data-key="date">Date of Breakdown</th>
-
-<th data-key="category">Category</th>
-
-<th data-key="vehicle">Vehicle No</th>
-
-<th data-key="details">Breakdown Details</th>
-
-<th data-key="reason">Reason For Pency</th>
-
-<th data-key="days">Pending Days</th>
-
-<th data-key="alert">Alert</th>
-
-
-</tr>
-
-</thead>
-
-
-<tbody id="bdBody">
-
-</tbody>
-
-
-</table>
-
-
-</div>
-
-
-</div>
-
+  <div id="tab-details" class="tab-panel" style="display:none;">
+    <div class="chart-card details-card">
+      <h2>Breakdown Details (filtered)</h2>
+      <div class="details-wrap">
+        <table class="details-table">
+          <thead><tr><th>Machine / Category</th><th>Site</th><th>Pending Days</th><th>Reason</th></tr></thead>
+          <tbody id="detailsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
 </div>
 
@@ -165,6 +102,10 @@ Chart.register(ChartDataLabels);
 
 const allData = JSON.parse(document.getElementById("pendingData").textContent);
 const RESOLVED_SAMPLE = JSON.parse(document.getElementById("resolvedData").textContent);
+
+
+
+yaha se new
 
 const filters = {site:"All", machine:null, reason:null, range:null};
 const RANGE_COLORS = {"0-5 Days":"#00e05a","6-30 Days":"#ffaa00","31+ Days":"#ff2d55"};
@@ -305,54 +246,13 @@ function renderAll(){
 
   if(document.getElementById("tab-details").style.display !== "none") renderDetails();
 }
+
 function renderDetails(){
-
   const data = getBase(null);
-
-  const body = document.getElementById("bdBody");
-
-  body.innerHTML = data.map((r,index)=>{
-
-    let alertClass="";
-    let alertText="";
-
-    if(r.days > 30){
-      alertClass="alert-high";
-      alertText="High";
-    }
-    else if(r.days >= 6){
-      alertClass="alert-medium";
-      alertText="Medium";
-    }
-    else{
-      alertClass="alert-low";
-      alertText="Low";
-    }
-
-    return `
-    <tr>
-
-      <td>${index+1}</td>
-      <td>${r.site}</td>
-      <td>${r.date}</td>
-      <td>${r.category}</td>
-      <td>${r.vehicle || "-"}</td>
-      <td>${r.details || "-"}</td>
-      <td>${r.reason || "-"}</td>
-      <td>${r.days}</td>
-
-      <td>
-        <span class="${alertClass}">
-          ${alertText}
-        </span>
-      </td>
-
-    </tr>
-    `;
-
-  }).join("");
-
+  const body = document.getElementById("detailsBody");
+  body.innerHTML = data.map(r=>`<tr><td>${r.category}</td><td>${r.site}</td><td>${r.days}</td><td>${r.reason}</td></tr>`).join("");
 }
+
 renderAll();
 </script>
 {% endblock %}
