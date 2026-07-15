@@ -1,75 +1,196 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Breakdown Analysis Dashboard</title>
+<style>
+*{box-sizing:border-box;font-family:'Segoe UI',Arial,sans-serif;}
+body{margin:0;color:white;min-height:100vh;overflow-x:hidden;background:#061426;}
+.background-animation{position:fixed;inset:0;z-index:-1;
+  background:radial-gradient(circle at 20% 20%,#00ffff66,transparent 30%),
+             radial-gradient(circle at 80% 70%,#0077ff88,transparent 35%),
+             linear-gradient(135deg,#020b18,#123d68);
+  animation:moveBackground 12s infinite alternate;}
+@keyframes moveBackground{from{transform:scale(1);}to{transform:scale(1.08);}}
 
-{% block page_title %}
-🛠 Breakdown Analysis Dashboard
-{% endblock %}
+.navbar{position:sticky;top:0;z-index:1000;height:60px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;background:rgba(255,255,255,.12);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.25);
+  box-shadow:0 8px 30px #0008;}
+.brand{display:flex;align-items:center;gap:10px;}
+.logo-circle{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:white;
+  color:#063b78;font-size:15px;font-weight:bold;box-shadow:0 0 14px cyan;animation:pulse 3s infinite;}
+@keyframes pulse{50%{box-shadow:0 0 24px cyan;}}
+.brand-text{font-size:17px;font-weight:bold;}
 
-{% block page_subtitle %}
-<h3>Live Machine Breakdown Monitoring System</h3>
-{% endblock %}
+.main{margin-left:0;width:100%;padding:16px;box-sizing:border-box;}
 
-{% block content %}
-<div class="kpi-container">
-<div class="kpi-card">
-<h3>
-Total Pending Cases
-</h3>
-<h1>
-{{pending_count}}
-</h1>
-<span>
-Resolved : NO
-</span>
-</div>
-<div class="kpi-card">
-<h3>
-Critical Pending > 15 Days
-</h3>
-<h1>
-{{pending_15}}
-</h1>
-<span>
-Pending Ageing
-</span>
-</div>
+/* ============ TOOLBAR: slicer + tabs ============ */
+.toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;
+  padding:14px 20px;margin-bottom:16px;border-radius:16px;background:rgba(255,255,255,.12);backdrop-filter:blur(20px);
+  box-shadow:0 15px 40px #0008;}
+.header-text h1{font-size:clamp(20px,2.4vw,26px);margin:0;text-shadow:0 0 10px cyan;}
+.header-text p{margin:2px 0 0;font-size:12.5px;opacity:.75;}
+.toolbar-group{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.toolbar-group label{font-size:13px;font-weight:600;opacity:.85;}
+select.slicer{padding:9px 14px;border-radius:10px;border:1px solid rgba(0,255,255,.5);
+  background:rgba(255,255,255,.1);color:#fff;font-size:13.5px;outline:none;}
+select.slicer option{color:#000;}
+.tabs{display:flex;gap:8px;background:rgba(255,255,255,.08);padding:4px;border-radius:12px;}
+.tab-btn{border:none;padding:9px 18px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;
+  background:transparent;color:#fff;opacity:.7;transition:.25s;}
+.tab-btn.active{background:linear-gradient(135deg,#0077ff,#00c6ff);opacity:1;box-shadow:0 0 16px cyan;}
+.tab-btn:hover{opacity:1;}
+.status{background:rgba(0,255,120,.25);padding:8px 16px;border-radius:20px;box-shadow:0 0 14px #00ff88;font-size:12.5px;white-space:nowrap;}
+.clear-filters{border:1px solid rgba(255,80,80,.6);background:rgba(255,60,60,.15);color:#fff;padding:8px 14px;
+  border-radius:10px;font-size:12.5px;cursor:pointer;display:none;}
+.clear-filters.show{display:inline-block;}
+
+/* ============ KPI ROW ============ */
+.kpi-container{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:16px;margin-bottom:16px;}
+.kpi-card{background:linear-gradient(145deg,rgba(0,255,255,.22),rgba(255,255,255,.08));border-radius:16px;padding:16px 18px;
+  border:1px solid rgba(0,255,255,.5);box-shadow:0 10px 25px #000;text-align:center;transition:.3s;cursor:default;}
+.kpi-card:hover{transform:translateY(-4px) scale(1.015);box-shadow:0 0 22px cyan;}
+.kpi-card h3{font-size:13px;font-weight:600;opacity:.9;margin:0;}
+.kpi-card h1{font-size:clamp(26px,2.6vw,34px);color:#fff;text-shadow:0 0 10px cyan;margin:8px 0;}
+.kpi-card span{font-size:12px;opacity:.75;}
+
+.kpi-range-card{grid-column:span 2;display:flex;flex-direction:column;gap:8px;padding:14px 18px;}
+.kpi-range-card h3{font-size:13px;text-align:left;}
+.range-legend{display:flex;gap:14px;font-size:11.5px;opacity:.85;flex-wrap:wrap;}
+.range-legend span{display:inline-flex;align-items:center;gap:5px;}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+.range-bars{display:flex;gap:6px;height:56px;}
+.range-seg{flex:1 1 0;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:bold;
+  font-size:18px;cursor:pointer;transition:.25s;border:2px solid transparent;text-shadow:0 1px 3px #0007;}
+.range-seg:hover{transform:translateY(-3px);}
+.range-seg.dim{opacity:.35;}
+.range-seg.sel{border-color:#fff;box-shadow:0 0 14px #fff8;}
+
+/* ============ CHART GRID (big) ============ */
+.chart-grid-top{margin-bottom:16px;}
+.chart-grid-bottom{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.chart-card{padding:16px;border-radius:16px;background:rgba(255,255,255,.12);backdrop-filter:blur(20px);
+  border:1px solid rgba(0,255,255,.35);box-shadow:0 15px 35px rgba(0,0,0,.6);transition:.3s;}
+.chart-card:hover{box-shadow:0 0 22px cyan;}
+.chart-card h2{text-align:center;color:#fff;text-shadow:0 0 8px cyan;font-size:15px;margin:0 0 10px 0;}
+.chart-box{position:relative;width:100%;height:340px;}
+.chart-box.big{height:380px;}
+.chart-box canvas{width:100% !important;height:100% !important;}
+
+.footer-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:16px;}
+.mini-kpi{background:rgba(255,255,255,.1);border-radius:14px;padding:12px;text-align:center;border:1px solid rgba(255,255,255,.2);}
+.mini-kpi h4{margin:0;font-size:12px;opacity:.8;font-weight:600;}
+.mini-kpi p{margin:6px 0 0;font-size:20px;font-weight:bold;text-shadow:0 0 8px cyan;}
+
+.details-table{width:100%;border-collapse:collapse;font-size:13px;}
+.details-table th,.details-table td{padding:9px 12px;text-align:left;border-bottom:1px solid rgba(255,255,255,.15);}
+.details-table th{background:rgba(0,255,255,.15);position:sticky;top:0;}
+.details-wrap{max-height:520px;overflow:auto;border-radius:12px;}
+
+footer{text-align:center;padding:16px;opacity:.7;font-size:13px;}
+@media(max-width:900px){.chart-grid-bottom{grid-template-columns:1fr;}.kpi-range-card{grid-column:span 1;}}
+</style>
+</head>
+<body>
+<div class="background-animation"></div>
+
+<div class="navbar">
+  <div class="brand">
+    <div class="logo-circle">AG</div>
+    <div class="brand-text">AGIPL Digital Portal</div>
+  </div>
+  <div class="status" id="lastUpdated">🟢 System Online</div>
 </div>
 
-<div class="chart-grid">
-<div class="chart-card">
-<h2>
-Pending Ageing Range
-</h2>
-<div class="chart-box">
-<canvas id="rangeChart"></canvas>
-</div>
-</div>
+<div class="main">
 
-<div class="chart-card">
-<h2>
-Machine Wise Pending >15 Days
-</h2>
-<div class="chart-box">
-<canvas id="machineChart"></canvas>
-</div>
-</div>
+  <div class="toolbar">
+    <div class="header-text">
+      <h1>🛠 Breakdown Analysis Dashboard</h1>
+      <p>Live Machine Breakdown Monitoring System</p>
+    </div>
 
-<div class="chart-card donut">
-<h2>
-Breakdown Machine Count By Site
-</h2>
-<div class="chart-box">
-<canvas id="siteChart"></canvas>
-</div>
-</div>
+    <div class="toolbar-group">
+      <label>Site Selection</label>
+      <select class="slicer" id="siteSlicer"></select>
+    </div>
 
-<div class="chart-card donut">
-<h2>
-Reason For Pendency >15 Days
-</h2>
-<div class="chart-box">
-<canvas id="reasonChart"></canvas>
-</div>
-</div>
+    <div class="toolbar-group">
+      <span class="tabs">
+        <button class="tab-btn active" data-tab="analysis">Breakdown Analysis</button>
+        <button class="tab-btn" data-tab="details">BD Details</button>
+      </span>
+    </div>
+
+    <button class="clear-filters" id="clearFiltersBtn">✕ Clear chart filters</button>
+  </div>
+
+  <!-- ============ TAB: ANALYSIS ============ -->
+  <div id="tab-analysis">
+
+    <div class="kpi-container">
+      <div class="kpi-card">
+        <h3>Total Pending Cases</h3>
+        <h1 id="kpiPending">0</h1>
+        <span>Resolved : NO</span>
+      </div>
+      <div class="kpi-card">
+        <h3>Critical Pending &gt; 15 Days</h3>
+        <h1 id="kpiPending15">0</h1>
+        <span>Pending Ageing</span>
+      </div>
+      <div class="kpi-range-card">
+        <h3>Machine Count by Pending Days Range</h3>
+        <div class="range-legend">
+          <span><i class="dot" style="background:#00e05a"></i>0-5 Days</span>
+          <span><i class="dot" style="background:#ffaa00"></i>6-30 Days</span>
+          <span><i class="dot" style="background:#ff2d55"></i>Over &gt; 30 Days</span>
+        </div>
+        <div class="range-bars" id="rangeBars"></div>
+      </div>
+    </div>
+
+    <div class="chart-grid-top">
+      <div class="chart-card">
+        <h2>Machine-wise Pending Cases (&gt; 15 days)</h2>
+        <div class="chart-box big"><canvas id="machineChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="chart-grid-bottom">
+      <div class="chart-card">
+        <h2>Breakdown Machine Count by Site</h2>
+        <div class="chart-box"><canvas id="siteChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h2>Pending Distribution (&gt; 15 Days)</h2>
+        <div class="chart-box"><canvas id="reasonChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="footer-kpis">
+      <div class="mini-kpi"><h4>Avg. Days Pending</h4><p id="kpiAvg">--</p></div>
+      <div class="mini-kpi"><h4>High Priority (&gt;30d)</h4><p id="kpiHigh">--</p></div>
+      <div class="mini-kpi"><h4>Medium Priority (8-30d)</h4><p id="kpiMed">--</p></div>
+      <div class="mini-kpi"><h4>Low Priority (0-7d)</h4><p id="kpiLow">--</p></div>
+      <div class="mini-kpi"><h4>Resolved (Site)</h4><p id="kpiResolved">--</p></div>
+    </div>
+  </div>
+
+  <!-- ============ TAB: DETAILS ============ -->
+  <div id="tab-details" style="display:none;">
+    <div class="chart-card">
+      <h2>Breakdown Details (filtered)</h2>
+      <div class="details-wrap">
+        <table class="details-table">
+          <thead><tr><th>Machine / Category</th><th>Site</th><th>Pending Days</th><th>Reason</th></tr></thead>
+          <tbody id="detailsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <footer>AGIPL Digital Transformation Platform</footer>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -77,174 +198,202 @@ Reason For Pendency >15 Days
 <script>
 Chart.register(ChartDataLabels);
 
-const commonOptions = {
-  responsive:true,
-  maintainAspectRatio:false,
-  plugins:{
-    legend:{
-      labels:{
-        color:"#ffffff",
-        font:{
-          size:12,
-          weight:"bold"
-        }
-      }
-    },
-    datalabels:{
-      color:"#ffffff",
-      font:{
-        size:12,
-        weight:"bold"
-      },
-      formatter:(value)=>value
-    }
-  },
-  scales:{
-    x:{
-      ticks:{
-        color:"#ffffff",
-        font:{ size:11 }
-      },
-      grid:{
-        color:"rgba(255,255,255,0.15)"
-      }
-    },
-    y:{
-      ticks:{
-        color:"#ffffff",
-        font:{ size:11 }
-      },
-      grid:{
-        color:"rgba(255,255,255,0.15)"
-      }
-    }
-  }
+/* ================= SAMPLE DATA (replace with backend JSON in production) ================= */
+const RESOLVED_SAMPLE = [
+  {site:"Ircon 1A"},{site:"Ircon 1A"},{site:"AMO"},{site:"Nagpur"},{site:"Aurangabad"},{site:"Ircon 1B"}
+];
+
+function R(cat,site,days,reason){return {category:cat,site:site,days:days,reason:reason};}
+const allData = [
+  R("Hmv Tipper","Ircon 1A",18,"Indent not done"),
+  R("Hmv Tipper","Ircon 1A",22,"Mechanic not available"),
+  R("Lmv Camper/Pickup","Ircon 1B",19,"Material not received"),
+  R("Lmv Camper/Pickup","Nagpur",31,"Indent not done"),
+  R("Tower Light","AMO",17,"WIP at site"),
+  R("Tower Light","Aurangabad",25,"Breakdown under inspection"),
+  R("Backhoe Loader","Ircon 1A",20,"Indent not done"),
+  R("Diesel Generator","Nagpur",33,"Breakdown under inspection"),
+  R("Excavator","Ircon 1A",16,"Material not received"),
+  R("Hydra Crane","Aurangabad",29,"Other"),
+  R("TM","AMO",21,"Other"),
+  R("Tractor","Ircon 1B",35,"Other"),
+  R("Wheel Loader","Ircon 1A",3,"WIP at site"),
+  R("Wheel Loader","Ircon 1A",5,"WIP at site"),
+  R("Crane","Ircon 1A",1,"Material not received"),
+  R("Crane","Ircon 1A",2,"Material not received"),
+  R("Dozer","Ircon 1A",4,"Indent not done"),
+  R("Dozer","Ircon 1A",7,"Indent not done"),
+  R("Tipper","Ircon 1A",2,"WIP at site"),
+  R("Tipper","AMO",6,"Indent not done"),
+  R("Tipper","AMO",3,"Mechanic not available"),
+  R("Grader","Aurangabad",1,"WIP at site"),
+  R("Grader","Aurangabad",4,"WIP at site"),
+  R("Compactor","Ircon 1B",2,"Indent not done"),
+  R("Compactor","Ircon 1B",5,"Indent not done"),
+  R("Loader","Nagpur",1,"Material not received"),
+  R("Loader","Nagpur",6,"Material not received"),
+  R("Loader","Nagpur",3,"WIP at site"),
+];
+
+/* ================= FILTER STATE ================= */
+const filters = {site:"All", machine:null, reason:null, range:null};
+
+const RANGE_COLORS = {"0-5 Days":"#00e05a","6-30 Days":"#ffaa00","31+ Days":"#ff2d55"};
+function rangeOf(d){ if(d<=5) return "0-5 Days"; if(d<=30) return "6-30 Days"; return "31+ Days"; }
+
+function getBase(excludeType){
+  return allData.filter(r=>{
+    if(filters.site!=="All" && r.site!==filters.site) return false;
+    if(excludeType!=="machine" && filters.machine && r.category!==filters.machine) return false;
+    if(excludeType!=="reason" && filters.reason && r.reason!==filters.reason) return false;
+    if(excludeType!=="range" && filters.range && rangeOf(r.days)!==filters.range) return false;
+    return true;
+  });
+}
+function countBy(arr, key){
+  const m={};
+  arr.forEach(r=>{ m[r[key]] = (m[r[key]]||0)+1; });
+  return m;
+}
+function toggleFilter(type, value){
+  if(filters[type]===value){ filters[type]=null; } else { filters[type]=value; }
+  if(type==="site"){ document.getElementById("siteSlicer").value = filters.site || "All"; }
+  renderAll();
+}
+
+/* ================= SITE SLICER ================= */
+const sites = ["All", ...new Set(allData.map(r=>r.site))];
+const siteSel = document.getElementById("siteSlicer");
+sites.forEach(s=>{ const o=document.createElement("option"); o.value=s; o.textContent=s; siteSel.appendChild(o); });
+siteSel.addEventListener("change", ()=>{ filters.site = siteSel.value; renderAll(); });
+
+document.getElementById("clearFiltersBtn").addEventListener("click", ()=>{
+  filters.machine=null; filters.reason=null; filters.range=null; filters.site="All"; siteSel.value="All";
+  renderAll();
+});
+
+/* ================= TABS ================= */
+document.querySelectorAll(".tab-btn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    const tab = btn.dataset.tab;
+    document.getElementById("tab-analysis").style.display = tab==="analysis" ? "" : "none";
+    document.getElementById("tab-details").style.display = tab==="details" ? "" : "none";
+    if(tab==="details") renderDetails();
+  });
+});
+
+/* ================= CHARTS ================= */
+const commonOpts = {
+  responsive:true, maintainAspectRatio:false,
+  plugins:{ legend:{labels:{color:"#fff",font:{size:12,weight:"bold"}}},
+    datalabels:{color:"#fff",font:{size:12,weight:"bold"},formatter:v=>v} },
+  scales:{ x:{ticks:{color:"#fff",font:{size:11}},grid:{color:"rgba(255,255,255,.15)"}},
+           y:{ticks:{color:"#fff",font:{size:11}},grid:{color:"rgba(255,255,255,.15)"},beginAtZero:true} }
 };
+const centerTotal = { id:"centerTotal", beforeDraw(chart){
+  const {ctx}=chart, {left,right,top,bottom}=chart.chartArea;
+  const cx=(left+right)/2, cy=(top+bottom)/2;
+  const total = chart.data.datasets[0].data.reduce((a,b)=>a+b,0);
+  ctx.save(); ctx.fillStyle="#fff"; ctx.textAlign="center"; ctx.textBaseline="middle";
+  ctx.font="bold 12px Segoe UI"; ctx.fillText("TOTAL",cx,cy-11);
+  ctx.font="bold 24px Segoe UI"; ctx.fillText(total,cx,cy+12);
+  ctx.restore();
+}};
+const donutOpts = { responsive:true, maintainAspectRatio:false, cutout:"65%",
+  plugins:{ legend:{position:"bottom",labels:{color:"#fff",boxWidth:10,padding:8,font:{size:11,weight:"bold"}}},
+            datalabels:{display:true,color:"#fff",font:{size:12,weight:"bold"}} } };
 
-const centerTotal = {
-  id:"centerTotal",
-  beforeDraw(chart){
-    let ctx=chart.ctx;
-    let {left,right,top,bottom}=chart.chartArea;
-    let centerX=(left+right)/2;
-    let centerY=(top+bottom)/2;
-    let total = chart.data.datasets[0].data.reduce((a,b)=>a+b,0);
-    ctx.save();
-    ctx.fillStyle="#ffffff";
-    ctx.textAlign="center";
-    ctx.textBaseline="middle";
-    ctx.font="bold 11px Segoe UI";
-    ctx.fillText("TOTAL", centerX, centerY-10);
-    ctx.font="bold 20px Segoe UI";
-    ctx.fillText(total, centerX, centerY+10);
-    ctx.restore();
-  }
-};
+const machineChart = new Chart(document.getElementById("machineChart"), {
+  type:"bar",
+  data:{ labels:[], datasets:[{ label:"Cases", data:[], borderRadius:10,
+    backgroundColor:["#ff5fa8","#e6cf3c","#3b4d9c","#1e90ff","#7a2ea1","#7d7d7d","#b39ddb","#d9756a","#1e90ff","#00c6ff"] }] },
+  options:{ ...commonOpts, onClick:(evt,els,chart)=>{ if(els.length){ const label=chart.data.labels[els[0].index]; toggleFilter("machine", label); } } }
+});
 
-const donutOptions = {
-  responsive:true,
-  maintainAspectRatio:false,
-  cutout:"65%",
-  plugins:{
-    legend:{
-      position:"bottom",
-      labels:{
-        color:"#ffffff",
-        boxWidth:10,
-        padding:8,
-        font:{
-          size:11,
-          weight:"bold"
-        }
-      }
-    },
-    datalabels:{
-      display:false
-    }
-  }
-};
+const siteChart = new Chart(document.getElementById("siteChart"), {
+  type:"doughnut", plugins:[centerTotal],
+  data:{ labels:[], datasets:[{ data:[], backgroundColor:["#00ffff","#0077ff","#00ff88","#ffaa00","#ff0055","#7a2ea1","#e6cf3c"] }] },
+  options:{ ...donutOpts, onClick:(evt,els,chart)=>{ if(els.length){ const label=chart.data.labels[els[0].index]; toggleFilter("site", label); } } }
+});
 
-new Chart(
-  document.getElementById("rangeChart"),
-  {
-    type:"bar",
-    data:{
-      labels:{{range_labels|safe}},
-      datasets:[{
-        label:"Cases",
-        data:{{range_values|safe}},
-        backgroundColor:[
-          "#00ffff",
-          "#00ff88",
-          "#ffaa00",
-          "#ff0055"
-        ],
-        borderRadius:10
-      }]
-    },
-    options:commonOptions
-  }
-);
+const reasonChart = new Chart(document.getElementById("reasonChart"), {
+  type:"doughnut", plugins:[centerTotal],
+  data:{ labels:[], datasets:[{ data:[], backgroundColor:["#ff0055","#ffaa00","#00ffff","#00ff88","#0077ff","#7a2ea1"] }] },
+  options:{ ...donutOpts, onClick:(evt,els,chart)=>{ if(els.length){ const label=chart.data.labels[els[0].index]; toggleFilter("reason", label); } } }
+});
 
-new Chart(
-  document.getElementById("machineChart"),
-  {
-    type:"bar",
-    data:{
-      labels:{{machine_labels|safe}},
-      datasets:[{
-        label:"Machines",
-        data:{{machine_values|safe}},
-        backgroundColor:"#00ffff",
-        borderRadius:10
-      }]
-    },
-    options:commonOptions
-  }
-);
+/* ================= RENDER ================= */
+function renderRangeBars(){
+  const data = getBase("range");
+  const buckets = {"0-5 Days":0,"6-30 Days":0,"31+ Days":0};
+  data.forEach(r=>{ buckets[rangeOf(r.days)]++; });
+  const wrap = document.getElementById("rangeBars");
+  wrap.innerHTML = "";
+  Object.entries(buckets).forEach(([label,count])=>{
+    const seg = document.createElement("div");
+    seg.className = "range-seg" + (filters.range && filters.range!==label ? " dim":"") + (filters.range===label ? " sel":"");
+    seg.style.background = RANGE_COLORS[label];
+    seg.style.flexGrow = Math.max(count,0.3);
+    seg.textContent = count;
+    seg.title = label;
+    seg.addEventListener("click", ()=>toggleFilter("range", label));
+    wrap.appendChild(seg);
+  });
+}
 
-new Chart(
-  document.getElementById("siteChart"),
-  {
-    type:"doughnut",
-    plugins:[centerTotal],
-    data:{
-      labels:{{site_labels|safe}},
-      datasets:[{
-        data:{{site_values|safe}},
-        backgroundColor:[
-          "#00ffff",
-          "#0077ff",
-          "#00ff88",
-          "#ffaa00",
-          "#ff0055"
-        ]
-      }]
-    },
-    options:donutOptions
-  }
-);
+function renderAll(){
+  const kpiBase = getBase(null);
+  document.getElementById("kpiPending").textContent = kpiBase.length;
+  document.getElementById("kpiPending15").textContent = kpiBase.filter(d=>d.days>15).length;
 
-new Chart(
-  document.getElementById("reasonChart"),
-  {
-    type:"doughnut",
-    plugins:[centerTotal],
-    data:{
-      labels:{{reason_labels|safe}},
-      datasets:[{
-        data:{{reason_values|safe}},
-        backgroundColor:[
-          "#ff0055",
-          "#ffaa00",
-          "#00ffff",
-          "#00ff88",
-          "#0077ff"
-        ]
-      }]
-    },
-    options:donutOptions
-  }
-);
+  renderRangeBars();
+
+  const machineSrc = getBase("machine").filter(d=>d.days>15);
+  const machineCounts = countBy(machineSrc, "category");
+  const machineEntries = Object.entries(machineCounts).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  machineChart.data.labels = machineEntries.map(e=>e[0]);
+  machineChart.data.datasets[0].data = machineEntries.map(e=>e[1]);
+  machineChart.data.datasets[0].borderWidth = machineEntries.map(e=> filters.machine===e[0] ? 3:0);
+  machineChart.data.datasets[0].borderColor = "#fff";
+  machineChart.update();
+
+  const siteSrc = getBase("site");
+  const siteCounts = countBy(siteSrc, "site");
+  const siteEntries = Object.entries(siteCounts);
+  siteChart.data.labels = siteEntries.map(e=>e[0]);
+  siteChart.data.datasets[0].data = siteEntries.map(e=>e[1]);
+  siteChart.update();
+
+  const reasonSrc = getBase("reason").filter(d=>d.days>15);
+  const reasonCounts = countBy(reasonSrc, "reason");
+  const reasonEntries = Object.entries(reasonCounts);
+  reasonChart.data.labels = reasonEntries.map(e=>e[0]);
+  reasonChart.data.datasets[0].data = reasonEntries.map(e=>e[1]);
+  reasonChart.update();
+
+  const days = kpiBase.map(d=>d.days);
+  document.getElementById("kpiAvg").textContent = days.length ? (days.reduce((a,b)=>a+b,0)/days.length).toFixed(1) : "--";
+  document.getElementById("kpiHigh").textContent = kpiBase.filter(d=>d.days>30).length;
+  document.getElementById("kpiMed").textContent = kpiBase.filter(d=>d.days>=8 && d.days<=30).length;
+  document.getElementById("kpiLow").textContent = kpiBase.filter(d=>d.days>=0 && d.days<=7).length;
+  const resolvedFiltered = RESOLVED_SAMPLE.filter(r=> filters.site==="All" || r.site===filters.site);
+  document.getElementById("kpiResolved").textContent = resolvedFiltered.length;
+
+  const anyChartFilter = filters.machine || filters.reason || filters.range || filters.site!=="All";
+  document.getElementById("clearFiltersBtn").classList.toggle("show", !!anyChartFilter);
+
+  if(document.getElementById("tab-details").style.display !== "none") renderDetails();
+}
+
+function renderDetails(){
+  const data = getBase(null);
+  const body = document.getElementById("detailsBody");
+  body.innerHTML = data.map(r=>`<tr><td>${r.category}</td><td>${r.site}</td><td>${r.days}</td><td>${r.reason}</td></tr>`).join("");
+}
+
+renderAll();
 </script>
-{% endblock %}
+</body>
+</html>
