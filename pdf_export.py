@@ -197,6 +197,17 @@ def create_pdf(master_df):
         "Alert Icon"
 
     ]
+	
+	# Pending Days ko integer format me convert karo
+
+	final_df["Pending for (no of days)"] = (
+		pd.to_numeric(
+			final_df["Pending for (no of days)"],
+			errors="coerce"
+		)
+		.fillna(0)
+		.astype(int)
+	)
 
 
 
