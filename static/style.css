@@ -275,8 +275,8 @@ footer{
   grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
   gap:14px;
   width:100%;
-  max-width:480px;
-  margin:0 auto 18px auto;
+  max-width:420px;
+  margin:0 auto 16px 0;
 }
 
 .kpi-card{
@@ -320,13 +320,13 @@ footer{
 .chart-grid{
   display:grid;
   grid-template-columns:repeat(2,1fr);
-  gap:16px;
+  gap:14px;
   overflow:hidden;
 }
 
 .chart-card{
-  padding:14px;
-  border-radius:16px;
+  padding:12px;
+  border-radius:14px;
   background:rgba(255,255,255,.12);
   backdrop-filter:blur(20px);
   border:1px solid rgba(0,255,255,.35);
@@ -352,19 +352,19 @@ footer{
 .chart-box{
   position:relative;
   width:100%;
-  height:190px;
+  height:150px;
 }
 
 .chart-box canvas{
   width:100% !important;
   height:100% !important;
-  max-height:190px !important;
+  max-height:150px !important;
 }
 
 /* Optional: use this class on donut chart-cards for a smaller, centered look */
 .chart-card.donut .chart-box{
-  height:170px;
-  max-width:170px;
+  height:135px;
+  max-width:135px;
   margin:0 auto;
 }
 
@@ -373,20 +373,20 @@ footer{
 ========================= */
 @media(max-width:1200px){
   .kpi-container{max-width:100%;}
-  .chart-box{height:180px;}
+  .chart-box{height:140px;}
 }
 
 @media(max-width:900px){
   .sidebar{display:none;} /* or convert to a toggle menu in JS */
   .main{margin-left:0;width:100%;}
   .chart-grid{grid-template-columns:1fr;}
-  .kpi-container{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));}
-  .chart-box{height:200px;}
+  .kpi-container{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));margin:0 auto 16px 0;}
+  .chart-box{height:170px;}
 }
 
 @media(max-width:600px){
   .navbar{padding:0 12px;}
   .content{padding:8px;}
-  .kpi-card h1{font-size:22px;}
-  .chart-box{height:180px;}
+  .kpi-card h1{font-size:20px;}
+  .chart-box{height:150px;}
 }
