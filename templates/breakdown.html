@@ -305,9 +305,9 @@ function renderAll(){
 
   if(document.getElementById("tab-details").style.display !== "none") renderDetails();
 }
-function renderDetails(){
 
-  function renderDetails(){
+
+ function renderDetails(){
 
   const data = getBase(null);
 
@@ -346,55 +346,33 @@ function renderDetails(){
     }
 
 
-
     return `
 
     <tr>
 
       <td>${index+1}</td>
 
+      <td>${r["Site"] || "-"}</td>
 
-      <td>
-        ${r["Site"] || "-"}
-      </td>
+      <td>${r["Date of breakdown"] || "-"}</td>
 
+      <td>${r["Category"] || "-"}</td>
 
-      <td>
-        ${r["Date of breakdown"] || "-"}
-      </td>
-
-
-      <td>
-        ${r["Category"] || "-"}
-      </td>
-
-
-      <td>
-        ${r["Vehcile No"] || "-"}
-      </td>
-
+      <td>${r["Vehcile No"] || "-"}</td>
 
       <td class="details-cell">
         ${r["Breakdown Details"] || "-"}
       </td>
 
+      <td>${r["Reason for pendency"] || "-"}</td>
 
-      <td>
-        ${r["Reason for pendency"] || "-"}
-      </td>
-
-
-      <td>
-        ${days}
-      </td>
-
+      <td>${days}</td>
 
       <td>
         <span class="${alertClass}">
           ${alertText}
         </span>
       </td>
-
 
     </tr>
 
@@ -404,7 +382,7 @@ function renderDetails(){
   }).join("");
 
 }
-}
+
 renderAll();
 </script>
 {% endblock %}
