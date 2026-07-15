@@ -166,12 +166,6 @@ def create_excel(master_df):
         )
     )
 
-# ===============================
-# ADD ALERT COLUMN
-# ===============================
-
-    master_df["Alert"] = ""
-
 
 
     # ===============================
@@ -307,139 +301,65 @@ def create_excel(master_df):
                 wrap_text=True
             )
 
+
+
     # ===============================
-# ADD ALERT IMAGE BASED ON DAYS
-# ===============================
+    # COLUMN WIDTH
+    # ===============================
 
-    alert_column = len(master_df.columns)
-    
-    
-    low_img = "low_alert.png"
-    medium_img = "medium_alert.png"
-    high_img = "high_alert.png"
-    
-    
-    
-    if "Pending for (no of days)" in master_df.columns:
-    
-    
-        days_column = (
-            master_df.columns
-            .get_loc("Pending for (no of days)") + 1
+    for column_cells in ws.columns:
+
+        column_number = column_cells[0].column
+
+        column_letter = get_column_letter(
+            column_number
         )
-    
-    
-        for excel_row, value in enumerate(
-            master_df["Pending for (no of days)"],
-            start_row + 1
-        ):
-    
-    
-            try:
-                days = int(value)
-    
-            except:
-                days = 0
-    
-    
-    
-            if days <= 7:
-    
-                image_path = low_img
-    
-    
-            elif days <= 15:
-    
-                image_path = medium_img
-    
-    
-            else:
-    
-                image_path = high_img
-    
-    
-    
-            if os.path.exists(image_path):
-    
-                img = Image(image_path)
-    
-                img.width = 70
-                img.height = 18
-    
-    
-                ws.add_image(
-                    img,
-                    f"{get_column_letter(alert_column)}{excel_row}"
-                )
-    
-    
-                ws.row_dimensions[
-                    excel_row
-                ].height = 25
-        
-    
 
 
-  
-
-# ===============================
-# COLUMN WIDTH
-# ===============================
-
-for column_cells in ws.columns:
-
-    column_number = column_cells[0].column
-
-    column_letter = get_column_letter(
-        column_number
-    )
-
-    header = ws.cell(
-        row=start_row,
-        column=column_number
-    ).value
+        header = ws.cell(
+            row=start_row,
+            column=column_number
+        ).value
 
 
-    if header == "Index Number":
 
-        ws.column_dimensions[
-            column_letter
-        ].width = 12
+        if header == "Index Number":
 
-
-    elif header == "Corrective Action":
-
-        ws.column_dimensions[
-            column_letter
-        ].width = 35
+            ws.column_dimensions[
+                column_letter
+            ].width = 12
 
 
-    elif header == "Alert":
 
-        ws.column_dimensions[
-            column_letter
-        ].width = 12
+        elif header == "Corrective Action":
+
+            ws.column_dimensions[
+                column_letter
+            ].width = 35
 
 
-    else:
 
-        max_length = 0
+        else:
 
-        for cell in column_cells:
+            max_length = 0
 
-            if cell.value:
 
-                max_length = max(
-                    max_length,
-                    len(str(cell.value))
-                )
+            for cell in column_cells:
 
-        ws.column_dimensions[
-            column_letter
-        ].width = min(
-            max_length + 3,
-            25
-        )
+                if cell.value:
+
+                    max_length = max(
+                        max_length,
+                        len(str(cell.value))
+                    )
+
+
+            ws.column_dimensions[
+                column_letter
+            ].width = min(
+                max_length + 3,
+                25
+            )
 
 
 
