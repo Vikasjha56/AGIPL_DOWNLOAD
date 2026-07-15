@@ -1,0 +1,412 @@
+*{
+  box-sizing:border-box;
+  font-family:'Segoe UI',Arial,sans-serif;
+}
+
+html,body{
+  margin:0;
+  height:100%;
+  color:white;
+  overflow:hidden; /* no page-level scroll anywhere */
+  background:#061426;
+}
+
+/* =========================
+   5D BACKGROUND
+========================= */
+.background-animation{
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  background:
+    radial-gradient(circle at 20% 20%,#00ffff66,transparent 30%),
+    radial-gradient(circle at 80% 70%,#0077ff88,transparent 35%),
+    linear-gradient(135deg,#020b18,#123d68);
+  animation:moveBackground 12s infinite alternate;
+}
+
+@keyframes moveBackground{
+  from{transform:scale(1);}
+  to{transform:scale(1.08);}
+}
+
+/* =========================
+   TOP NAVBAR
+========================= */
+.navbar{
+  position:fixed;
+  top:0; left:0; right:0;
+  height:60px;
+  z-index:1000;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 24px;
+  background:rgba(255,255,255,.12);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(255,255,255,.25);
+  box-shadow:0 8px 30px #0008;
+}
+
+.brand{display:flex;align-items:center;gap:10px;}
+
+.logo-circle{
+  width:38px;height:38px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:white;color:#063b78;font-size:15px;font-weight:bold;
+  box-shadow:0 0 14px cyan;
+  animation:pulse 3s infinite;
+}
+@keyframes pulse{50%{box-shadow:0 0 24px cyan;}}
+
+.brand-text{font-size:17px;font-weight:bold;}
+
+.menu a{
+  color:white;text-decoration:none;margin-left:22px;font-size:14px;transition:.3s;
+}
+.menu a:hover{color:#00ffff;text-shadow:0 0 10px cyan;}
+
+/* =========================
+   SIDEBAR (fixed, same on every page)
+========================= */
+.sidebar{
+  position:fixed;
+  top:76px;
+  left:14px;
+  width:210px;
+  bottom:14px;
+  padding:16px;
+  border-radius:16px;
+  background:rgba(255,255,255,.12);
+  backdrop-filter:blur(20px);
+  box-shadow:0 15px 40px #0008;
+  overflow-y:auto;
+  z-index:900;
+}
+
+.sidebar h3{margin-top:0;margin-bottom:10px;font-size:15px;}
+
+.sidebar a{
+  display:block;padding:9px 10px;margin:5px 0;border-radius:10px;
+  color:white;text-decoration:none;font-size:13.5px;transition:.3s;
+}
+.sidebar a:hover{
+  background:rgba(0,255,255,.25);transform:translateX(6px);box-shadow:0 0 14px cyan;
+}
+.sidebar a.active{
+  background:rgba(0,255,255,.3);box-shadow:0 0 14px cyan;
+}
+
+/* =========================
+   MAIN (fills viewport, no scroll)
+========================= */
+.main{
+  position:fixed;
+  top:60px; left:240px; right:0; bottom:0;
+  padding:14px 16px;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+header{
+  flex:0 0 auto;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  padding:2px 4px 10px 4px;
+  gap:16px;
+}
+
+.header-text{line-height:1.1;text-align:left;}
+
+.header-text h1{
+  font-size:clamp(18px,2vw,23px);
+  color:white;text-shadow:0 0 10px cyan;margin:0;line-height:1.2;text-align:left;
+}
+.header-text p,.header-text h3{
+  font-size:12px;font-weight:400;opacity:.75;margin:2px 0 0 0;line-height:1.2;text-align:left;
+}
+
+.status{
+  background:rgba(0,255,120,.25);padding:7px 15px;border-radius:20px;
+  box-shadow:0 0 14px #00ff88;font-size:12.5px;white-space:nowrap;
+}
+
+.content{
+  flex:1 1 auto;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+/* =========================
+   HOME PAGE
+========================= */
+.home-title{text-align:center;margin:20px 0 26px;}
+.home-title h1{
+  font-size:clamp(24px,3vw,34px);
+  background:linear-gradient(90deg,#00ffff,#ffffff,#0077ff);
+  -webkit-background-clip:text;color:transparent;
+}
+.home-title p{font-size:15px;opacity:.8;}
+
+.modules{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:20px;
+  overflow-y:auto;
+  padding-bottom:10px;
+}
+
+.card{
+  padding:24px;border-radius:20px;
+  background:rgba(255,255,255,.12);
+  backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,.3);
+  text-decoration:none;color:white;transition:.4s;
+  box-shadow:0 15px 35px #0007;
+}
+.card:hover{
+  transform:translateY(-8px) scale(1.02);
+  background:rgba(255,255,255,.22);
+  box-shadow:0 20px 45px #000, 0 0 25px cyan;
+}
+.icon{font-size:34px;transition:.5s;}
+.card:hover .icon{transform:scale(1.15) rotateY(360deg);}
+.card h2{margin-top:12px;font-size:19px;}
+.card p{opacity:.75;font-size:14px;}
+
+/* =========================
+   DASHBOARD WRAPPER (Breakdown Analysis)
+   — everything below fits the remaining viewport height, no scroll
+========================= */
+.dashboard-wrap{
+  flex:1 1 auto;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.tab-panel{
+  flex:1 1 auto;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+/* ---- toolbar ---- */
+.toolbar{
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:12px;
+  padding:10px 18px;
+  border-radius:14px;
+  background:rgba(255,255,255,.12);
+  backdrop-filter:blur(20px);
+  box-shadow:0 10px 25px #0007;
+}
+.toolbar-group{display:flex;align-items:center;gap:10px;}
+.toolbar-group label{font-size:12.5px;font-weight:600;opacity:.85;}
+select.slicer{
+  padding:7px 12px;border-radius:9px;border:1px solid rgba(0,255,255,.5);
+  background:rgba(255,255,255,.1);color:#fff;font-size:13px;outline:none;
+}
+select.slicer option{color:#000;}
+.tabs{display:flex;gap:6px;background:rgba(255,255,255,.08);padding:4px;border-radius:11px;}
+.tab-btn{
+  border:none;padding:7px 16px;border-radius:8px;font-size:12.5px;font-weight:600;
+  cursor:pointer;background:transparent;color:#fff;opacity:.7;transition:.25s;
+}
+.tab-btn.active{background:linear-gradient(135deg,#0077ff,#00c6ff);opacity:1;box-shadow:0 0 14px cyan;}
+.tab-btn:hover{opacity:1;}
+.clear-filters{
+  border:1px solid rgba(255,80,80,.6);background:rgba(255,60,60,.15);color:#fff;
+  padding:7px 13px;border-radius:9px;font-size:12px;cursor:pointer;display:none;
+}
+.clear-filters.show{display:inline-block;}
+
+/* ---- KPI row ---- */
+.kpi-container{
+  flex:0 0 auto;
+  display:grid;
+  grid-template-columns:repeat(4, 1fr);
+  gap:12px;
+}
+.kpi-card{
+  background:linear-gradient(145deg,rgba(0,255,255,.22),rgba(255,255,255,.08));
+  border-radius:14px;padding:10px 16px;
+  border:1px solid rgba(0,255,255,.5);
+  box-shadow:0 8px 20px #000;
+  text-align:center;transition:.3s;
+}
+.kpi-card:hover{transform:translateY(-3px);box-shadow:0 0 18px cyan;}
+.kpi-card h3{font-size:12px;font-weight:600;opacity:.9;margin:0;}
+.kpi-card h1{font-size:clamp(20px,2vw,26px);color:white;text-shadow:0 0 10px cyan;margin:5px 0;}
+.kpi-card span{font-size:11px;opacity:.75;}
+
+.kpi-range-card{
+  grid-column:span 2;
+  display:flex;flex-direction:column;gap:6px;justify-content:center;
+  padding:10px 16px;
+  background:linear-gradient(145deg,rgba(0,255,255,.22),rgba(255,255,255,.08));
+  border-radius:14px;border:1px solid rgba(0,255,255,.5);box-shadow:0 8px 20px #000;
+}
+.kpi-range-card h3{font-size:12px;text-align:left;margin:0;}
+.range-legend{display:flex;gap:12px;font-size:10.5px;opacity:.85;flex-wrap:wrap;}
+.range-legend span{display:inline-flex;align-items:center;gap:4px;}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+.range-bars{display:flex;gap:5px;height:34px;}
+.range-seg{
+  flex:1 1 0;border-radius:8px;display:flex;align-items:center;justify-content:center;
+  font-weight:bold;font-size:15px;cursor:pointer;transition:.25s;
+  border:2px solid transparent;text-shadow:0 1px 3px #0007;
+}
+.range-seg:hover{transform:translateY(-2px);}
+.range-seg.dim{opacity:.35;}
+.range-seg.sel{border-color:#fff;box-shadow:0 0 12px #fff8;}
+
+/* ---- charts: fills all remaining space, no fixed px heights ---- */
+.dashboard-charts{
+  flex:1 1 auto;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.chart-top{flex:1.15 1 0;min-height:0;}
+.chart-grid-bottom{
+  flex:1 1 0;
+  min-height:0;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.chart-card{
+  padding:10px 14px;
+  border-radius:14px;
+  background:rgba(255,255,255,.12);
+  backdrop-filter:blur(20px);
+  border:1px solid rgba(0,255,255,.35);
+  box-shadow:0 10px 25px rgba(0,0,0,.6);
+  transition:.3s;
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+}
+.chart-card:hover{box-shadow:0 0 18px cyan;}
+.chart-card h2{
+  flex:0 0 auto;text-align:center;color:white;text-shadow:0 0 8px cyan;
+  font-size:13px;margin:0 0 6px 0;
+}
+
+/* ---- footer mini KPIs ---- */
+.footer-kpis{
+  flex:0 0 auto;
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:10px;
+}
+.mini-kpi{
+  background:rgba(255,255,255,.1);border-radius:12px;padding:8px;text-align:center;
+  border:1px solid rgba(255,255,255,.2);
+}
+.mini-kpi h4{margin:0;font-size:11px;opacity:.8;font-weight:600;}
+.mini-kpi p{margin:4px 0 0;font-size:17px;font-weight:bold;text-shadow:0 0 8px cyan;}
+
+/* ---- BD Details tab ---- */
+.details-card{flex:1 1 auto;min-height:0;}
+.details-wrap{flex:1 1 auto;min-height:0;overflow:auto;border-radius:10px;}
+.details-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.details-table th,.details-table td{
+  padding:8px 10px;text-align:left;border-bottom:1px solid rgba(255,255,255,.15);
+}
+.details-table th{background:rgba(0,255,255,.15);position:sticky;top:0;}
+
+/* =========================
+   RESPONSIVE — below 900px, allow page scroll instead of squeezing everything
+========================= */
+@media(max-width:900px){
+  html,body{overflow:auto;}
+  .sidebar{display:none;}
+  .main{position:static;left:0;padding:70px 12px 20px;overflow:visible;}
+  .content{overflow:visible;}
+  .dashboard-wrap{min-height:auto;}
+  .tab-panel{min-height:auto;}
+  .kpi-container{grid-template-columns:repeat(2,1fr);}
+  .kpi-range-card{grid-column:span 2;}
+  .dashboard-charts{min-height:auto;}
+  .chart-top{flex:none;}
+  .chart-box{height:220px;}
+  .chart-grid-bottom{grid-template-columns:1fr;flex:none;}
+  .footer-kpis{grid-template-columns:repeat(2,1fr);}
+  .modules{overflow-y:visible;}
+  .toolbar{flex-direction:column;align-items:stretch;}
+}
+/* =========================
+   ADD THESE RULES TO dashboard.css
+   (append at the end of the existing file — do not delete anything above)
+========================= */
+
+/* ---- fix: prevent Chart.js canvas from growing/overlapping inside flex containers ---- */
+.chart-box{ position:relative; width:100%; flex:1 1 auto; min-height:0; overflow:hidden; }
+.chart-box canvas{
+  position:absolute !important;
+  top:0; left:0;
+  width:100% !important;
+  height:100% !important;
+}
+
+/* ---- date range slicer ---- */
+.date-input{
+  padding:6px 10px;border-radius:9px;border:1px solid rgba(0,255,255,.5);
+  background:rgba(255,255,255,.1);color:#fff;font-size:12.5px;outline:none;
+  color-scheme:dark;
+}
+.to-sep{font-size:12px;opacity:.7;}
+
+/* ---- details tab header + export buttons ---- */
+.details-header{
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:6px;
+}
+.details-header h2{margin:0;}
+.export-btns{display:flex;gap:8px;}
+.export-btn{
+  border:1px solid rgba(0,255,255,.5);background:rgba(0,255,255,.12);color:#fff;
+  padding:6px 14px;border-radius:9px;font-size:12px;cursor:pointer;font-weight:600;transition:.25s;
+}
+.export-btn:hover{background:rgba(0,255,255,.3);box-shadow:0 0 12px cyan;}
+.export-btn.pdf{border-color:rgba(255,80,80,.6);background:rgba(255,60,60,.15);}
+.export-btn.pdf:hover{background:rgba(255,60,60,.3);box-shadow:0 0 12px #ff5555;}
+
+/* ---- sortable column headers ---- */
+.details-table th{cursor:pointer;user-select:none;}
+.details-table th:hover{background:rgba(0,255,255,.28);}
+
+/* ---- clickable site cell ---- */
+td.clickable-cell{cursor:pointer;}
+td.clickable-cell:hover{text-decoration:underline;color:#00ffff;}
+
+/* ---- Breakdown Alert Icon badge ---- */
+.alert-badge{
+  display:inline-block;
+  padding:4px 10px;
+  border-radius:20px;
+  color:#fff;
+  font-size:11px;
+  font-weight:700;
+  text-shadow:0 1px 2px #0007;
+  cursor:pointer;
+  white-space:nowrap;
+}
