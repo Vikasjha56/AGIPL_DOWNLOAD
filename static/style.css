@@ -129,6 +129,11 @@ body{
   box-shadow:0 0 14px cyan;
 }
 
+.sidebar a.active{
+  background:rgba(0,255,255,.3);
+  box-shadow:0 0 14px cyan;
+}
+
 /* =========================
    MAIN
 ========================= */
@@ -196,7 +201,8 @@ header{
   box-sizing:border-box;
   display:flex;
   flex-direction:column;
-  overflow:hidden;
+  overflow-y:auto;
+  overflow-x:hidden;
 }
 
 /* =========================
@@ -269,7 +275,96 @@ footer{
   opacity:.8;
 }
 
-/* dashboard-header rules removed — header/.header-text now handles this via base.html */
+/* =========================
+   TOOLBAR: slicer + tabs + clear filters
+   (new — top control bar of the interactive dashboard)
+========================= */
+.toolbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:14px;
+  padding:14px 20px;
+  margin-bottom:16px;
+  border-radius:16px;
+  background:rgba(255,255,255,.12);
+  backdrop-filter:blur(20px);
+  box-shadow:0 15px 40px #0008;
+}
+
+.toolbar-group{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.toolbar-group label{
+  font-size:13px;
+  font-weight:600;
+  opacity:.85;
+}
+
+select.slicer{
+  padding:9px 14px;
+  border-radius:10px;
+  border:1px solid rgba(0,255,255,.5);
+  background:rgba(255,255,255,.1);
+  color:#fff;
+  font-size:13.5px;
+  outline:none;
+}
+
+select.slicer option{
+  color:#000;
+}
+
+.tabs{
+  display:flex;
+  gap:8px;
+  background:rgba(255,255,255,.08);
+  padding:4px;
+  border-radius:12px;
+}
+
+.tab-btn{
+  border:none;
+  padding:9px 18px;
+  border-radius:9px;
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+  background:transparent;
+  color:#fff;
+  opacity:.7;
+  transition:.25s;
+}
+
+.tab-btn.active{
+  background:linear-gradient(135deg,#0077ff,#00c6ff);
+  opacity:1;
+  box-shadow:0 0 16px cyan;
+}
+
+.tab-btn:hover{
+  opacity:1;
+}
+
+.clear-filters{
+  border:1px solid rgba(255,80,80,.6);
+  background:rgba(255,60,60,.15);
+  color:#fff;
+  padding:8px 14px;
+  border-radius:10px;
+  font-size:12.5px;
+  cursor:pointer;
+  display:none;
+}
+
+.clear-filters.show{
+  display:inline-block;
+}
 
 /* =========================
    FILTER BOX
@@ -291,22 +386,21 @@ footer{
 }
 
 /* =========================
-   KPI CARDS (fixed: no more fixed 40% width / 3x duplication)
+   KPI CARDS
 ========================= */
 .kpi-container{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
-  gap:14px;
+  grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+  gap:16px;
   width:100%;
-  max-width:420px;
-  margin:0 auto 12px 0;
+  margin:0 0 16px 0;
   flex:0 0 auto;
 }
 
 .kpi-card{
   background:linear-gradient(145deg,rgba(0,255,255,.22),rgba(255,255,255,.08));
   border-radius:16px;
-  padding:10px 14px;
+  padding:16px 18px;
   border:1px solid rgba(0,255,255,.5);
   box-shadow:0 10px 25px #000;
   text-align:center;
@@ -319,17 +413,17 @@ footer{
 }
 
 .kpi-card h3{
-  font-size:12.5px;
+  font-size:13px;
   font-weight:600;
   opacity:.9;
   margin:0;
 }
 
 .kpi-card h1{
-  font-size:clamp(22px,2.2vw,28px);
+  font-size:clamp(24px,2.4vw,32px);
   color:white;
   text-shadow:0 0 10px cyan;
-  margin:6px 0;
+  margin:8px 0;
 }
 
 .kpi-card span,
@@ -338,28 +432,104 @@ footer{
   opacity:.75;
 }
 
-/* =========================
-   CHARTS (fixed: no more 420px fixed height / duplicate blocks)
-========================= */
-.chart-grid{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  grid-template-rows:1fr 1fr;
+/* Wide KPI card that holds the segmented "pending days range" bar (new) */
+.kpi-range-card{
+  grid-column:span 2;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  padding:14px 18px;
+  background:linear-gradient(145deg,rgba(0,255,255,.22),rgba(255,255,255,.08));
+  border-radius:16px;
+  border:1px solid rgba(0,255,255,.5);
+  box-shadow:0 10px 25px #000;
+}
+
+.kpi-range-card h3{
+  font-size:13px;
+  text-align:left;
+  margin:0;
+}
+
+.range-legend{
+  display:flex;
   gap:14px;
+  font-size:11.5px;
+  opacity:.85;
+  flex-wrap:wrap;
+}
+
+.range-legend span{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+}
+
+.dot{
+  width:9px;
+  height:9px;
+  border-radius:50%;
+  display:inline-block;
+}
+
+.range-bars{
+  display:flex;
+  gap:6px;
+  height:56px;
+}
+
+.range-seg{
+  flex:1 1 0;
+  border-radius:10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:bold;
+  font-size:18px;
+  cursor:pointer;
+  transition:.25s;
+  border:2px solid transparent;
+  text-shadow:0 1px 3px #0007;
+}
+
+.range-seg:hover{
+  transform:translateY(-3px);
+}
+
+.range-seg.dim{
+  opacity:.35;
+}
+
+.range-seg.sel{
+  border-color:#fff;
+  box-shadow:0 0 14px #fff8;
+}
+
+/* =========================
+   CHARTS — enlarged, one full-width machine chart on top,
+   two big donuts below (matches the reference layout)
+========================= */
+.chart-grid-top{
+  margin-bottom:16px;
+  flex:0 0 auto;
+}
+
+.chart-grid-bottom{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
   flex:1 1 auto;
   min-height:0;
-  overflow:hidden;
 }
 
 .chart-card{
-  padding:12px;
-  border-radius:14px;
+  padding:16px;
+  border-radius:16px;
   background:rgba(255,255,255,.12);
   backdrop-filter:blur(20px);
   border:1px solid rgba(0,255,255,.35);
   box-shadow:0 15px 35px rgba(0,0,0,.6);
   transition:.3s;
-  overflow:hidden;
   display:flex;
   flex-direction:column;
   min-height:0;
@@ -375,21 +545,86 @@ footer{
   text-align:center;
   color:white;
   text-shadow:0 0 8px cyan;
-  font-size:14px;
-  margin:0 0 6px 0;
+  font-size:15px;
+  margin:0 0 10px 0;
 }
 
-/* This wrapper is what actually controls chart size — always fills remaining card space, never overflows */
 .chart-box{
   position:relative;
   width:100%;
+  height:340px;
   flex:1 1 auto;
   min-height:0;
+}
+
+.chart-box.big{
+  height:380px;
 }
 
 .chart-box canvas{
   width:100% !important;
   height:100% !important;
+}
+
+/* =========================
+   FOOTER MINI-KPI ROW (new)
+========================= */
+.footer-kpis{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:14px;
+  margin-top:16px;
+  flex:0 0 auto;
+}
+
+.mini-kpi{
+  background:rgba(255,255,255,.1);
+  border-radius:14px;
+  padding:12px;
+  text-align:center;
+  border:1px solid rgba(255,255,255,.2);
+}
+
+.mini-kpi h4{
+  margin:0;
+  font-size:12px;
+  opacity:.8;
+  font-weight:600;
+}
+
+.mini-kpi p{
+  margin:6px 0 0;
+  font-size:20px;
+  font-weight:bold;
+  text-shadow:0 0 8px cyan;
+}
+
+/* =========================
+   BD DETAILS TABLE (new — "BD Details" tab)
+========================= */
+.details-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:13px;
+}
+
+.details-table th,
+.details-table td{
+  padding:9px 12px;
+  text-align:left;
+  border-bottom:1px solid rgba(255,255,255,.15);
+}
+
+.details-table th{
+  background:rgba(0,255,255,.15);
+  position:sticky;
+  top:0;
+}
+
+.details-wrap{
+  max-height:520px;
+  overflow:auto;
+  border-radius:12px;
 }
 
 /* =========================
@@ -400,19 +635,23 @@ footer{
 }
 
 @media(max-width:900px){
-  .sidebar{display:none;} /* or convert to a toggle menu in JS */
+  .sidebar{display:none;}
   .main{margin-left:0;width:100%;height:auto;min-height:100vh;overflow:visible;}
   .content{overflow:visible;}
-  .chart-grid{grid-template-columns:1fr;grid-template-rows:none;flex:none;}
-  .kpi-container{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));margin:0 auto 16px 0;flex:none;}
-  .chart-box{height:200px;flex:none;}
+  .chart-grid-bottom{grid-template-columns:1fr;}
+  .kpi-container{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));}
+  .kpi-range-card{grid-column:span 1;}
+  .chart-box{height:240px;}
+  .chart-box.big{height:280px;}
+  .footer-kpis{grid-template-columns:repeat(2,1fr);}
 }
 
 @media(max-width:600px){
   .navbar{padding:0 12px;}
   .content{padding:8px;}
   .kpi-card h1{font-size:20px;}
-  .chart-box{height:180px;}
+  .chart-box{height:200px;}
   header{flex-direction:column;align-items:flex-start;gap:10px;}
   .status{align-self:flex-start;}
+  .toolbar{flex-direction:column;align-items:flex-start;}
 }
