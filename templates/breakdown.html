@@ -1,448 +1,1578 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>AGIPL Digital Portal — Breakdown Analysis</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-<style>
-  :root{
-    --bg:#0A1F3D; --panel:#0F2A52; --panel-2:#0C2444; --border:#1D3E68; --teal:#2DD4BF;
-    --teal-dim:#1B8F80; --text:#EAF1FB; --muted:#8CA3C4;
-    --red:#E5484D; --orange:#F2994A; --yellow:#F2C94C; --green:#27AE60; --blue:#4E7FDB;
-  }
-  *{box-sizing:border-box;}
-  html,body{height:100%;}
-  body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);}
-  .app{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
-  .topbar{background:#081733;padding:10px 22px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);}
-  .brand{display:flex;align-items:center;gap:10px;}
-  .brand .logo{width:34px;height:34px;border-radius:50%;background:var(--panel);border:2px solid var(--teal);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--teal);font-size:13px;}
-  .brand h1{font-size:16px;margin:0;}
-  .status{background:rgba(39,174,96,.15);color:var(--green);border:1px solid var(--green);padding:5px 12px;border-radius:14px;font-size:11px;display:flex;align-items:center;gap:6px;}
-  .dot{width:7px;height:7px;border-radius:50%;background:var(--green);}
+{% extends "base.html" %}
 
-  .headerrow{padding:10px 22px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;}
-  .headerrow h2{margin:0;font-size:18px;}
-  .headerrow .sub{font-size:11px;color:var(--muted);}
-  .tabs{display:flex;gap:6px;}
-  .tab-btn{background:var(--panel-2);border:1px solid var(--border);color:var(--muted);padding:7px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;font-weight:600;}
-  .tab-btn.active{background:var(--teal);color:#04211C;border-color:var(--teal);}
+{% block page_title %}
+🛠 Breakdown Analysis Dashboard
+{% endblock %}
 
-  .filters{padding:0 22px 10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
-  .filters label{font-size:11px;color:var(--muted);margin-right:6px;}
-  .filters select,.filters input{background:var(--panel-2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12.5px;}
-  .filter-group{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:6px 10px;display:flex;align-items:center;}
-  .clear-btn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;}
+{% block page_subtitle %}
+<p>Live Machine Breakdown Monitoring System</p>
+{% endblock %}
 
-  .content{flex:1;overflow:hidden;padding:0 22px 14px;}
-  .view{display:none;height:100%;}
-  .view.active{display:flex;flex-direction:column;gap:10px;height:100%;}
 
-  .kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;flex:0 0 auto;}
-  .kpi{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px 14px;}
-  .kpi-label{font-size:11px;color:var(--muted);}
-  .kpi-value{font-size:24px;font-weight:700;color:var(--text);margin-top:2px;}
-  .kpi-sub{font-size:10.5px;color:var(--muted);margin-top:2px;}
-  .bucket-row{display:flex;gap:8px;margin-top:8px;}
-  .bucket{flex:1;text-align:center;border-radius:6px;padding:8px 4px;font-weight:700;font-size:16px;color:#08131f;}
-  .bucket small{display:block;font-weight:500;font-size:9.5px;margin-top:2px;color:#08131f;}
-  .b-green{background:var(--green);} .b-orange{background:var(--orange);} .b-red{background:var(--red);}
+{% block content %}
 
-  .mid-row{display:grid;grid-template-columns:1fr;gap:10px;flex:1 1 auto;min-height:0;}
-  .panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;min-height:0;}
-  .panel h3{margin:0 0 6px;font-size:12px;color:var(--teal);text-transform:uppercase;letter-spacing:.4px;text-align:center;}
-  .chart-wrap{flex:1;min-height:0;position:relative;}
 
-  .donut-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1 1 auto;min-height:0;}
+<div class="dashboard-wrap">
 
-  .priority-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;flex:0 0 auto;}
-  .priority-row .kpi-value{font-size:20px;}
 
-  /* BD Details */
-  .details-panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;flex:1;display:flex;flex-direction:column;min-height:0;padding:10px 14px;}
-  .details-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;}
-  .details-top h3{margin:0;font-size:14px;}
-  .export-btns{display:flex;gap:8px;}
-  .export-btns button{background:var(--panel-2);border:1px solid var(--teal);color:var(--teal);padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;font-weight:600;}
-  .export-btns button:hover{background:var(--teal);color:#04211C;}
-  .table-scroll{flex:1;overflow:auto;border:1px solid var(--border);border-radius:6px;}
-  table{width:100%;border-collapse:collapse;font-size:12px;}
-  thead th{position:sticky;top:0;background:#0C2A54;color:var(--teal);padding:8px 10px;text-align:left;cursor:pointer;user-select:none;white-space:nowrap;border-bottom:1px solid var(--border);}
-  thead th .arrow{font-size:10px;color:var(--muted);margin-left:4px;}
-  tbody td{padding:6px 10px;border-bottom:1px solid var(--border);white-space:nowrap;}
-  tbody tr:nth-child(even){background:rgba(255,255,255,.02);}
-  tbody tr:hover{background:rgba(45,212,191,.08);}
-  .pill{padding:3px 10px;border-radius:12px;font-size:10.5px;font-weight:700;color:#fff;display:inline-block;}
-  .pill.High{background:var(--red);}
-  .pill.Medium{background:var(--orange);}
-  .pill.Low{background:#C9A400;}
-  .oh{padding:2px 9px;border-radius:5px;font-size:10.5px;font-weight:600;}
-  .oh.Owned{background:rgba(78,127,219,.2);color:#8FB0EE;}
-  .oh.Hired{background:rgba(242,153,74,.2);color:var(--orange);}
-</style>
-</head>
-<body>
-<div class="app">
+<!-- ================= TOOLBAR ================= -->
 
-  <div class="topbar">
-    <div class="brand">
-      <div class="logo">AG</div>
-      <h1>AGIPL Digital Portal</h1>
-    </div>
-    <div class="status"><span class="dot"></span>System Online</div>
-  </div>
+<div class="toolbar">
 
-  <div class="headerrow">
-    <div>
-      <h2>🛠 Breakdown Analysis Dashboard</h2>
-      <div class="sub">Live Machine Breakdown Monitoring System</div>
-    </div>
-    <div class="tabs">
-      <button class="tab-btn active" data-view="analysis">Breakdown Analysis</button>
-      <button class="tab-btn" data-view="details">BD Details</button>
-    </div>
-  </div>
 
-  <div class="filters">
-    <div class="filter-group"><label>Site</label>
-      <select id="fSite"><option value="All">All</option></select>
-    </div>
-    <div class="filter-group"><label>Owned/Hired</label>
-      <select id="fOwned"><option value="All">All</option><option value="Owned">Owned</option><option value="Hired">Hired</option></select>
-    </div>
-    <div class="filter-group"><label>From</label>
-      <input type="date" id="fFrom">
-    </div>
-    <div class="filter-group"><label>To</label>
-      <input type="date" id="fTo">
-    </div>
-    <button class="clear-btn" id="clearFilters">Clear filters</button>
-  </div>
+<div class="toolbar-group">
 
-  <div class="content">
+<label>Site</label>
 
-    <!-- BREAKDOWN ANALYSIS VIEW -->
-    <div class="view active" id="view-analysis">
-      <div class="kpi-row">
-        <div class="kpi">
-          <div class="kpi-label">Total Pending Cases</div>
-          <div class="kpi-value" id="kTotal">0</div>
-          <div class="kpi-sub">Resolved : NO</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">Critical Pending &gt; 15 Days</div>
-          <div class="kpi-value" id="kCritical">0</div>
-          <div class="kpi-sub">Pending Ageing</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">Machine Count by Pending Days Range</div>
-          <div class="bucket-row">
-            <div class="bucket b-green" id="bLow">0<small>0-5 Days</small></div>
-            <div class="bucket b-orange" id="bMed">0<small>6-30 Days</small></div>
-            <div class="bucket b-red" id="bHigh">0<small>Over &gt; 30</small></div>
-          </div>
-        </div>
-      </div>
+<select id="siteSlicer" class="slicer">
+<option value="All">All</option>
+</select>
 
-      <div class="mid-row">
-        <div class="panel">
-          <h3>Machine-wise Pending Cases (&gt; 15 days)</h3>
-          <div class="chart-wrap"><canvas id="machineChart"></canvas></div>
-        </div>
-      </div>
 
-      <div class="donut-row">
-        <div class="panel">
-          <h3>Breakdown Machine Count by Site</h3>
-          <div class="chart-wrap"><canvas id="siteDonut"></canvas></div>
-        </div>
-        <div class="panel">
-          <h3>Pending Distribution (&gt; 15 Days)</h3>
-          <div class="chart-wrap"><canvas id="reasonDonut"></canvas></div>
-        </div>
-      </div>
+<label>Owned/Hired</label>
 
-      <div class="priority-row">
-        <div class="kpi"><div class="kpi-label">Avg. Days Pending</div><div class="kpi-value" id="kAvg">0</div></div>
-        <div class="kpi"><div class="kpi-label">High Priority (&gt;30d)</div><div class="kpi-value" id="kHigh">0</div></div>
-        <div class="kpi"><div class="kpi-label">Medium Priority (8-30d)</div><div class="kpi-value" id="kMed">0</div></div>
-        <div class="kpi"><div class="kpi-label">Low Priority (0-7d)</div><div class="kpi-value" id="kLow">0</div></div>
-        <div class="kpi"><div class="kpi-label">Resolved</div><div class="kpi-value" id="kResolved">0</div></div>
-      </div>
-    </div>
+<select id="ownedSlicer" class="slicer">
 
-    <!-- BD DETAILS VIEW -->
-    <div class="view" id="view-details">
-      <div class="details-panel">
-        <div class="details-top">
-          <h3>Machine Breakdown Details</h3>
-          <div class="export-btns">
-            <button id="exportExcel">⬇ Export Excel</button>
-            <button id="exportPdf">⬇ Export PDF</button>
-          </div>
-        </div>
-        <div class="table-scroll">
-          <table id="bdTable">
-            <thead>
-              <tr>
-                <th data-key="no">No</th>
-                <th data-key="site">Site</th>
-                <th data-key="date">Date of breakdown</th>
-                <th data-key="category">Category</th>
-                <th data-key="vehicle">Vehcile No</th>
-                <th data-key="details">Breakdown Details</th>
-                <th data-key="reason">Reason for pendency</th>
-                <th data-key="days">Pending for (no of days)</th>
-                <th data-key="alert">Breakdown Alert Icon</th>
-              </tr>
-            </thead>
-            <tbody id="bdBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+<option value="All">
+All
+</option>
 
-  </div>
+<option value="Owned">
+Owned
+</option>
+
+<option value="Hired">
+Hired
+</option>
+
+</select>
+
+
+
+<label>From</label>
+
+<input 
+type="date"
+id="fromDate"
+class="slicer"
+/>
+
+
+<label>To</label>
+
+<input 
+type="date"
+id="toDate"
+class="slicer"
+/>
+
+
+
 </div>
 
-<script>
-/* ---------- REAL DATA (from your Machine Breakdown Details sheet) ---------- */
-const raw = [
-["AMO","2026-07-01","Excavator","EX-1798","ACCIDENTLE","WIP","14","Owned"],
-["AMO","2026-07-09","Backhoe Loader","MH35AW 0304","FUEL PUMP ISSUE","WIP","6","Owned"],
-["AMO","2026-07-10","Transit Mixer","MH35AJ-2865","FUEL SUCTION PIPE ASSY DAMAGE","WIP","3","Hired"],
-["AMO","2026-07-12","Diesel Generator","DG-SET 140KVA","DISPLAY COMMAND BUTTON NOT WORKING","WIP","3","Owned"],
-["Aurangabad","2025-12-13","Lmv Camper/Pickup","MH34BZ-0727","ENGINE REPARING WORK","Material not received","214","Hired"],
-["Aurangabad","2026-06-17","Lmv Camper/Pickup","MH34BZ-0730","INJECTER REPARING WORK","Material not received","28","Hired"],
-["Aurangabad","2026-06-17","Excavator","EXCAVATOR - TATA HITACHI ZX220","HYDROLIC PUMP PROBLEM","Indent not done","28","Owned"],
-["Aurangabad","2026-07-11","Hmv Tipper","MH34BZ-0428","CLUTCH PLATE PROBLEM","Breakdown under inspection","4","Owned"],
-["Ircon 1A","2026-05-22","Hmv Tipper","MH34BZ-1522","ENGINE SEIZED","Mechanic not available","54","Owned"],
-["Ircon 1A","2026-06-08","Hydra Crane","MH34BV-4286","DIFFRENTIAL DAMAGE","Material received repair pending","37","Hired"],
-["Ircon 1A","2026-07-01","Hmv Tipper","MH34BZ-0651","CLUTCH DISMENTAL","Mechanic not available","14","Owned"],
-["Ircon 1A","2026-06-25","Hmv Tipper","MH34BZ-0650","PICK UP NOT GENERATE CLUTCH ISSUE","Mechanic not available","20","Owned"],
-["Ircon 1A","2026-06-26","TM","MH34BZ-1523","ENGINE HEAD DISMENATL AND WATER PUMP","Indent not done","19","Hired"],
-["Ircon 1A","2026-06-30","Tractor","MH34BZ-1420","CLUTCH PROBLEM","Mechanica not available","15","Owned"],
-["Ircon 1A","2026-06-29","Backhoe Loader","MH34BV-8531","TRANSMISSION PROBLEM AND PIN BUSING","Breakdown under inspection","16","Owned"],
-["Ircon 1A","2026-07-11","Transit Mixer","MH34BZ-503","MIXER DRUM UNBALANCED","Mechanic not available","4","Hired"],
-["Ircon 1A","2026-07-12","Transit Mixer","MH35BZ-2689","SELF STARTER PROBLEM","Mechanic not available","1","Owned"],
-["Ircon 1A","2026-07-14","Boom Placer","MH34BZ-0736","END HOSE DAMAGE AND","Indent not done","1","Owned"],
-["Ircon 1B","2026-01-20","Diesel Generator","15KVA DG (92190004)","ENGINE REPAIR","WIP at site","176","Hired"],
-["Ircon 1B","2026-01-30","Tower Light","COOPER COP (92360006)","ENGINE RPM UP & DOWN","WIP at site","166","Hired"],
-["Ircon 1B","2026-07-02","Lmv Camper/Pickup","MH34BZ0708","STARTING PROBLEM IN DEISEL LINE","Mechanic not available","13","Owned"],
-["Ircon 1B","2026-07-14","Lmv Camper/Pickup","CG04NM1175","STARTING PROBLEM","Mechanic not available","1","Owned"],
-["Nagpur","2026-01-01","Tower Light","KAHMC02042","Engine overhauling and full body","Indent not done","195","Hired"],
-];
 
-function alertLevel(days){
-  if(days>30) return "High";
-  if(days>=6) return "Medium";
-  return "Low";
+
+<div class="toolbar-group">
+
+<button 
+class="clear-filters"
+id="clearFiltersBtn">
+
+✕ Clear Filters
+
+</button>
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+<!-- ================= TABS ================= -->
+
+
+<div class="tabs">
+
+
+<button 
+class="tab-btn active"
+data-tab="analysis">
+
+Breakdown Analysis
+
+</button>
+
+
+
+<button 
+class="tab-btn"
+data-tab="details">
+
+BD Details
+
+</button>
+
+
+</div>
+
+
+
+
+
+<!-- ================= ANALYSIS TAB ================= -->
+
+
+<div id="tab-analysis" class="tab-panel">
+
+
+<div class="kpi-container">
+
+
+<div class="kpi-card">
+
+<h3>
+Total Pending Cases
+</h3>
+
+<h1 id="kpiPending">
+0
+</h1>
+
+<span>
+Resolved : NO
+</span>
+
+
+</div>
+
+
+
+<div class="kpi-card">
+
+
+<h3>
+Critical Pending &gt;15 Days
+</h3>
+
+
+<h1 id="kpiPending15">
+0
+</h1>
+
+
+<span>
+Pending Ageing
+</span>
+
+
+</div>
+
+
+
+
+
+<div class="kpi-range-card">
+
+
+<h3>
+Machine Count by Pending Days Range
+</h3>
+
+
+
+<div class="range-bars">
+
+
+<div 
+class="range-seg"
+id="lowRange">
+
+0
+
+</div>
+
+
+<div 
+class="range-seg"
+id="mediumRange">
+
+0
+
+</div>
+
+
+<div 
+class="range-seg"
+id="highRange">
+
+0
+
+</div>
+
+
+</div>
+
+
+</div>
+
+
+
+</div>
+
+
+
+
+
+<!-- MACHINE CHART -->
+
+<div class="chart-card chart-full">
+
+
+<h2>
+Machine-wise Pending Cases (&gt;15 Days)
+</h2>
+
+
+<div class="chart-box">
+
+<canvas id="machineChart"></canvas>
+
+</div>
+
+
+</div>
+
+
+
+
+
+<!-- DONUT AREA -->
+
+
+<div class="chart-grid-bottom">
+
+
+<div class="chart-card">
+
+
+<h2>
+Breakdown Machine Count by Site
+</h2>
+
+
+<div class="chart-box donut-box">
+
+<canvas id="siteChart"></canvas>
+
+</div>
+
+
+</div>
+
+
+
+
+
+<div class="chart-card">
+
+
+<h2>
+Pending Distribution (&gt;15 Days)
+</h2>
+
+
+<div class="chart-box donut-box">
+
+<canvas id="reasonChart"></canvas>
+
+</div>
+
+
+</div>
+
+
+
+</div>
+
+
+
+
+
+<div class="footer-kpis">
+
+
+<div class="mini-kpi">
+
+<h4>
+Avg. Days Pending
+</h4>
+
+<p id="kpiAvg">
+--
+</p>
+
+
+</div>
+
+
+
+<div class="mini-kpi">
+
+<h4>
+High Priority (&gt;30d)
+</h4>
+
+<p id="kpiHigh">
+--
+</p>
+
+
+</div>
+
+
+
+<div class="mini-kpi">
+
+<h4>
+Medium Priority (8-30d)
+</h4>
+
+<p id="kpiMed">
+--
+</p>
+
+
+</div>
+
+
+
+<div class="mini-kpi">
+
+<h4>
+Low Priority (0-7d)
+</h4>
+
+<p id="kpiLow">
+--
+</p>
+
+
+</div>
+
+
+
+<div class="mini-kpi">
+
+<h4>
+Resolved
+</h4>
+
+<p id="kpiResolved">
+--
+</p>
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
+<!-- ================= DETAILS TAB ================= -->
+
+
+
+<div id="tab-details" 
+class="tab-panel"
+style="display:none;">
+
+
+
+<div class="chart-card details-card">
+
+
+<div class="details-header">
+
+
+<h2>
+Breakdown Details
+</h2>
+
+
+
+<div class="export-btns">
+
+
+<button id="exportExcel">
+⬇ Export Excel
+</button>
+
+
+<button id="exportPdf">
+⬇ Export PDF
+</button>
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+
+<div class="details-wrap">
+
+
+<table 
+class="details-table"
+id="bdTable">
+
+
+<thead>
+
+
+<tr>
+
+
+<th data-key="no">
+No
+</th>
+
+
+<th data-key="site">
+Site
+</th>
+
+
+<th data-key="date">
+Date of Breakdown
+</th>
+
+
+<th data-key="category">
+Category
+</th>
+
+
+<th data-key="vehicle">
+Vehicle No
+</th>
+
+
+<th data-key="details">
+Breakdown Details
+</th>
+
+
+<th data-key="reason">
+Reason for pendency
+</th>
+
+
+<th data-key="days">
+Pending for (no of days)
+</th>
+
+
+<th data-key="alert">
+Breakdown Alert Icon
+</th>
+
+
+
+</tr>
+
+
+</thead>
+
+
+
+<tbody id="detailsBody">
+
+</tbody>
+
+
+
+</table>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+
+
+
+</div>
+
+
+
+<script id="pendingData" type="application/json">
+{{ pending_records|tojson }}
+</script>
+
+
+<script id="resolvedData" type="application/json">
+{{ resolved_records|tojson }}
+</script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+
+<script>
+
+
+Chart.register(ChartDataLabels);
+
+
+
+const data = JSON.parse(
+document.getElementById("pendingData").textContent
+);
+
+
+const resolvedData = JSON.parse(
+document.getElementById("resolvedData").textContent
+);
+
+
+
+
+
+let filters={
+
+site:"All",
+owned:"All",
+from:"",
+to:"",
+alert:null,
+sort:"no",
+direction:1
+
+};
+
+
+
+
+
+function getAlert(days){
+
+if(days>30)
+return "High";
+
+if(days>=6)
+return "Medium";
+
+return "Low";
+
 }
 
-const data = raw.map((r,i)=>({
-  no:i+1, site:r[0], date:r[1], category:r[2], vehicle:r[3], details:r[4],
-  reason:r[5], days:parseInt(r[6],10), owned:r[7], alert:alertLevel(parseInt(r[6],10))
+
+
+
+
+let master=data.map((r,i)=>({
+
+no:i+1,
+
+site:r.site,
+
+owned:r.owned || "Owned",
+
+date:r.date || "",
+
+category:r.category,
+
+vehicle:r.vehicle || "",
+
+details:r.details || "",
+
+reason:r.reason,
+
+days:Number(r.days),
+
+alert:getAlert(Number(r.days))
+
 }));
 
-/* ---------- FILTER SETUP ---------- */
-const siteSel=document.getElementById('fSite');
-[...new Set(data.map(d=>d.site))].sort().forEach(s=>siteSel.innerHTML+=`<option value="${s}">${s}</option>`);
-const ownedSel=document.getElementById('fOwned');
-const fromInp=document.getElementById('fFrom');
-const toInp=document.getElementById('fTo');
 
-document.getElementById('clearFilters').onclick=()=>{
-  siteSel.value="All"; ownedSel.value="All"; fromInp.value=""; toInp.value="";
-  applyFilters();
-};
 
-function getFiltered(){
-  return data.filter(d=>{
-    if(siteSel.value!=="All" && d.site!==siteSel.value) return false;
-    if(ownedSel.value!=="All" && d.owned!==ownedSel.value) return false;
-    if(fromInp.value && d.date < fromInp.value) return false;
-    if(toInp.value && d.date > toInp.value) return false;
-    return true;
-  });
-}
 
-/* ---------- TABS ---------- */
-document.querySelectorAll('.tab-btn').forEach(btn=>{
-  btn.onclick=()=>{
-    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-    document.getElementById('view-'+btn.dataset.view).classList.add('active');
-    if(btn.dataset.view==='details') renderTable();
-    else renderAnalysis();
-  };
+
+
+/* ================= FILTER ================= */
+
+
+function filteredData(){
+
+
+return master.filter(r=>{
+
+
+if(filters.site!="All" && r.site!==filters.site)
+return false;
+
+
+if(filters.owned!="All" && r.owned!==filters.owned)
+return false;
+
+
+
+if(filters.from && r.date < filters.from)
+return false;
+
+
+if(filters.to && r.date > filters.to)
+return false;
+
+
+
+if(filters.alert && r.alert!==filters.alert)
+return false;
+
+
+
+return true;
+
+
 });
 
-/* ---------- CHARTS ---------- */
-let machineChart, siteDonut, reasonDonut;
-const centerTextPlugin = {
-  id:'centerText',
-  afterDraw(chart){
-    if(!chart.config._centerText) return;
-    const {ctx, chartArea:{left,right,top,bottom}} = chart;
-    ctx.save();
-    const cx=(left+right)/2, cy=(top+bottom)/2;
-    ctx.font='700 20px Segoe UI'; ctx.fillStyle='#EAF1FB'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(chart.config._centerText.value, cx, cy-8);
-    ctx.font='500 10px Segoe UI'; ctx.fillStyle='#8CA3C4';
-    ctx.fillText(chart.config._centerText.label, cx, cy+10);
-    ctx.restore();
-  }
-};
-Chart.register(centerTextPlugin);
 
-const palette=['#2DD4BF','#4E7FDB','#F2994A','#E5484D','#9B59B6','#27AE60','#F2C94C','#EB5757'];
-
-function renderAnalysis(){
-  const f=getFiltered();
-  const pending=f.filter(d=>d.days>0); // all rows are "pending" (Resolved: NO) per source sheet
-  const total=pending.length;
-  const critical=pending.filter(d=>d.days>15).length;
-  const low=pending.filter(d=>d.days<=5).length;
-  const med=pending.filter(d=>d.days>=6 && d.days<=30).length;
-  const high=pending.filter(d=>d.days>30).length;
-  const avg=pending.length? (pending.reduce((a,d)=>a+d.days,0)/pending.length).toFixed(1):0;
-  const hi30=pending.filter(d=>d.days>30).length;
-  const med830=pending.filter(d=>d.days>=8 && d.days<=30).length;
-  const low07=pending.filter(d=>d.days>=0 && d.days<=7).length;
-
-  document.getElementById('kTotal').textContent=total;
-  document.getElementById('kCritical').textContent=critical;
-  document.getElementById('bLow').innerHTML=low+"<small>0-5 Days</small>";
-  document.getElementById('bMed').innerHTML=med+"<small>6-30 Days</small>";
-  document.getElementById('bHigh').innerHTML=high+"<small>Over &gt; 30</small>";
-  document.getElementById('kAvg').textContent=avg;
-  document.getElementById('kHigh').textContent=hi30;
-  document.getElementById('kMed').textContent=med830;
-  document.getElementById('kLow').textContent=low07;
-  document.getElementById('kResolved').textContent=0;
-
-  // Machine-wise pending (> 15 days), grouped by category
-  const gt15 = pending.filter(d=>d.days>15);
-  const byCat={};
-  gt15.forEach(d=>byCat[d.category]=(byCat[d.category]||0)+1);
-  const catLabels=Object.keys(byCat);
-  const catValues=catLabels.map(l=>byCat[l]);
-
-  if(machineChart) machineChart.destroy();
-  machineChart=new Chart(document.getElementById('machineChart'),{
-    type:'bar',
-    data:{labels:catLabels,datasets:[{data:catValues,backgroundColor:catLabels.map((_,i)=>palette[i%palette.length]),borderRadius:5}]},
-    options:{maintainAspectRatio:false,plugins:{legend:{display:false},datalabels:{}},
-      scales:{y:{beginAtZero:true,ticks:{precision:0,color:'#8CA3C4'},grid:{color:'#1D3E68'}},
-               x:{ticks:{color:'#EAF1FB',font:{size:10}},grid:{display:false}}}}
-  });
-
-  // Site donut
-  const bySite={};
-  f.forEach(d=>bySite[d.site]=(bySite[d.site]||0)+1);
-  const siteLabels=Object.keys(bySite);
-  if(siteDonut) siteDonut.destroy();
-  siteDonut=new Chart(document.getElementById('siteDonut'),{
-    type:'doughnut',
-    data:{labels:siteLabels,datasets:[{data:siteLabels.map(l=>bySite[l]),backgroundColor:palette,borderColor:'#0F2A52',borderWidth:2}]},
-    options:{maintainAspectRatio:false,cutout:'62%',
-      plugins:{legend:{position:'bottom',labels:{color:'#EAF1FB',boxWidth:10,font:{size:10},padding:8}}}},
-    _centerText:{value:total,label:'TOTAL'}
-  });
-
-  // Reason donut (pending distribution > 15 days)
-  const byReason={};
-  gt15.forEach(d=>byReason[d.reason]=(byReason[d.reason]||0)+1);
-  const reasonLabels=Object.keys(byReason);
-  if(reasonDonut) reasonDonut.destroy();
-  reasonDonut=new Chart(document.getElementById('reasonDonut'),{
-    type:'doughnut',
-    data:{labels:reasonLabels,datasets:[{data:reasonLabels.map(l=>byReason[l]),backgroundColor:palette.slice().reverse(),borderColor:'#0F2A52',borderWidth:2}]},
-    options:{maintainAspectRatio:false,cutout:'62%',
-      plugins:{legend:{position:'bottom',labels:{color:'#EAF1FB',boxWidth:10,font:{size:9.5},padding:6}}}},
-    _centerText:{value:gt15.length,label:'CASES'}
-  });
 }
 
-/* ---------- BD DETAILS TABLE (sortable, filterable, exportable) ---------- */
-let sortKey='no', sortDir=1;
+
+
+
+
+
+/* ================= SLICERS ================= */
+
+
+const site=document.getElementById("siteSlicer");
+
+
+
+[...new Set(master.map(x=>x.site))]
+.sort()
+.forEach(s=>{
+
+
+let o=document.createElement("option");
+
+o.value=s;
+
+o.textContent=s;
+
+site.appendChild(o);
+
+
+});
+
+
+
+
+
+site.onchange=function(){
+
+filters.site=this.value;
+
+renderAll();
+
+};
+
+
+
+
+
+document.getElementById("ownedSlicer")
+.onchange=function(){
+
+
+filters.owned=this.value;
+
+renderAll();
+
+
+};
+
+
+
+
+document.getElementById("fromDate")
+.onchange=function(){
+
+filters.from=this.value;
+
+renderAll();
+
+};
+
+
+
+
+document.getElementById("toDate")
+.onchange=function(){
+
+filters.to=this.value;
+
+renderAll();
+
+};
+
+
+
+
+
+
+document.getElementById("clearFiltersBtn")
+.onclick=function(){
+
+
+filters={
+
+site:"All",
+owned:"All",
+from:"",
+to:"",
+alert:null,
+sort:"no",
+direction:1
+
+};
+
+
+site.value="All";
+
+document.getElementById("ownedSlicer").value="All";
+
+document.getElementById("fromDate").value="";
+
+document.getElementById("toDate").value="";
+
+
+renderAll();
+
+
+};
+
+
+
+
+
+
+/* ================= CHARTS ================= */
+
+
+let machineChart;
+let siteChart;
+let reasonChart;
+
+
+
+
+
+
+const centerPlugin={
+
+
+id:"center",
+
+afterDraw(chart){
+
+
+if(chart.config.type!="doughnut")
+return;
+
+
+let ctx=chart.ctx;
+
+let area=chart.chartArea;
+
+
+ctx.save();
+
+
+ctx.font="bold 20px Segoe UI";
+
+ctx.fillStyle="#fff";
+
+ctx.textAlign="center";
+
+ctx.fillText(
+
+chart.data.datasets[0].data.reduce((a,b)=>a+b,0),
+
+(area.left+area.right)/2,
+
+(area.top+area.bottom)/2
+
+);
+
+
+ctx.restore();
+
+
+}
+
+
+};
+
+
+
+
+Chart.register(centerPlugin);
+
+
+
+
+
+
+const chartOption={
+
+
+responsive:true,
+
+maintainAspectRatio:false,
+
+
+plugins:{
+
+
+legend:{
+
+
+position:"bottom",
+
+labels:{
+
+color:"#fff",
+
+boxWidth:10,
+
+font:{
+size:10
+}
+
+}
+
+},
+
+
+datalabels:{
+
+
+color:"#fff",
+
+font:{
+weight:"bold"
+}
+
+}
+
+
+},
+
+
+
+};
+
+
+function destroyCharts(){
+
+
+if(machineChart)
+machineChart.destroy();
+
+
+if(siteChart)
+siteChart.destroy();
+
+
+
+if(reasonChart)
+reasonChart.destroy();
+
+
+
+}
+
+
+
+
+
+
+
+
+function renderCharts(){
+
+
+destroyCharts();
+
+
+
+let arr=filteredData();
+
+
+
+
+
+/* MACHINE */
+
+
+let mc={};
+
+
+arr.filter(x=>x.days>15)
+.forEach(x=>{
+
+
+mc[x.category]=(mc[x.category]||0)+1;
+
+
+});
+
+
+
+
+machineChart=new Chart(
+document.getElementById("machineChart"),
+
+{
+
+
+type:"bar",
+
+
+data:{
+
+
+labels:Object.keys(mc),
+
+
+datasets:[{
+
+data:Object.values(mc),
+
+backgroundColor:"#00c6ff",
+
+borderRadius:8
+
+
+}]
+
+
+},
+
+
+options:{
+
+responsive:true,
+
+maintainAspectRatio:false,
+
+
+plugins:{
+
+
+legend:{
+display:false
+}
+
+}
+
+
+}
+
+
+}
+
+);
+
+
+
+
+
+
+
+
+/* SITE DONUT */
+
+
+let sc={};
+
+
+arr.forEach(x=>{
+
+
+sc[x.site]=(sc[x.site]||0)+1;
+
+
+});
+
+
+
+
+
+siteChart=new Chart(
+
+document.getElementById("siteChart"),
+
+{
+
+
+type:"doughnut",
+
+
+data:{
+
+
+labels:Object.keys(sc),
+
+
+datasets:[{
+
+
+data:Object.values(sc),
+
+backgroundColor:[
+
+"#00ffff",
+
+"#0077ff",
+
+"#00ff88",
+
+"#ffaa00",
+
+"#ff0055"
+
+]
+
+
+}]
+
+
+},
+
+
+
+options:{
+
+
+...chartOption,
+
+cutout:"65%"
+
+
+}
+
+
+
+}
+
+);
+
+
+
+
+
+
+
+
+
+/* REASON DONUT */
+
+
+let rc={};
+
+
+arr.filter(x=>x.days>15)
+.forEach(x=>{
+
+
+rc[x.reason]=(rc[x.reason]||0)+1;
+
+
+});
+
+
+
+
+reasonChart=new Chart(
+
+document.getElementById("reasonChart"),
+
+{
+
+
+type:"doughnut",
+
+
+data:{
+
+
+labels:Object.keys(rc),
+
+
+datasets:[{
+
+data:Object.values(rc),
+
+backgroundColor:[
+
+"#ff0055",
+
+"#ffaa00",
+
+"#00ffff",
+
+"#00ff88",
+
+"#0077ff"
+
+]
+
+}]
+
+
+},
+
+
+options:{
+
+
+...chartOption,
+
+cutout:"65%"
+
+
+}
+
+
+
+}
+
+
+);
+
+
+
+
+}
+
+
+
+
+
+
+
+
+/* ================= KPI ================= */
+
+
+function renderKPI(){
+
+
+let arr=filteredData();
+
+
+
+document.getElementById("kpiPending").innerHTML=arr.length;
+
+
+document.getElementById("kpiPending15").innerHTML=
+
+arr.filter(x=>x.days>15).length;
+
+
+
+
+document.getElementById("kpiAvg").innerHTML=
+
+arr.length?
+
+(arr.reduce((a,b)=>a+b.days,0)/arr.length).toFixed(1)
+
+:"--";
+
+
+
+document.getElementById("kpiHigh").innerHTML=
+
+arr.filter(x=>x.days>30).length;
+
+
+document.getElementById("kpiMed").innerHTML=
+
+arr.filter(x=>x.days>=8&&x.days<=30).length;
+
+
+document.getElementById("kpiLow").innerHTML=
+
+arr.filter(x=>x.days<=7).length;
+
+
+
+document.getElementById("kpiResolved").innerHTML=
+
+resolvedData.length;
+
+
+
+}
+
+
+
+
+
+/* ================= TABLE ================= */
+
+
+let sortKey="no";
+
+
 
 function renderTable(){
-  let f=getFiltered();
-  f.sort((a,b)=>{
-    let va=a[sortKey], vb=b[sortKey];
-    if(typeof va==='string'){ va=va.toLowerCase(); vb=vb.toLowerCase(); }
-    if(va<vb) return -1*sortDir;
-    if(va>vb) return 1*sortDir;
-    return 0;
-  });
-  const body=document.getElementById('bdBody');
-  body.innerHTML=f.map(d=>`<tr>
-    <td>${d.no}</td><td>${d.site}</td><td>${d.date}</td><td>${d.category}</td>
-    <td>${d.vehicle}</td><td>${d.details}</td><td>${d.reason}</td><td>${d.days}</td>
-    <td><span class="pill ${d.alert}">${d.alert} Alert</span></td>
-  </tr>`).join('');
-  document.querySelectorAll('#bdTable thead th').forEach(th=>{
-    th.innerHTML = th.textContent.replace(' ▲','').replace(' ▼','') + (th.dataset.key===sortKey ? (sortDir===1?' ▲':' ▼') : '');
-  });
-}
 
-document.querySelectorAll('#bdTable thead th').forEach(th=>{
-  th.addEventListener('click',()=>{
-    const key=th.dataset.key;
-    if(sortKey===key) sortDir*=-1; else { sortKey=key; sortDir=1; }
-    renderTable();
-  });
+
+
+let arr=filteredData();
+
+
+
+arr.sort((a,b)=>{
+
+
+let x=a[sortKey];
+
+let y=b[sortKey];
+
+
+if(x<y)
+return -1;
+
+
+if(x>y)
+return 1;
+
+
+return 0;
+
+
 });
 
-function currentTableRows(){
-  let f=getFiltered();
-  f.sort((a,b)=>{
-    let va=a[sortKey], vb=b[sortKey];
-    if(typeof va==='string'){ va=va.toLowerCase(); vb=vb.toLowerCase(); }
-    if(va<vb) return -1*sortDir;
-    if(va>vb) return 1*sortDir;
-    return 0;
-  });
-  return f;
+
+
+
+
+let body=document.getElementById("detailsBody");
+
+
+
+body.innerHTML="";
+
+
+
+
+
+arr.forEach((r,i)=>{
+
+
+body.innerHTML+=`
+
+<tr>
+
+<td>${i+1}</td>
+
+<td>${r.site}</td>
+
+<td>${r.date}</td>
+
+<td>${r.category}</td>
+
+<td>${r.vehicle}</td>
+
+<td>${r.details}</td>
+
+<td>${r.reason}</td>
+
+<td>${r.days}</td>
+
+
+<td>
+
+<span class="alert-${r.alert}">
+
+${r.alert} Alert
+
+</span>
+
+
+</td>
+
+
+</tr>
+
+`;
+
+
+});
+
+
 }
 
-document.getElementById('exportExcel').onclick=()=>{
-  const rows=currentTableRows().map(d=>({
-    "No":d.no,"Site":d.site,"Date of breakdown":d.date,"Category":d.category,
-    "Vehcile No":d.vehicle,"Breakdown Details":d.details,"Reason for pendency":d.reason,
-    "Pending for (no of days)":d.days,"Breakdown Alert Icon":d.alert+" Alert"
-  }));
-  const ws=XLSX.utils.json_to_sheet(rows);
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,"BD Details");
-  XLSX.writeFile(wb,"BD_Details_Export.xlsx");
+
+
+
+
+
+
+document.querySelectorAll("#bdTable th")
+.forEach(th=>{
+
+
+th.onclick=function(){
+
+
+sortKey=this.dataset.key;
+
+
+renderTable();
+
+
 };
 
-document.getElementById('exportPdf').onclick=()=>{
-  const { jsPDF } = window.jspdf;
-  const doc=new jsPDF({orientation:'landscape'});
-  const rows=currentTableRows().map(d=>[d.no,d.site,d.date,d.category,d.vehicle,d.details,d.reason,d.days,d.alert+" Alert"]);
-  doc.text("Machine Breakdown Details",14,12);
-  doc.autoTable({
-    startY:18,
-    head:[["No","Site","Date","Category","Vehicle No","Breakdown Details","Reason for pendency","Pending Days","Alert"]],
-    body:rows, styles:{fontSize:7}, headStyles:{fillColor:[10,31,61]}
-  });
-  doc.save("BD_Details_Export.pdf");
-};
 
-/* ---------- WIRE FILTERS ---------- */
-[siteSel,ownedSel,fromInp,toInp].forEach(el=>el.addEventListener('change',()=>{
-  renderAnalysis(); renderTable();
+
+});
+
+
+
+
+
+
+
+
+/* ================= EXPORT EXCEL ================= */
+
+
+document.getElementById("exportExcel")
+.onclick=function(){
+
+
+
+let arr=filteredData();
+
+
+
+let rows=arr.map((r,i)=>({
+
+
+"No":i+1,
+
+"Site":r.site,
+
+"Date of Breakdown":r.date,
+
+"Category":r.category,
+
+"Vehicle No":r.vehicle,
+
+"Breakdown Details":r.details,
+
+"Reason for pendency":r.reason,
+
+"Pending for (no of days)":r.days,
+
+"Breakdown Alert Icon":r.alert+" Alert"
+
+
 }));
 
-renderAnalysis();
+
+
+
+let ws=XLSX.utils.json_to_sheet(rows);
+
+
+let wb=XLSX.utils.book_new();
+
+
+XLSX.utils.book_append_sheet(wb,ws,"BD Details");
+
+
+XLSX.writeFile(wb,"Breakdown_Details.xlsx");
+
+
+};
+
+
+
+
+
+
+
+
+/* ================= EXPORT PDF ================= */
+
+
+document.getElementById("exportPdf")
+.onclick=function(){
+
+
+
+const {jsPDF}=window.jspdf;
+
+
+let doc=new jsPDF("landscape");
+
+
+
+let arr=filteredData();
+
+
+
+let rows=arr.map((r,i)=>[
+
+
+i+1,
+
+r.site,
+
+r.date,
+
+r.category,
+
+r.vehicle,
+
+r.details,
+
+r.reason,
+
+r.days,
+
+r.alert+" Alert"
+
+
+]);
+
+
+
+doc.text(
+
+"Breakdown Details",
+
+14,
+
+12
+
+);
+
+
+
+doc.autoTable({
+
+startY:18,
+
+head:[[
+
+"No",
+
+"Site",
+
+"Date",
+
+"Category",
+
+"Vehicle",
+
+"Details",
+
+"Reason",
+
+"Days",
+
+"Alert"
+
+]],
+
+
+body:rows,
+
+styles:{
+fontSize:7
+}
+
+
+});
+
+
+doc.save("Breakdown_Details.pdf");
+
+
+
+};
+
+
+
+
+
+
+
+function renderAll(){
+
+
+renderKPI();
+
+renderCharts();
+
 renderTable();
+
+
+
+}
+
+
+
+renderAll();
+
+
 </script>
-</body>
-</html>
+{% endblock %}
