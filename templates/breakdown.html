@@ -14,8 +14,18 @@
 
   <div class="toolbar">
     <div class="toolbar-group">
-      <label>Site Selection</label>
+      <label>Site</label>
       <select class="slicer" id="siteSlicer"></select>
+    </div>
+    <div class="toolbar-group">
+      <label>Owned/Hired</label>
+      <select class="slicer" id="ownedSlicer"></select>
+    </div>
+    <div class="toolbar-group">
+      <label>Date Range</label>
+      <input type="date" class="date-input" id="dateFrom">
+      <span class="to-sep">to</span>
+      <input type="date" class="date-input" id="dateTo">
     </div>
     <div class="toolbar-group">
       <span class="tabs">
@@ -79,10 +89,28 @@
 
   <div id="tab-details" class="tab-panel" style="display:none;">
     <div class="chart-card details-card">
-      <h2>Breakdown Details (filtered)</h2>
+      <div class="details-header">
+        <h2>Breakdown Details (filtered)</h2>
+        <div class="export-btns">
+          <button class="export-btn excel" id="exportExcelBtn">⬇ Export Excel</button>
+          <button class="export-btn pdf" id="exportPdfBtn">⬇ Export PDF</button>
+        </div>
+      </div>
       <div class="details-wrap">
         <table class="details-table">
-          <thead><tr><th>Machine / Category</th><th>Site</th><th>Pending Days</th><th>Reason</th></tr></thead>
+          <thead>
+            <tr>
+              <th data-key="no">No</th>
+              <th data-key="site">Site</th>
+              <th data-key="date">Date of breakdown</th>
+              <th data-key="category">Category</th>
+              <th data-key="vehicleNo">Vehicle No</th>
+              <th data-key="details">Breakdown Details</th>
+              <th data-key="reason">Reason for pendency</th>
+              <th data-key="days">Pending for (no of days)</th>
+              <th data-key="alert">Breakdown Alert Icon</th>
+            </tr>
+          </thead>
           <tbody id="detailsBody"></tbody>
         </table>
       </div>
@@ -97,19 +125,44 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 <script>
 Chart.register(ChartDataLabels);
 
 const allData = JSON.parse(document.getElementById("pendingData").textContent);
 const RESOLVED_SAMPLE = JSON.parse(document.getElementById("resolvedData").textContent);
 
-const filters = {site:"All", machine:null, reason:null, range:null};
+// ---- date parsing (handles DD-MM-YYYY, DD/MM/YYYY, YYYY-MM-DD) ----
+function parseDate(str){
+  if(!str) return null;
+  const s = String(str).trim();
+  let m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if(m){ return new Date(+m[3], +m[2]-1, +m[1]); }
+  m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+  if(m){ return new Date(+m[1], +m[2]-1, +m[3]); }
+  const d = new Date(s);
+  return isNaN(d) ? null : d;
+}
+allData.forEach(r=>{ r._date = parseDate(r.date); });
+
+function alertInfo(days){
+  if(days>30) return {label:"High Alert", color:"#ff2d55"};
+  if(days>=16) return {label:"Medium Alert", color:"#ffaa00"};
+  return {label:"Low Alert", color:"#00e05a"};
+}
+
+const filters = {site:"All", machine:null, reason:null, range:null, ownedHired:"All", dateFrom:null, dateTo:null, alert:null};
 const RANGE_COLORS = {"0-5 Days":"#00e05a","6-30 Days":"#ffaa00","31+ Days":"#ff2d55"};
 function rangeOf(d){ if(d<=5) return "0-5 Days"; if(d<=30) return "6-30 Days"; return "31+ Days"; }
 
 function getBase(excludeType){
   return allData.filter(r=>{
     if(filters.site!=="All" && r.site!==filters.site) return false;
+    if(filters.ownedHired!=="All" && r.ownedHired!==filters.ownedHired) return false;
+    if(filters.dateFrom && (!r._date || r._date < filters.dateFrom)) return false;
+    if(filters.dateTo && (!r._date || r._date > filters.dateTo)) return false;
     if(excludeType!=="machine" && filters.machine && r.category!==filters.machine) return false;
     if(excludeType!=="reason" && filters.reason && r.reason!==filters.reason) return false;
     if(excludeType!=="range" && filters.range && rangeOf(r.days)!==filters.range) return false;
@@ -128,8 +181,20 @@ const siteSel = document.getElementById("siteSlicer");
 sites.forEach(s=>{ const o=document.createElement("option"); o.value=s; o.textContent=s; siteSel.appendChild(o); });
 siteSel.addEventListener("change", ()=>{ filters.site = siteSel.value; renderAll(); });
 
+const ownedVals = ["All", ...new Set(allData.map(r=>r.ownedHired).filter(Boolean))];
+const ownedSel = document.getElementById("ownedSlicer");
+ownedVals.forEach(s=>{ const o=document.createElement("option"); o.value=s; o.textContent=s; ownedSel.appendChild(o); });
+ownedSel.addEventListener("change", ()=>{ filters.ownedHired = ownedSel.value; renderAll(); });
+
+const dateFromEl = document.getElementById("dateFrom");
+const dateToEl = document.getElementById("dateTo");
+dateFromEl.addEventListener("change", ()=>{ filters.dateFrom = dateFromEl.value ? new Date(dateFromEl.value) : null; renderAll(); });
+dateToEl.addEventListener("change", ()=>{ filters.dateTo = dateToEl.value ? new Date(dateToEl.value) : null; renderAll(); });
+
 document.getElementById("clearFiltersBtn").addEventListener("click", ()=>{
-  filters.machine=null; filters.reason=null; filters.range=null; filters.site="All"; siteSel.value="All";
+  filters.machine=null; filters.reason=null; filters.range=null; filters.site="All"; filters.ownedHired="All";
+  filters.dateFrom=null; filters.dateTo=null; filters.alert=null;
+  siteSel.value="All"; ownedSel.value="All"; dateFromEl.value=""; dateToEl.value="";
   renderAll();
 });
 
@@ -140,12 +205,18 @@ document.querySelectorAll(".tab-btn").forEach(btn=>{
     const tab = btn.dataset.tab;
     document.getElementById("tab-analysis").style.display = tab==="analysis" ? "" : "none";
     document.getElementById("tab-details").style.display = tab==="details" ? "" : "none";
-    if(tab==="details") renderDetails();
+    if(tab==="details"){
+      renderDetails();
+      // force chart resize fix isn't needed here since charts live in analysis tab only
+    } else {
+      // re-sync chart sizes when coming back to analysis tab
+      requestAnimationFrame(()=>{ machineChart.resize(); siteChart.resize(); reasonChart.resize(); });
+    }
   });
 });
 
 const commonOpts = {
-  responsive:true, maintainAspectRatio:false,
+  responsive:true, maintainAspectRatio:false, resizeDelay:100,
   plugins:{ legend:{labels:{color:"#fff",font:{size:11,weight:"bold"}}},
     datalabels:{color:"#fff",font:{size:11,weight:"bold"},formatter:v=>v} },
   scales:{ x:{ticks:{color:"#fff",font:{size:10}},grid:{color:"rgba(255,255,255,.15)"}},
@@ -160,7 +231,8 @@ const centerTotal = { id:"centerTotal", beforeDraw(chart){
   ctx.font="bold 20px Segoe UI"; ctx.fillText(total,cx,cy+11);
   ctx.restore();
 }};
-const donutOpts = { responsive:true, maintainAspectRatio:false, cutout:"62%",
+const donutOpts = { responsive:true, maintainAspectRatio:false, resizeDelay:100, cutout:"62%",
+  layout:{padding:4},
   plugins:{ legend:{position:"bottom",labels:{color:"#fff",boxWidth:9,padding:6,font:{size:10,weight:"bold"}}},
             datalabels:{display:true,color:"#fff",font:{size:11,weight:"bold"}} } };
 
@@ -237,17 +309,90 @@ function renderAll(){
   const resolvedFiltered = RESOLVED_SAMPLE.filter(r=> filters.site==="All" || r.site===filters.site);
   document.getElementById("kpiResolved").textContent = resolvedFiltered.length;
 
-  const anyChartFilter = filters.machine || filters.reason || filters.range || filters.site!=="All";
+  const anyChartFilter = filters.machine || filters.reason || filters.range || filters.site!=="All" ||
+    filters.ownedHired!=="All" || filters.dateFrom || filters.dateTo || filters.alert;
   document.getElementById("clearFiltersBtn").classList.toggle("show", !!anyChartFilter);
 
   if(document.getElementById("tab-details").style.display !== "none") renderDetails();
 }
 
-function renderDetails(){
-  const data = getBase(null);
-  const body = document.getElementById("detailsBody");
-  body.innerHTML = data.map(r=>`<tr><td>${r.category}</td><td>${r.site}</td><td>${r.days}</td><td>${r.reason}</td></tr>`).join("");
+// ---- BD Details tab: table, sorting, alert badges, export ----
+const detailsSort = { key:null, dir:1 };
+
+function getDetailsData(){
+  let data = getBase(null);
+  if(filters.alert) data = data.filter(r=> alertInfo(r.days).label === filters.alert);
+  if(detailsSort.key){
+    data = [...data].sort((a,b)=>{
+      let av = a[detailsSort.key], bv = b[detailsSort.key];
+      if(detailsSort.key==="days") return (av-bv)*detailsSort.dir;
+      if(detailsSort.key==="alert") { av = alertInfo(a.days).label; bv = alertInfo(b.days).label; }
+      return String(av).localeCompare(String(bv)) * detailsSort.dir;
+    });
+  }
+  return data;
 }
+
+function renderDetails(){
+  const data = getDetailsData();
+  const body = document.getElementById("detailsBody");
+  body.innerHTML = data.map((r,i)=>{
+    const info = alertInfo(r.days);
+    return `<tr>
+      <td>${i+1}</td>
+      <td class="clickable-cell" data-type="site" data-value="${r.site}">${r.site}</td>
+      <td>${r.date || ""}</td>
+      <td>${r.category}</td>
+      <td>${r.vehicleNo || ""}</td>
+      <td>${r.details || ""}</td>
+      <td>${r.reason}</td>
+      <td>${r.days}</td>
+      <td><span class="alert-badge clickable-cell" data-type="alert" data-value="${info.label}" style="background:${info.color}">${info.label}</span></td>
+    </tr>`;
+  }).join("");
+
+  body.querySelectorAll(".clickable-cell").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      const type = el.dataset.type, value = el.dataset.value;
+      if(type==="site"){ toggleFilter("site", value); }
+      else if(type==="alert"){ filters.alert = (filters.alert===value) ? null : value; renderAll(); }
+    });
+  });
+}
+
+document.querySelectorAll(".details-table th").forEach(th=>{
+  th.addEventListener("click", ()=>{
+    const key = th.dataset.key;
+    if(key==="no") return;
+    if(detailsSort.key===key){ detailsSort.dir *= -1; } else { detailsSort.key = key; detailsSort.dir = 1; }
+    renderDetails();
+  });
+});
+
+document.getElementById("exportExcelBtn").addEventListener("click", ()=>{
+  const data = getDetailsData();
+  const rows = data.map((r,i)=>({
+    "No": i+1, "Site": r.site, "Date of breakdown": r.date, "Category": r.category,
+    "Vehicle No": r.vehicleNo, "Breakdown Details": r.details, "Reason for pendency": r.reason,
+    "Pending for (no of days)": r.days, "Breakdown Alert": alertInfo(r.days).label
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "BD Details");
+  XLSX.writeFile(wb, "BD_Details_Filtered.xlsx");
+});
+
+document.getElementById("exportPdfBtn").addEventListener("click", ()=>{
+  const data = getDetailsData();
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({orientation:"landscape"});
+  const rows = data.map((r,i)=>[i+1, r.site, r.date||"", r.category, r.vehicleNo||"", r.details||"", r.reason, r.days, alertInfo(r.days).label]);
+  doc.autoTable({
+    head:[["No","Site","Date","Category","Vehicle No","Breakdown Details","Reason","Pending Days","Alert"]],
+    body: rows, styles:{fontSize:8}
+  });
+  doc.save("BD_Details_Filtered.pdf");
+});
 
 renderAll();
 </script>
