@@ -34,6 +34,9 @@ body{
    TOP NAVBAR
 ========================= */
 .navbar{
+  position:sticky;
+  top:0;
+  z-index:1000;
   height:60px;
   display:flex;
   align-items:center;
@@ -148,6 +151,7 @@ header{
 
 .header-text{
   line-height:1.1;
+  text-align:left;
 }
 
 .header-text h1{
@@ -156,6 +160,7 @@ header{
   text-shadow:0 0 10px cyan;
   margin:0;
   line-height:1.2;
+  text-align:left;
 }
 
 .header-text p,
@@ -165,6 +170,7 @@ header{
   opacity:.75;
   margin:1px 0 0 0;
   line-height:1.2;
+  text-align:left;
 }
 
 .status{
@@ -370,9 +376,9 @@ footer{
 
 /* Optional: use this class on donut chart-cards for a smaller, centered look */
 .chart-card.donut .chart-box{
-  height:135px;
-  max-width:135px;
-  margin:0 auto;
+  height:190px;
+  max-width:100%;
+  margin:0;
 }
 
 /* =========================
@@ -381,6 +387,7 @@ footer{
 @media(max-width:1200px){
   .kpi-container{max-width:100%;}
   .chart-box{height:140px;}
+  .chart-card.donut .chart-box{height:170px;}
 }
 
 @media(max-width:900px){
@@ -389,6 +396,7 @@ footer{
   .chart-grid{grid-template-columns:1fr;}
   .kpi-container{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));margin:0 auto 16px 0;}
   .chart-box{height:170px;}
+  .chart-card.donut .chart-box{height:200px;}
 }
 
 @media(max-width:600px){
@@ -396,6 +404,7 @@ footer{
   .content{padding:8px;}
   .kpi-card h1{font-size:20px;}
   .chart-box{height:150px;}
+  .chart-card.donut .chart-box{height:180px;}
   header{flex-direction:column;align-items:flex-start;gap:10px;}
   .status{align-self:flex-start;}
 }
