@@ -665,13 +665,13 @@ font-size:38px;
 
     display:grid;
 
-    grid-template-columns:repeat(auto-fit,minmax(100px,1fr));
+    grid-template-columns:repeat(auto-fit,minmax(50px,1fr));
 
-    gap:20px;
+    gap:10px;
 
-    width:100%;
+    width:50%;
 
-    margin-bottom:25px;
+    margin-bottom:10px;
 
 }
 
@@ -835,13 +835,13 @@ grid-template-columns:1fr;
 
     display:grid;
 
-    grid-template-columns:repeat(auto-fit,minmax(100px,1fr));
+    grid-template-columns:repeat(auto-fit,minmax(50px,1fr));
 
-    gap:20px;
+    gap:10px;
 
-    width:100%;
+    width:50%;
 
-    margin-bottom:25px;
+    margin-bottom:10px;
 
 }
 
@@ -905,13 +905,13 @@ opacity:.8;
 
     display:grid;
 
-    grid-template-columns:repeat(auto-fit,minmax(100px,1fr));
+    grid-template-columns:repeat(auto-fit,minmax(50px,1fr));
 
-    gap:20px;
+    gap:10px;
 
-    width:100%;
+    width:50%;
 
-    margin-bottom:25px;
+    margin-bottom:10px;
 
 }
 
