@@ -170,6 +170,17 @@ def create_pdf(master_df):
             "Stock Alert Level"
         ]
     ].copy()
+	
+# Convert Pending Days to Integer
+final_df["Pending for (no of days)"] = (
+    pd.to_numeric(
+        final_df["Pending for (no of days)"],
+        errors="coerce"
+    )
+    .fillna(0)
+    .astype(int)
+)
+
 
 
 
@@ -182,31 +193,6 @@ def create_pdf(master_df):
 
     )
 
-
-
-	final_df = master_df[
-    [
-        "Index Number",
-        "Site",
-        "Date of breakdown",
-        "Category",
-        "Vehcile No",
-        "Breakdown Details",
-        "Reason for pendency",
-        "Pending for (no of days)",
-        "Stock Alert Level"
-    ]
-].copy()
-
-# Convert Pending Days to Integer
-final_df["Pending for (no of days)"] = (
-    pd.to_numeric(
-        final_df["Pending for (no of days)"],
-        errors="coerce"
-    )
-    .fillna(0)
-    .astype(int)
-)
 
 
 
