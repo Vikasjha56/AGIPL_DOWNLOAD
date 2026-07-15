@@ -113,7 +113,9 @@ def create_pdf(master_df):
 
 
 
-    # Stock Alert Logic
+        # ===============================
+    # STOCK ALERT LOGIC
+    # ===============================
 
     def alert_level(days):
 
@@ -121,31 +123,25 @@ def create_pdf(master_df):
 
             qty = float(days)
 
-
-            if qty >=1 and qty <=15:
+            if 1 <= qty <= 15:
 
                 return "C [Low Alert]"
 
-
-            elif qty >=16 and qty <=30:
+            elif 16 <= qty <= 30:
 
                 return "B [Medium Alert]"
 
-
-            elif qty >=31 and qty <=10000:
+            elif qty >= 31:
 
                 return "A [High Alert]"
-
 
             else:
 
                 return "[No Breakdown]"
 
-
         except:
 
             return "[No Breakdown]"
-
 
 
     master_df["Stock Alert Level"] = (
@@ -154,61 +150,65 @@ def create_pdf(master_df):
     )
 
 
-	# Required Columns
+    # ===============================
+    # REQUIRED COLUMNS
+    # ===============================
 
-	final_df = master_df[
-		[
-			"Index Number",
-			"Site",
-			"Date of breakdown",
-			"Category",
-			"Vehcile No",
-			"Breakdown Details",
-			"Reason for pendency",
-			"Pending for (no of days)",
-			"Stock Alert Level"
-		]
-	].copy()
-
-
-	# Convert Pending Days to Integer
-
-	final_df["Pending for (no of days)"] = (
-		pd.to_numeric(
-			final_df["Pending for (no of days)"],
-			errors="coerce"
-		)
-		.fillna(0)
-		.astype(int)
-	)
+    final_df = master_df[
+        [
+            "Index Number",
+            "Site",
+            "Date of breakdown",
+            "Category",
+            "Vehcile No",
+            "Breakdown Details",
+            "Reason for pendency",
+            "Pending for (no of days)",
+            "Stock Alert Level"
+        ]
+    ].copy()
 
 
-	# Alert Icon Column
+    # ===============================
+    # CONVERT PENDING DAYS TO INTEGER
+    # ===============================
 
-	final_df["Alert Icon"] = (
-		final_df["Stock Alert Level"]
-		.apply(AlertIcon)
-	)
-
-
-	# Rename Columns
-
-	final_df.columns = [
-		"Index Number",
-		"Site",
-		"Date of Breakdown",
-		"Category",
-		"Vehicle No",
-		"Breakdown Details",
-		"Reason for Pendency",
-		"Pending (No of Days)",
-		"Stock Alert Level",
-		"Alert Icon"
-	]
+    final_df["Pending for (no of days)"] = (
+        pd.to_numeric(
+            final_df["Pending for (no of days)"],
+            errors="coerce"
+        )
+        .fillna(0)
+        .astype(int)
+    )
 
 
+    # ===============================
+    # ALERT ICON COLUMN
+    # ===============================
+
+    final_df["Alert Icon"] = (
+        final_df["Stock Alert Level"]
+        .apply(AlertIcon)
+    )
 
 
+    # ===============================
+    # RENAME COLUMNS
+    # ===============================
+
+    final_df.columns = [
+        "Index Number",
+        "Site",
+        "Date of Breakdown",
+        "Category",
+        "Vehicle No",
+        "Breakdown Details",
+        "Reason for Pendency",
+        "Pending (No of Days)",
+        "Stock Alert Level",
+        "Alert Icon"
+    ]
 
 
 
