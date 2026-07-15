@@ -268,7 +268,7 @@ footer{
 }
 
 /* =========================
-   KPI CARDS (fixed: no more fixed 40% width / 3x duplication)
+   KPI CARDS — left aligned
 ========================= */
 .kpi-container{
   display:grid;
@@ -315,7 +315,7 @@ footer{
 }
 
 /* =========================
-   CHARTS (fixed: no more 420px fixed height / duplicate blocks)
+   CHARTS
 ========================= */
 .chart-grid{
   display:grid;
@@ -348,7 +348,6 @@ footer{
   margin:0 0 8px 0;
 }
 
-/* This wrapper is what actually controls chart size — always keep charts inside it */
 .chart-box{
   position:relative;
   width:100%;
@@ -361,7 +360,6 @@ footer{
   max-height:150px !important;
 }
 
-/* Optional: use this class on donut chart-cards for a smaller, centered look */
 .chart-card.donut .chart-box{
   height:135px;
   max-width:135px;
@@ -377,7 +375,7 @@ footer{
 }
 
 @media(max-width:900px){
-  .sidebar{display:none;} /* or convert to a toggle menu in JS */
+  .sidebar{display:none;}
   .main{margin-left:0;width:100%;}
   .chart-grid{grid-template-columns:1fr;}
   .kpi-container{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));margin:0 auto 16px 0;}
