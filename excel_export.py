@@ -88,8 +88,8 @@ def create_excel(master_df):
         "No",
         "Index",
         "Index Number",
-        "Source Sheet",
-        "Resolved"
+        "Source Sheet"
+        
     ]
 
 
