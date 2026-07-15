@@ -1,236 +1,93 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-
 <title>
-{% block title %}
-AGIPL Digital Command Center
-{% endblock %}
+{% block title %}AGIPL Digital Command Center{% endblock %}
 </title>
-
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
-
 <link rel="stylesheet" href="{{ url_for('static',filename='style.css') }}">
-
-
 </head>
-
-
 <body>
-
-
 <div class="background-animation"></div>
 
-
-
 <!-- TOP NAVBAR -->
-
 <div class="navbar">
-
-
 <div class="brand">
-
-
 <div class="logo-circle">
 AG
 </div>
-
-
 <div class="brand-text">
 AGIPL Digital Portal
 </div>
-
-
 </div>
-
-
-
-
 <div class="menu">
-
-
 <a href="/">
 🏠 Home
 </a>
-
-
 <a href="/modules">
 📊 Modules
 </a>
-
-
 <a href="/reports">
 📑 Reports
 </a>
-
-
 <a href="#">⚙ Support
 </a>
-
-
 </div>
-
-
 </div>
-
-
-
-
-
-
 
 <!-- SIDEBAR -->
-
-
 <div class="sidebar">
-
-
 <h3>
 Business Modules
 </h3>
-
-
-
 <a href="/breakdown">
-
 🛠 Breakdown Analysis
-
 </a>
-
-
-
 <a href="/fuel">
-
 ⛽ Fuel Analysis
-
 </a>
-
-
-
-
 <a href="/hr">
-
 👥 HR Module
-
 </a>
-
-
-
-
 <a href="/purchase">
-
 🛒 Purchase Module
-
 </a>
-
-
-
-
 <a href="/sales">
-
 📈 Sales Module
-
 </a>
-
-
-
-
 <a href="/machinery">
-
 ⚙ Machinery Module
-
 </a>
-
-
-
-
 <a href="/assets">
-
 🏢 Assets Module
-
 </a>
-
-
-
-
 <a href="/it">
-
 💻 IT Module
-
 </a>
-
-
-
 </div>
-
-
-
-
-
-
-
-
 
 <!-- MAIN -->
-
-
 <div class="main">
-
-
-
 <header>
-
-
+<div class="header-text">
 <h1>
-AGIPL Digital Command Center
+{% block page_title %}AGIPL Digital Command Center{% endblock %}
 </h1>
-
-
-
-<div class="status">
-
-🟢 System Online
-
+{% block page_subtitle %}{% endblock %}
 </div>
-
-
+<div class="status">
+🟢 System Online
+</div>
 </header>
 
-
-
-
-
 <section class="content">
-
-
 {% block content %}
-
 {% endblock %}
-
-
 </section>
 
-
-
-
-
-
 <footer>
-
 AGIPL Digital Transformation Platform
-
 </footer>
-
-
-
-
 </div>
-
-
-
-
 </body>
-
 </html>
