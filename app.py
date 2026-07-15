@@ -30,7 +30,7 @@ def home():
 
 
 # ==========================
-# EXCEL DOWNLOAD
+# EXCEL DOWNLOAD (full master export - unchanged)
 # ==========================
 
 @app.route("/download_excel")
@@ -46,7 +46,7 @@ def download_excel():
 
 
 # ==========================
-# PDF DOWNLOAD
+# PDF DOWNLOAD (full master export - unchanged)
 # ==========================
 
 @app.route("/download_pdf")
@@ -77,8 +77,11 @@ def reports():
 
 # ==========================
 # BREAKDOWN DASHBOARD
-# (now sends ROW-LEVEL data as JSON so the client can cross-filter
-#  KPIs + all 4 charts together on every click / slicer change)
+# (sends ROW-LEVEL data as JSON so the client can cross-filter
+#  KPIs + all 4 charts + BD Details table together on every
+#  click / slicer change, including Owned/Hired + Date range +
+#  Breakdown Alert Icon filters, and export filtered Excel/PDF
+#  directly in the browser)
 # ==========================
 
 @app.route("/breakdown")
@@ -120,6 +123,12 @@ def breakdown():
 
         # ======================
         # ROW-LEVEL RECORDS FOR CLIENT-SIDE FILTERING
+        # NOTE: added date / vehicleNo / details / ownedHired fields
+        # so the client can build the "Owned/Hired" slicer, the
+        # date-range slicer, and the BD Details table exactly like
+        # the reference screenshot (minus "Stock Alert Level").
+        # If your Google Sheet uses different header names than the
+        # ones below, just update the .get(...) keys accordingly.
         # ======================
         pending_records = [
             {
@@ -127,6 +136,12 @@ def breakdown():
                 "site": str(row.get("Site", "Not Defined") or "Not Defined"),
                 "days": int(row["Pending Days"]),
                 "reason": str(row.get("Reason for pendency", "Not Defined") or "Not Defined"),
+                "date": str(row.get("Date of breakdown", "") or ""),
+                "vehicleNo": str(
+                    row.get("Vehcile No", row.get("Vehicle No", "Not Defined")) or "Not Defined"
+                ),
+                "details": str(row.get("Breakdown Details", "Not Defined") or "Not Defined"),
+                "ownedHired": str(row.get("Owned/Hired", "Not Defined") or "Not Defined"),
             }
             for _, row in pending.iterrows()
         ]
