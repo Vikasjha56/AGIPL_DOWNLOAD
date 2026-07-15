@@ -305,6 +305,8 @@ select.slicer option{color:#000;}
   flex:0 0 auto;text-align:center;color:white;text-shadow:0 0 8px cyan;
   font-size:13px;margin:0 0 6px 0;
 }
+.chart-box{position:relative;width:100%;flex:1 1 auto;min-height:0;}
+.chart-box canvas{width:100% !important;height:100% !important;}
 
 /* ---- footer mini KPIs ---- */
 .footer-kpis{
@@ -347,66 +349,4 @@ select.slicer option{color:#000;}
   .chart-grid-bottom{grid-template-columns:1fr;flex:none;}
   .footer-kpis{grid-template-columns:repeat(2,1fr);}
   .modules{overflow-y:visible;}
-  .toolbar{flex-direction:column;align-items:stretch;}
-}
-/* =========================
-   ADD THESE RULES TO dashboard.css
-   (append at the end of the existing file — do not delete anything above)
-========================= */
-
-/* ---- fix: prevent Chart.js canvas from growing/overlapping inside flex containers ---- */
-.chart-box{ position:relative; width:100%; flex:1 1 auto; min-height:0; overflow:hidden; }
-.chart-box canvas{
-  position:absolute !important;
-  top:0; left:0;
-  width:100% !important;
-  height:100% !important;
-}
-
-/* ---- date range slicer ---- */
-.date-input{
-  padding:6px 10px;border-radius:9px;border:1px solid rgba(0,255,255,.5);
-  background:rgba(255,255,255,.1);color:#fff;font-size:12.5px;outline:none;
-  color-scheme:dark;
-}
-.to-sep{font-size:12px;opacity:.7;}
-
-/* ---- details tab header + export buttons ---- */
-.details-header{
-  flex:0 0 auto;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  margin-bottom:6px;
-}
-.details-header h2{margin:0;}
-.export-btns{display:flex;gap:8px;}
-.export-btn{
-  border:1px solid rgba(0,255,255,.5);background:rgba(0,255,255,.12);color:#fff;
-  padding:6px 14px;border-radius:9px;font-size:12px;cursor:pointer;font-weight:600;transition:.25s;
-}
-.export-btn:hover{background:rgba(0,255,255,.3);box-shadow:0 0 12px cyan;}
-.export-btn.pdf{border-color:rgba(255,80,80,.6);background:rgba(255,60,60,.15);}
-.export-btn.pdf:hover{background:rgba(255,60,60,.3);box-shadow:0 0 12px #ff5555;}
-
-/* ---- sortable column headers ---- */
-.details-table th{cursor:pointer;user-select:none;}
-.details-table th:hover{background:rgba(0,255,255,.28);}
-
-/* ---- clickable site cell ---- */
-td.clickable-cell{cursor:pointer;}
-td.clickable-cell:hover{text-decoration:underline;color:#00ffff;}
-
-/* ---- Breakdown Alert Icon badge ---- */
-.alert-badge{
-  display:inline-block;
-  padding:4px 10px;
-  border-radius:20px;
-  color:#fff;
-  font-size:11px;
-  font-weight:700;
-  text-shadow:0 1px 2px #0007;
-  cursor:pointer;
-  white-space:nowrap;
 }
