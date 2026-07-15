@@ -154,44 +154,60 @@ def create_pdf(master_df):
     )
 
 
+	# Required Columns
 
-    # Required Columns
-
-    final_df = master_df[
-        [
-            "Index Number",
-            "Site",
-            "Date of breakdown",
-            "Category",
-            "Vehcile No",
-            "Breakdown Details",
-            "Reason for pendency",
-            "Pending for (no of days)",
-            "Stock Alert Level"
-        ]
-    ].copy()
-	
-# Convert Pending Days to Integer
-final_df["Pending for (no of days)"] = (
-    pd.to_numeric(
-        final_df["Pending for (no of days)"],
-        errors="coerce"
-    )
-    .fillna(0)
-    .astype(int)
-)
+	final_df = master_df[
+		[
+			"Index Number",
+			"Site",
+			"Date of breakdown",
+			"Category",
+			"Vehcile No",
+			"Breakdown Details",
+			"Reason for pendency",
+			"Pending for (no of days)",
+			"Stock Alert Level"
+		]
+	].copy()
 
 
+	# Convert Pending Days to Integer
+
+	final_df["Pending for (no of days)"] = (
+		pd.to_numeric(
+			final_df["Pending for (no of days)"],
+			errors="coerce"
+		)
+		.fillna(0)
+		.astype(int)
+	)
 
 
-    # Alert Icon Column
+	# Alert Icon Column
 
-    final_df["Alert Icon"] = (
+	final_df["Alert Icon"] = (
+		final_df["Stock Alert Level"]
+		.apply(AlertIcon)
+	)
 
-        final_df["Stock Alert Level"]
-        .apply(AlertIcon)
 
-    )
+	# Rename Columns
+
+	final_df.columns = [
+		"Index Number",
+		"Site",
+		"Date of Breakdown",
+		"Category",
+		"Vehicle No",
+		"Breakdown Details",
+		"Reason for Pendency",
+		"Pending (No of Days)",
+		"Stock Alert Level",
+		"Alert Icon"
+	]
+
+
+
 
 
 
