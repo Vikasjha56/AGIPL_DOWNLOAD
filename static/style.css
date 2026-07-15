@@ -361,14 +361,20 @@ MAIN
 ========================= */
 
 
+
+
+
 .main{
 
+    margin-left:280px;
 
-margin-left:290px;
+    width:calc(100% - 280px);
 
+    padding:20px;
+
+    overflow-x:hidden;
 
 }
-
 
 
 header{
@@ -422,9 +428,11 @@ box-shadow:
 
 .content{
 
+    width:100%;
 
-padding:40px;
+    padding:20px;
 
+    box-sizing:border-box;
 
 }
 
