@@ -1,93 +1,52 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>
-{% block title %}AGIPL Digital Command Center{% endblock %}
-</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="{{ url_for('static',filename='style.css') }}">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGIPL Digital Portal</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 <div class="background-animation"></div>
 
-<!-- TOP NAVBAR -->
 <div class="navbar">
-<div class="brand">
-<div class="logo-circle">
-AG
-</div>
-<div class="brand-text">
-AGIPL Digital Portal
-</div>
-</div>
-<div class="menu">
-<a href="/">
-🏠 Home
-</a>
-<a href="/modules">
-📊 Modules
-</a>
-<a href="/reports">
-📑 Reports
-</a>
-<a href="#">⚙ Support
-</a>
-</div>
+  <div class="brand">
+    <div class="logo-circle">AG</div>
+    <div class="brand-text">AGIPL Digital Portal</div>
+  </div>
+  <div class="menu">
+    <a href="/">🏠 Home</a>
+    <a href="/modules">📊 Modules</a>
+    <a href="/reports">📄 Reports</a>
+    <a href="#">⚙ Support</a>
+  </div>
 </div>
 
-<!-- SIDEBAR -->
 <div class="sidebar">
-<h3>
-Business Modules
-</h3>
-<a href="/breakdown">
-🛠 Breakdown Analysis
-</a>
-<a href="/fuel">
-⛽ Fuel Analysis
-</a>
-<a href="/hr">
-👥 HR Module
-</a>
-<a href="/purchase">
-🛒 Purchase Module
-</a>
-<a href="/sales">
-📈 Sales Module
-</a>
-<a href="/machinery">
-⚙ Machinery Module
-</a>
-<a href="/assets">
-🏢 Assets Module
-</a>
-<a href="/it">
-💻 IT Module
-</a>
+  <h3>Business Modules</h3>
+  <a href="/breakdown" class="{{ 'active' if request.path=='/breakdown' else '' }}">🛠 Breakdown Analysis</a>
+  <a href="/fuel" class="{{ 'active' if request.path=='/fuel' else '' }}">⛽ Fuel Analysis</a>
+  <a href="/hr" class="{{ 'active' if request.path=='/hr' else '' }}">👥 HR Module</a>
+  <a href="/purchase" class="{{ 'active' if request.path=='/purchase' else '' }}">🛒 Purchase Module</a>
+  <a href="/sales" class="{{ 'active' if request.path=='/sales' else '' }}">📈 Sales Module</a>
+  <a href="/machinery" class="{{ 'active' if request.path=='/machinery' else '' }}">⚙ Machinery Module</a>
+  <a href="/assets" class="{{ 'active' if request.path=='/assets' else '' }}">🏢 Assets Module</a>
+  <a href="/it" class="{{ 'active' if request.path=='/it' else '' }}">💻 IT Module</a>
 </div>
 
-<!-- MAIN -->
 <div class="main">
-<header>
-<div class="header-text">
-<h1>
-{% block page_title %}AGIPL Digital Command Center{% endblock %}
-</h1>
-{% block page_subtitle %}{% endblock %}
-</div>
-<div class="status">
-🟢 System Online
-</div>
-</header>
+  <header>
+    <div class="header-text">
+      <h1>{% block page_title %}{% endblock %}</h1>
+      {% block page_subtitle %}{% endblock %}
+    </div>
+    <div class="status">🟢 System Online</div>
+  </header>
 
-<section class="content">
-{% block content %}
-{% endblock %}
-</section>
-
-<footer>
-AGIPL Digital Transformation Platform
-</footer>
+  <div class="content">
+    {% block content %}{% endblock %}
+  </div>
 </div>
+
 </body>
 </html>
