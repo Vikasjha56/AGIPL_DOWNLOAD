@@ -18,23 +18,6 @@
       <select class="slicer" id="siteSlicer"></select>
     </div>
     <div class="toolbar-group">
-      <label>Owned / Hired</label>
-      <select class="slicer" id="ownedSlicer">
-        <option value="All">All</option>
-        {% for o in owned_options %}
-        <option value="{{ o }}">{{ o }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="toolbar-group">
-      <label>From</label>
-      <input type="date" class="slicer date-slicer" id="dateFrom">
-    </div>
-    <div class="toolbar-group">
-      <label>To</label>
-      <input type="date" class="slicer date-slicer" id="dateTo">
-    </div>
-    <div class="toolbar-group">
       <span class="tabs">
         <button class="tab-btn active" data-tab="analysis">Breakdown Analysis</button>
         <button class="tab-btn" data-tab="details">BD Details</button>
@@ -94,36 +77,80 @@
     </div>
   </div>
 
-  <div id="tab-details" class="tab-panel" style="display:none;">
-    <div class="chart-card details-card">
-      <div class="details-header">
-        <h2>Machine Breakdown Details (filtered)</h2>
-        <div class="export-btns">
-          <button id="exportExcelBtn">⬇ Export Excel</button>
-          <button id="exportPdfBtn">⬇ Export PDF</button>
-        </div>
-      </div>
-      <div class="details-wrap">
-        <table class="details-table" id="bdTable">
-          <thead>
-            <tr>
-              <th data-key="no">No</th>
-              <th data-key="site">Site</th>
-              <th data-key="date">Date of breakdown</th>
-              <th data-key="category">Category</th>
-              <th data-key="vehicle">Vehcile No</th>
-              <th data-key="details">Breakdown Details</th>
-              <th data-key="reason">Reason for pendency</th>
-              <th data-key="days">Pending for (no of days)</th>
-              <th data-key="owned">Owned/Hired</th>
-              <th data-key="alert">Breakdown Alert Icon</th>
-            </tr>
-          </thead>
-          <tbody id="detailsBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
+  <!-- ================= BD DETAILS TABLE ================= -->
+
+<div id="tab-details" class="tab-panel" style="display:none;">
+
+<div class="details-panel">
+
+<div class="details-header">
+
+<h2>
+📋 Machine Breakdown Details
+</h2>
+
+
+<div class="export-buttons">
+
+<button id="exportExcel">
+⬇ Export Excel
+</button>
+
+
+<button id="exportPdf">
+⬇ Export PDF
+</button>
+
+</div>
+
+</div>
+
+
+<div class="table-container">
+
+<table id="bdTable">
+
+<thead>
+
+<tr>
+
+<th data-key="no">No</th>
+
+<th data-key="site">Site</th>
+
+<th data-key="date">Date of Breakdown</th>
+
+<th data-key="category">Category</th>
+
+<th data-key="vehicle">Vehicle No</th>
+
+<th data-key="details">Breakdown Details</th>
+
+<th data-key="reason">Reason For Pency</th>
+
+<th data-key="days">Pending Days</th>
+
+<th data-key="alert">Alert</th>
+
+
+</tr>
+
+</thead>
+
+
+<tbody id="bdBody">
+
+</tbody>
+
+
+</table>
+
+
+</div>
+
+
+</div>
+
 
 </div>
 
@@ -139,16 +166,13 @@ Chart.register(ChartDataLabels);
 const allData = JSON.parse(document.getElementById("pendingData").textContent);
 const RESOLVED_SAMPLE = JSON.parse(document.getElementById("resolvedData").textContent);
 
-const filters = {site:"All", owned:"All", from:"", to:"", machine:null, reason:null, range:null};
+const filters = {site:"All", machine:null, reason:null, range:null};
 const RANGE_COLORS = {"0-5 Days":"#00e05a","6-30 Days":"#ffaa00","31+ Days":"#ff2d55"};
 function rangeOf(d){ if(d<=5) return "0-5 Days"; if(d<=30) return "6-30 Days"; return "31+ Days"; }
 
 function getBase(excludeType){
   return allData.filter(r=>{
     if(filters.site!=="All" && r.site!==filters.site) return false;
-    if(filters.owned!=="All" && r.owned!==filters.owned) return false;
-    if(filters.from && r.dateIso && r.dateIso < filters.from) return false;
-    if(filters.to && r.dateIso && r.dateIso > filters.to) return false;
     if(excludeType!=="machine" && filters.machine && r.category!==filters.machine) return false;
     if(excludeType!=="reason" && filters.reason && r.reason!==filters.reason) return false;
     if(excludeType!=="range" && filters.range && rangeOf(r.days)!==filters.range) return false;
@@ -167,18 +191,8 @@ const siteSel = document.getElementById("siteSlicer");
 sites.forEach(s=>{ const o=document.createElement("option"); o.value=s; o.textContent=s; siteSel.appendChild(o); });
 siteSel.addEventListener("change", ()=>{ filters.site = siteSel.value; renderAll(); });
 
-const ownedSel = document.getElementById("ownedSlicer");
-ownedSel.addEventListener("change", ()=>{ filters.owned = ownedSel.value; renderAll(); });
-
-const fromInp = document.getElementById("dateFrom");
-const toInp = document.getElementById("dateTo");
-fromInp.addEventListener("change", ()=>{ filters.from = fromInp.value; renderAll(); });
-toInp.addEventListener("change", ()=>{ filters.to = toInp.value; renderAll(); });
-
 document.getElementById("clearFiltersBtn").addEventListener("click", ()=>{
-  filters.machine=null; filters.reason=null; filters.range=null;
-  filters.site="All"; filters.owned="All"; filters.from=""; filters.to="";
-  siteSel.value="All"; ownedSel.value="All"; fromInp.value=""; toInp.value="";
+  filters.machine=null; filters.reason=null; filters.range=null; filters.site="All"; siteSel.value="All";
   renderAll();
 });
 
@@ -209,11 +223,9 @@ const centerTotal = { id:"centerTotal", beforeDraw(chart){
   ctx.font="bold 20px Segoe UI"; ctx.fillText(total,cx,cy+11);
   ctx.restore();
 }};
-/* cutout raised + legend padding increased so labels/center-total never overlap the ring */
-const donutOpts = { responsive:true, maintainAspectRatio:false, cutout:"68%",
-  layout:{padding:{top:4,bottom:2}},
-  plugins:{ legend:{position:"bottom",labels:{color:"#fff",boxWidth:9,padding:8,font:{size:10,weight:"bold"}}},
-            datalabels:{display:true,color:"#fff",font:{size:10,weight:"bold"}} } };
+const donutOpts = { responsive:true, maintainAspectRatio:false, cutout:"62%",
+  plugins:{ legend:{position:"bottom",labels:{color:"#fff",boxWidth:9,padding:6,font:{size:10,weight:"bold"}}},
+            datalabels:{display:true,color:"#fff",font:{size:11,weight:"bold"}} } };
 
 const machineChart = new Chart(document.getElementById("machineChart"), {
   type:"bar",
@@ -288,81 +300,59 @@ function renderAll(){
   const resolvedFiltered = RESOLVED_SAMPLE.filter(r=> filters.site==="All" || r.site===filters.site);
   document.getElementById("kpiResolved").textContent = resolvedFiltered.length;
 
-  const anyChartFilter = filters.machine || filters.reason || filters.range || filters.site!=="All" || filters.owned!=="All" || filters.from || filters.to;
+  const anyChartFilter = filters.machine || filters.reason || filters.range || filters.site!=="All";
   document.getElementById("clearFiltersBtn").classList.toggle("show", !!anyChartFilter);
 
   if(document.getElementById("tab-details").style.display !== "none") renderDetails();
 }
-
-/* ===== BD DETAILS — sortable table ===== */
-let sortKey = "no", sortDir = 1; // 1 = asc, -1 = desc
-
-function alertClass(alert){
-  if(alert.startsWith("High")) return "alert-high";
-  if(alert.startsWith("Medium")) return "alert-medium";
-  return "alert-low";
-}
-
-function sortedDetailsData(){
-  const data = getBase(null).slice();
-  data.sort((a,b)=>{
-    let va = a[sortKey], vb = b[sortKey];
-    if(typeof va === "string"){ va = va.toLowerCase(); vb = vb.toLowerCase(); }
-    if(va < vb) return -1 * sortDir;
-    if(va > vb) return 1 * sortDir;
-    return 0;
-  });
-  return data;
-}
-
 function renderDetails(){
-  const data = sortedDetailsData();
-  const body = document.getElementById("detailsBody");
-  body.innerHTML = data.map(r=>`<tr>
-    <td>${r.no}</td>
-    <td>${r.site}</td>
-    <td>${r.date}</td>
-    <td>${r.category}</td>
-    <td>${r.vehicle}</td>
-    <td>${r.details}</td>
-    <td>${r.reason}</td>
-    <td>${r.days}</td>
-    <td>${r.owned}</td>
-    <td><span class="alert-pill ${alertClass(r.alert)}">${r.alert}</span></td>
-  </tr>`).join("");
 
-  document.querySelectorAll("#bdTable thead th").forEach(th=>{
-    const base = th.textContent.replace(" ▲","").replace(" ▼","").trim();
-    th.textContent = base + (th.dataset.key === sortKey ? (sortDir === 1 ? " ▲" : " ▼") : "");
-  });
+  const data = getBase(null);
+
+  const body = document.getElementById("bdBody");
+
+  body.innerHTML = data.map((r,index)=>{
+
+    let alertClass="";
+    let alertText="";
+
+    if(r.days > 30){
+      alertClass="alert-high";
+      alertText="High";
+    }
+    else if(r.days >= 6){
+      alertClass="alert-medium";
+      alertText="Medium";
+    }
+    else{
+      alertClass="alert-low";
+      alertText="Low";
+    }
+
+    return `
+    <tr>
+
+      <td>${index+1}</td>
+      <td>${r.site}</td>
+      <td>${r.date}</td>
+      <td>${r.category}</td>
+      <td>${r.vehicle || "-"}</td>
+      <td>${r.details || "-"}</td>
+      <td>${r.reason || "-"}</td>
+      <td>${r.days}</td>
+
+      <td>
+        <span class="${alertClass}">
+          ${alertText}
+        </span>
+      </td>
+
+    </tr>
+    `;
+
+  }).join("");
+
 }
-
-document.querySelectorAll("#bdTable thead th").forEach(th=>{
-  th.addEventListener("click", ()=>{
-    const key = th.dataset.key;
-    if(sortKey === key) sortDir *= -1; else { sortKey = key; sortDir = 1; }
-    renderDetails();
-  });
-});
-
-/* ===== EXPORT — passes current filters + sort so download matches screen ===== */
-function buildExportQuery(){
-  const p = new URLSearchParams();
-  p.set("site", filters.site);
-  p.set("owned", filters.owned);
-  if(filters.from) p.set("from", filters.from);
-  if(filters.to) p.set("to", filters.to);
-  p.set("sort", sortKey);
-  p.set("dir", sortDir === 1 ? "asc" : "desc");
-  return p.toString();
-}
-document.getElementById("exportExcelBtn").addEventListener("click", ()=>{
-  window.location = "/download_excel?" + buildExportQuery();
-});
-document.getElementById("exportPdfBtn").addEventListener("click", ()=>{
-  window.location = "/download_pdf?" + buildExportQuery();
-});
-
 renderAll();
 </script>
 {% endblock %}
