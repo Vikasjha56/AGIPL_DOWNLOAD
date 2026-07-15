@@ -307,39 +307,87 @@ function renderAll(){
 }
 function renderDetails(){
 
+  function renderDetails(){
+
   const data = getBase(null);
 
   const body = document.getElementById("bdBody");
 
+
   body.innerHTML = data.map((r,index)=>{
+
+
+    let days = Number(
+      r["Pending for (no of days)"] || 0
+    );
+
 
     let alertClass="";
     let alertText="";
 
-    if(r.days > 30){
+
+    if(days > 30){
+
       alertClass="alert-high";
       alertText="High";
+
     }
-    else if(r.days >= 6){
+    else if(days >= 6){
+
       alertClass="alert-medium";
       alertText="Medium";
+
     }
     else{
+
       alertClass="alert-low";
       alertText="Low";
+
     }
 
+
+
     return `
+
     <tr>
 
       <td>${index+1}</td>
-      <td>${r.site}</td>
-      <td>${r.date}</td>
-      <td>${r.category}</td>
-      <td>${r.vehicle || "-"}</td>
-      <td>${r.details || "-"}</td>
-      <td>${r.reason || "-"}</td>
-      <td>${r.days}</td>
+
+
+      <td>
+        ${r["Site"] || "-"}
+      </td>
+
+
+      <td>
+        ${r["Date of breakdown"] || "-"}
+      </td>
+
+
+      <td>
+        ${r["Category"] || "-"}
+      </td>
+
+
+      <td>
+        ${r["Vehcile No"] || "-"}
+      </td>
+
+
+      <td class="details-cell">
+        ${r["Breakdown Details"] || "-"}
+      </td>
+
+
+      <td>
+        ${r["Reason for pendency"] || "-"}
+      </td>
+
+
+      <td>
+        ${days}
+      </td>
+
 
       <td>
         <span class="${alertClass}">
@@ -347,11 +395,15 @@ function renderDetails(){
         </span>
       </td>
 
+
     </tr>
+
     `;
+
 
   }).join("");
 
+}
 }
 renderAll();
 </script>
