@@ -1,4 +1,5 @@
 from reportlab.lib import colors
+import pandas as pd
 from reportlab.lib.pagesizes import landscape, A3
 from reportlab.platypus import (
     SimpleDocTemplate,
@@ -183,31 +184,29 @@ def create_pdf(master_df):
 
 
 
-    final_df.columns = [
-
+	final_df = master_df[
+    [
         "Index Number",
         "Site",
-        "Date of Breakdown",
+        "Date of breakdown",
         "Category",
-        "Vehicle No",
+        "Vehcile No",
         "Breakdown Details",
-        "Reason for Pendency",
-        "Pending (No of Days)",
-        "Stock Alert Level",
-        "Alert Icon"
-
+        "Reason for pendency",
+        "Pending for (no of days)",
+        "Stock Alert Level"
     ]
-	
-	# Pending Days ko integer format me convert karo
+].copy()
 
-	final_df["Pending for (no of days)"] = (
-		pd.to_numeric(
-			final_df["Pending for (no of days)"],
-			errors="coerce"
-		)
-		.fillna(0)
-		.astype(int)
-	)
+# Convert Pending Days to Integer
+final_df["Pending for (no of days)"] = (
+    pd.to_numeric(
+        final_df["Pending for (no of days)"],
+        errors="coerce"
+    )
+    .fillna(0)
+    .astype(int)
+)
 
 
 
