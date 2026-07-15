@@ -34,52 +34,52 @@ body{
    TOP NAVBAR
 ========================= */
 .navbar{
-  height:70px;
+  height:60px;
   display:flex;
   align-items:center;
   justify-content:space-between;
-  padding:0 30px;
+  padding:0 24px;
   background:rgba(255,255,255,.12);
   backdrop-filter:blur(20px);
   border-bottom:1px solid rgba(255,255,255,.25);
-  box-shadow:0 10px 40px #0008;
+  box-shadow:0 8px 30px #0008;
 }
 
 .brand{
   display:flex;
   align-items:center;
-  gap:12px;
+  gap:10px;
 }
 
 .logo-circle{
-  width:48px;
-  height:48px;
+  width:38px;
+  height:38px;
   border-radius:50%;
   display:flex;
   align-items:center;
   justify-content:center;
   background:white;
   color:#063b78;
-  font-size:20px;
+  font-size:15px;
   font-weight:bold;
-  box-shadow:0 0 20px cyan;
+  box-shadow:0 0 14px cyan;
   animation:pulse 3s infinite;
 }
 
 @keyframes pulse{
-  50%{box-shadow:0 0 35px cyan;}
+  50%{box-shadow:0 0 24px cyan;}
 }
 
 .brand-text{
-  font-size:20px;
+  font-size:17px;
   font-weight:bold;
 }
 
 .menu a{
   color:white;
   text-decoration:none;
-  margin-left:24px;
-  font-size:15px;
+  margin-left:20px;
+  font-size:14px;
   transition:.3s;
 }
 
@@ -93,67 +93,68 @@ body{
 ========================= */
 .sidebar{
   position:fixed;
-  top:90px;
-  left:16px;
-  width:220px;
-  padding:20px;
-  border-radius:20px;
+  top:76px;
+  left:14px;
+  width:190px;
+  padding:16px;
+  border-radius:16px;
   background:rgba(255,255,255,.12);
   backdrop-filter:blur(20px);
-  box-shadow:0 20px 50px #0008;
+  box-shadow:0 15px 40px #0008;
 }
 
 .sidebar h3{
   margin-top:0;
-  font-size:18px;
+  margin-bottom:10px;
+  font-size:15px;
 }
 
 .sidebar a{
   display:block;
-  padding:12px;
-  margin:8px 0;
-  border-radius:12px;
+  padding:9px 10px;
+  margin:5px 0;
+  border-radius:10px;
   color:white;
   text-decoration:none;
-  font-size:15px;
+  font-size:13.5px;
   transition:.3s;
 }
 
 .sidebar a:hover{
   background:rgba(0,255,255,.25);
-  transform:translateX(8px);
-  box-shadow:0 0 18px cyan;
+  transform:translateX(6px);
+  box-shadow:0 0 14px cyan;
 }
 
 /* =========================
    MAIN
 ========================= */
 .main{
-  margin-left:260px;
-  width:calc(100% - 260px);
-  padding:20px;
+  margin-left:220px;
+  width:calc(100% - 220px);
+  padding:16px;
   overflow-x:hidden;
 }
 
 header{
-  height:70px;
+  height:60px;
   display:flex;
   justify-content:space-between;
   align-items:center;
-  padding:0 20px;
+  padding:0 16px;
 }
 
 .status{
   background:rgba(0,255,120,.25);
-  padding:10px 20px;
-  border-radius:25px;
-  box-shadow:0 0 18px #00ff88;
-  font-size:14px;
+  padding:8px 16px;
+  border-radius:20px;
+  box-shadow:0 0 14px #00ff88;
+  font-size:13px;
 }
 
 .content{
   width:100%;
-  padding:10px 20px;
+  padding:8px 16px;
   box-sizing:border-box;
 }
 
@@ -232,18 +233,19 @@ footer{
 ========================= */
 .dashboard-header{
   text-align:center;
-  margin-bottom:25px;
+  margin-bottom:18px;
 }
 
 .dashboard-header h1{
-  font-size:clamp(24px,3vw,34px);
+  font-size:clamp(20px,2.2vw,26px);
   color:white;
-  text-shadow:0 0 15px cyan;
+  text-shadow:0 0 12px cyan;
 }
 
 .dashboard-header p{
-  font-size:15px;
+  font-size:13.5px;
   opacity:.8;
+  margin-top:4px;
 }
 
 /* =========================
@@ -270,39 +272,46 @@ footer{
 ========================= */
 .kpi-container{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-  gap:20px;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:14px;
   width:100%;
-  max-width:700px;
-  margin-bottom:25px;
+  max-width:480px;
+  margin:0 auto 18px auto;
 }
 
 .kpi-card{
   background:linear-gradient(145deg,rgba(0,255,255,.22),rgba(255,255,255,.08));
-  border-radius:20px;
-  padding:20px;
+  border-radius:16px;
+  padding:14px;
   border:1px solid rgba(0,255,255,.5);
-  box-shadow:0 15px 35px #000;
+  box-shadow:0 10px 25px #000;
   text-align:center;
-  transition:.4s;
+  transition:.3s;
 }
 
 .kpi-card:hover{
-  transform:translateY(-6px) scale(1.02);
-  box-shadow:0 0 30px cyan;
+  transform:translateY(-4px) scale(1.015);
+  box-shadow:0 0 22px cyan;
+}
+
+.kpi-card h3{
+  font-size:12.5px;
+  font-weight:600;
+  opacity:.9;
+  margin:0;
 }
 
 .kpi-card h1{
-  font-size:clamp(28px,3vw,38px);
+  font-size:clamp(22px,2.2vw,28px);
   color:white;
-  text-shadow:0 0 15px cyan;
-  margin:8px 0;
+  text-shadow:0 0 10px cyan;
+  margin:6px 0;
 }
 
-.kpi-card h3,
+.kpi-card span,
 .kpi-card p{
-  font-size:14px;
-  opacity:.85;
+  font-size:12px;
+  opacity:.75;
 }
 
 /* =========================
@@ -311,45 +320,52 @@ footer{
 .chart-grid{
   display:grid;
   grid-template-columns:repeat(2,1fr);
-  gap:20px;
+  gap:16px;
   overflow:hidden;
 }
 
 .chart-card{
-  padding:18px;
-  border-radius:20px;
+  padding:14px;
+  border-radius:16px;
   background:rgba(255,255,255,.12);
   backdrop-filter:blur(20px);
   border:1px solid rgba(0,255,255,.35);
-  box-shadow:0 20px 45px rgba(0,0,0,.6);
-  transition:.4s;
+  box-shadow:0 15px 35px rgba(0,0,0,.6);
+  transition:.3s;
   overflow:hidden;
 }
 
 .chart-card:hover{
-  transform:translateY(-6px);
-  box-shadow:0 0 30px cyan;
+  transform:translateY(-4px);
+  box-shadow:0 0 22px cyan;
 }
 
 .chart-card h2{
   text-align:center;
   color:white;
-  text-shadow:0 0 10px cyan;
-  font-size:17px;
-  margin:0 0 12px 0;
+  text-shadow:0 0 8px cyan;
+  font-size:14px;
+  margin:0 0 8px 0;
 }
 
 /* This wrapper is what actually controls chart size — always keep charts inside it */
 .chart-box{
   position:relative;
   width:100%;
-  height:260px;
+  height:190px;
 }
 
 .chart-box canvas{
   width:100% !important;
   height:100% !important;
-  max-height:260px !important;
+  max-height:190px !important;
+}
+
+/* Optional: use this class on donut chart-cards for a smaller, centered look */
+.chart-card.donut .chart-box{
+  height:170px;
+  max-width:170px;
+  margin:0 auto;
 }
 
 /* =========================
@@ -357,7 +373,7 @@ footer{
 ========================= */
 @media(max-width:1200px){
   .kpi-container{max-width:100%;}
-  .chart-box{height:230px;}
+  .chart-box{height:180px;}
 }
 
 @media(max-width:900px){
@@ -365,12 +381,12 @@ footer{
   .main{margin-left:0;width:100%;}
   .chart-grid{grid-template-columns:1fr;}
   .kpi-container{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));}
-  .chart-box{height:220px;}
+  .chart-box{height:200px;}
 }
 
 @media(max-width:600px){
-  .navbar{padding:0 15px;}
-  .content{padding:10px;}
-  .kpi-card h1{font-size:28px;}
-  .chart-box{height:200px;}
+  .navbar{padding:0 12px;}
+  .content{padding:8px;}
+  .kpi-card h1{font-size:22px;}
+  .chart-box{height:180px;}
 }
