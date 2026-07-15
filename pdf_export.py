@@ -73,16 +73,33 @@ def create_pdf(master_df):
 
 
 
-    # Resolved = No only
+    # ===============================
+    # FILTER PENDING + OWNED DATA
+    # ===============================
 
-    master_df = master_df[
-        master_df["Resolved"]
-        .astype(str)
-        .str.strip()
-        .str.lower()
-        ==
-        "no"
-    ].copy()
+    if "Owned/Hired" in master_df.columns:
+
+        master_df = master_df[
+            (master_df["Resolved"]
+             .astype(str)
+             .str.strip()
+             .str.upper() == "NO")
+            &
+            (master_df["Owned/Hired"]
+             .astype(str)
+             .str.strip()
+             .str.upper() == "OWNED")
+        ].copy()
+
+    else:
+
+        master_df = master_df[
+            master_df["Resolved"]
+            .astype(str)
+            .str.strip()
+            .str.upper() == "NO"
+        ].copy()
+
 
 
 
