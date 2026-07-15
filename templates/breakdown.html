@@ -1,410 +1,448 @@
-{% extends "base.html" %}
-
-{% block page_title %}
-🛠 Breakdown Analysis Dashboard
-{% endblock %}
-
-{% block page_subtitle %}
-<p>Live Machine Breakdown Monitoring System</p>
-{% endblock %}
-
-{% block content %}
-
-{% if debug_info and debug_info.final_pending_records is defined and debug_info.final_pending_records == 0 %}
-<div style="background:#3a0d0d;border:2px solid #ff2d55;border-radius:12px;padding:16px 20px;margin-bottom:12px;font-size:13px;line-height:1.7;">
-  <b style="color:#ff2d55;font-size:15px;">⚠ DEBUG: Data khaali aa rahi hai — ye jaankari batayega kyun</b><br>
-  {% if debug_info.error %}
-    <b style="color:#ffaa00;">Error:</b> {{ debug_info.error }}<br>
-  {% endif %}
-  <b>Google Sheet se total rows mile:</b> {{ debug_info.total_rows }}<br>
-  <b>Sheet ke columns (exact naam):</b> {{ debug_info.columns | join(", ") }}<br>
-  <b>"Resolved" column ki unique values:</b> {{ debug_info.resolved_values | join(", ") }}<br>
-  <b>Rows jinme Resolved == NO mila:</b> {{ debug_info.resolved_no_count }}<br>
-  <b>Rows drop hue (Pending Days number nahi tha):</b> {{ debug_info.dropped_non_numeric }}<br>
-  <b>Final pending records (dashboard ko mila):</b> {{ debug_info.final_pending_records }}
-</div>
-{% endif %}
-
-<div class="dashboard-wrap">
-
-  <div class="toolbar">
-    <div class="toolbar-group">
-      <label>Site</label>
-      <select class="slicer" id="siteSlicer"></select>
-    </div>
-    <div class="toolbar-group">
-      <label>Owned/Hired</label>
-      <select class="slicer" id="ownedSlicer"></select>
-    </div>
-    <div class="toolbar-group">
-      <label>Date Range</label>
-      <input type="date" class="date-input" id="dateFrom">
-      <span class="to-sep">to</span>
-      <input type="date" class="date-input" id="dateTo">
-    </div>
-    <div class="toolbar-group">
-      <span class="tabs">
-        <button class="tab-btn active" data-tab="analysis">Breakdown Analysis</button>
-        <button class="tab-btn" data-tab="details">BD Details</button>
-      </span>
-    </div>
-    <button class="clear-filters" id="clearFiltersBtn">✕ Clear chart filters</button>
-  </div>
-
-  <div id="tab-analysis" class="tab-panel">
-
-    <div class="kpi-container">
-      <div class="kpi-card">
-        <h3>Total Pending Cases</h3>
-        <h1 id="kpiPending">0</h1>
-        <span>Resolved : NO</span>
-      </div>
-      <div class="kpi-card">
-        <h3>Critical Pending &gt; 15 Days</h3>
-        <h1 id="kpiPending15">0</h1>
-        <span>Pending Ageing</span>
-      </div>
-      <div class="kpi-range-card">
-        <h3>Machine Count by Pending Days Range</h3>
-        <div class="range-legend">
-          <span><i class="dot" style="background:#00e05a"></i>0-5 Days</span>
-          <span><i class="dot" style="background:#ffaa00"></i>6-30 Days</span>
-          <span><i class="dot" style="background:#ff2d55"></i>Over &gt; 30 Days</span>
-        </div>
-        <div class="range-bars" id="rangeBars"></div>
-      </div>
-    </div>
-
-    <div class="dashboard-charts">
-      <div class="chart-card chart-top">
-        <h2>Machine-wise Pending Cases (&gt; 15 days)</h2>
-        <div class="chart-box"><canvas id="machineChart"></canvas></div>
-      </div>
-
-      <div class="chart-grid-bottom">
-        <div class="chart-card">
-          <h2>Breakdown Machine Count by Site</h2>
-          <div class="chart-box"><canvas id="siteChart"></canvas></div>
-        </div>
-        <div class="chart-card">
-          <h2>Pending Distribution (&gt; 15 Days)</h2>
-          <div class="chart-box"><canvas id="reasonChart"></canvas></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="footer-kpis">
-      <div class="mini-kpi"><h4>Avg. Days Pending</h4><p id="kpiAvg">--</p></div>
-      <div class="mini-kpi"><h4>High Priority (&gt;30d)</h4><p id="kpiHigh">--</p></div>
-      <div class="mini-kpi"><h4>Medium Priority (8-30d)</h4><p id="kpiMed">--</p></div>
-      <div class="mini-kpi"><h4>Low Priority (0-7d)</h4><p id="kpiLow">--</p></div>
-      <div class="mini-kpi"><h4>Resolved (Site)</h4><p id="kpiResolved">--</p></div>
-    </div>
-  </div>
-
-  <div id="tab-details" class="tab-panel" style="display:none;">
-    <div class="chart-card details-card">
-      <div class="details-header">
-        <h2>Breakdown Details (filtered)</h2>
-        <div class="export-btns">
-          <button class="export-btn excel" id="exportExcelBtn">⬇ Export Excel</button>
-          <button class="export-btn pdf" id="exportPdfBtn">⬇ Export PDF</button>
-        </div>
-      </div>
-      <div class="details-wrap">
-        <table class="details-table">
-          <thead>
-            <tr>
-              <th data-key="no">No</th>
-              <th data-key="site">Site</th>
-              
-              <th data-key="category">Category</th>
-              <th data-key="vehicleNo">Vehicle No</th>
-              <th data-key="details">Breakdown Details</th>
-              <th data-key="reason">Reason for pendency</th>
-              <th data-key="days">Pending for (no of days)</th>
-              <th data-key="alert">Breakdown Alert Icon</th>
-            </tr>
-          </thead>
-          <tbody id="detailsBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-</div>
-
-<!-- Row-level data rendered once by Flask; ALL filtering/aggregation happens client-side -->
-<script id="pendingData" type="application/json">{{ pending_records|tojson }}</script>
-<script id="resolvedData" type="application/json">{{ resolved_records|tojson }}</script>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AGIPL Digital Portal — Breakdown Analysis</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+  :root{
+    --bg:#0A1F3D; --panel:#0F2A52; --panel-2:#0C2444; --border:#1D3E68; --teal:#2DD4BF;
+    --teal-dim:#1B8F80; --text:#EAF1FB; --muted:#8CA3C4;
+    --red:#E5484D; --orange:#F2994A; --yellow:#F2C94C; --green:#27AE60; --blue:#4E7FDB;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);}
+  .app{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+  .topbar{background:#081733;padding:10px 22px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);}
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand .logo{width:34px;height:34px;border-radius:50%;background:var(--panel);border:2px solid var(--teal);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--teal);font-size:13px;}
+  .brand h1{font-size:16px;margin:0;}
+  .status{background:rgba(39,174,96,.15);color:var(--green);border:1px solid var(--green);padding:5px 12px;border-radius:14px;font-size:11px;display:flex;align-items:center;gap:6px;}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--green);}
+
+  .headerrow{padding:10px 22px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;}
+  .headerrow h2{margin:0;font-size:18px;}
+  .headerrow .sub{font-size:11px;color:var(--muted);}
+  .tabs{display:flex;gap:6px;}
+  .tab-btn{background:var(--panel-2);border:1px solid var(--border);color:var(--muted);padding:7px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;font-weight:600;}
+  .tab-btn.active{background:var(--teal);color:#04211C;border-color:var(--teal);}
+
+  .filters{padding:0 22px 10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  .filters label{font-size:11px;color:var(--muted);margin-right:6px;}
+  .filters select,.filters input{background:var(--panel-2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12.5px;}
+  .filter-group{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:6px 10px;display:flex;align-items:center;}
+  .clear-btn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;}
+
+  .content{flex:1;overflow:hidden;padding:0 22px 14px;}
+  .view{display:none;height:100%;}
+  .view.active{display:flex;flex-direction:column;gap:10px;height:100%;}
+
+  .kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;flex:0 0 auto;}
+  .kpi{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px 14px;}
+  .kpi-label{font-size:11px;color:var(--muted);}
+  .kpi-value{font-size:24px;font-weight:700;color:var(--text);margin-top:2px;}
+  .kpi-sub{font-size:10.5px;color:var(--muted);margin-top:2px;}
+  .bucket-row{display:flex;gap:8px;margin-top:8px;}
+  .bucket{flex:1;text-align:center;border-radius:6px;padding:8px 4px;font-weight:700;font-size:16px;color:#08131f;}
+  .bucket small{display:block;font-weight:500;font-size:9.5px;margin-top:2px;color:#08131f;}
+  .b-green{background:var(--green);} .b-orange{background:var(--orange);} .b-red{background:var(--red);}
+
+  .mid-row{display:grid;grid-template-columns:1fr;gap:10px;flex:1 1 auto;min-height:0;}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;min-height:0;}
+  .panel h3{margin:0 0 6px;font-size:12px;color:var(--teal);text-transform:uppercase;letter-spacing:.4px;text-align:center;}
+  .chart-wrap{flex:1;min-height:0;position:relative;}
+
+  .donut-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1 1 auto;min-height:0;}
+
+  .priority-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;flex:0 0 auto;}
+  .priority-row .kpi-value{font-size:20px;}
+
+  /* BD Details */
+  .details-panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;flex:1;display:flex;flex-direction:column;min-height:0;padding:10px 14px;}
+  .details-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;}
+  .details-top h3{margin:0;font-size:14px;}
+  .export-btns{display:flex;gap:8px;}
+  .export-btns button{background:var(--panel-2);border:1px solid var(--teal);color:var(--teal);padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;font-weight:600;}
+  .export-btns button:hover{background:var(--teal);color:#04211C;}
+  .table-scroll{flex:1;overflow:auto;border:1px solid var(--border);border-radius:6px;}
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  thead th{position:sticky;top:0;background:#0C2A54;color:var(--teal);padding:8px 10px;text-align:left;cursor:pointer;user-select:none;white-space:nowrap;border-bottom:1px solid var(--border);}
+  thead th .arrow{font-size:10px;color:var(--muted);margin-left:4px;}
+  tbody td{padding:6px 10px;border-bottom:1px solid var(--border);white-space:nowrap;}
+  tbody tr:nth-child(even){background:rgba(255,255,255,.02);}
+  tbody tr:hover{background:rgba(45,212,191,.08);}
+  .pill{padding:3px 10px;border-radius:12px;font-size:10.5px;font-weight:700;color:#fff;display:inline-block;}
+  .pill.High{background:var(--red);}
+  .pill.Medium{background:var(--orange);}
+  .pill.Low{background:#C9A400;}
+  .oh{padding:2px 9px;border-radius:5px;font-size:10.5px;font-weight:600;}
+  .oh.Owned{background:rgba(78,127,219,.2);color:#8FB0EE;}
+  .oh.Hired{background:rgba(242,153,74,.2);color:var(--orange);}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">AG</div>
+      <h1>AGIPL Digital Portal</h1>
+    </div>
+    <div class="status"><span class="dot"></span>System Online</div>
+  </div>
+
+  <div class="headerrow">
+    <div>
+      <h2>🛠 Breakdown Analysis Dashboard</h2>
+      <div class="sub">Live Machine Breakdown Monitoring System</div>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" data-view="analysis">Breakdown Analysis</button>
+      <button class="tab-btn" data-view="details">BD Details</button>
+    </div>
+  </div>
+
+  <div class="filters">
+    <div class="filter-group"><label>Site</label>
+      <select id="fSite"><option value="All">All</option></select>
+    </div>
+    <div class="filter-group"><label>Owned/Hired</label>
+      <select id="fOwned"><option value="All">All</option><option value="Owned">Owned</option><option value="Hired">Hired</option></select>
+    </div>
+    <div class="filter-group"><label>From</label>
+      <input type="date" id="fFrom">
+    </div>
+    <div class="filter-group"><label>To</label>
+      <input type="date" id="fTo">
+    </div>
+    <button class="clear-btn" id="clearFilters">Clear filters</button>
+  </div>
+
+  <div class="content">
+
+    <!-- BREAKDOWN ANALYSIS VIEW -->
+    <div class="view active" id="view-analysis">
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="kpi-label">Total Pending Cases</div>
+          <div class="kpi-value" id="kTotal">0</div>
+          <div class="kpi-sub">Resolved : NO</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Critical Pending &gt; 15 Days</div>
+          <div class="kpi-value" id="kCritical">0</div>
+          <div class="kpi-sub">Pending Ageing</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Machine Count by Pending Days Range</div>
+          <div class="bucket-row">
+            <div class="bucket b-green" id="bLow">0<small>0-5 Days</small></div>
+            <div class="bucket b-orange" id="bMed">0<small>6-30 Days</small></div>
+            <div class="bucket b-red" id="bHigh">0<small>Over &gt; 30</small></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mid-row">
+        <div class="panel">
+          <h3>Machine-wise Pending Cases (&gt; 15 days)</h3>
+          <div class="chart-wrap"><canvas id="machineChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="donut-row">
+        <div class="panel">
+          <h3>Breakdown Machine Count by Site</h3>
+          <div class="chart-wrap"><canvas id="siteDonut"></canvas></div>
+        </div>
+        <div class="panel">
+          <h3>Pending Distribution (&gt; 15 Days)</h3>
+          <div class="chart-wrap"><canvas id="reasonDonut"></canvas></div>
+        </div>
+      </div>
+
+      <div class="priority-row">
+        <div class="kpi"><div class="kpi-label">Avg. Days Pending</div><div class="kpi-value" id="kAvg">0</div></div>
+        <div class="kpi"><div class="kpi-label">High Priority (&gt;30d)</div><div class="kpi-value" id="kHigh">0</div></div>
+        <div class="kpi"><div class="kpi-label">Medium Priority (8-30d)</div><div class="kpi-value" id="kMed">0</div></div>
+        <div class="kpi"><div class="kpi-label">Low Priority (0-7d)</div><div class="kpi-value" id="kLow">0</div></div>
+        <div class="kpi"><div class="kpi-label">Resolved</div><div class="kpi-value" id="kResolved">0</div></div>
+      </div>
+    </div>
+
+    <!-- BD DETAILS VIEW -->
+    <div class="view" id="view-details">
+      <div class="details-panel">
+        <div class="details-top">
+          <h3>Machine Breakdown Details</h3>
+          <div class="export-btns">
+            <button id="exportExcel">⬇ Export Excel</button>
+            <button id="exportPdf">⬇ Export PDF</button>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table id="bdTable">
+            <thead>
+              <tr>
+                <th data-key="no">No</th>
+                <th data-key="site">Site</th>
+                <th data-key="date">Date of breakdown</th>
+                <th data-key="category">Category</th>
+                <th data-key="vehicle">Vehcile No</th>
+                <th data-key="details">Breakdown Details</th>
+                <th data-key="reason">Reason for pendency</th>
+                <th data-key="days">Pending for (no of days)</th>
+                <th data-key="alert">Breakdown Alert Icon</th>
+              </tr>
+            </thead>
+            <tbody id="bdBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <script>
-Chart.register(ChartDataLabels);
+/* ---------- REAL DATA (from your Machine Breakdown Details sheet) ---------- */
+const raw = [
+["AMO","2026-07-01","Excavator","EX-1798","ACCIDENTLE","WIP","14","Owned"],
+["AMO","2026-07-09","Backhoe Loader","MH35AW 0304","FUEL PUMP ISSUE","WIP","6","Owned"],
+["AMO","2026-07-10","Transit Mixer","MH35AJ-2865","FUEL SUCTION PIPE ASSY DAMAGE","WIP","3","Hired"],
+["AMO","2026-07-12","Diesel Generator","DG-SET 140KVA","DISPLAY COMMAND BUTTON NOT WORKING","WIP","3","Owned"],
+["Aurangabad","2025-12-13","Lmv Camper/Pickup","MH34BZ-0727","ENGINE REPARING WORK","Material not received","214","Hired"],
+["Aurangabad","2026-06-17","Lmv Camper/Pickup","MH34BZ-0730","INJECTER REPARING WORK","Material not received","28","Hired"],
+["Aurangabad","2026-06-17","Excavator","EXCAVATOR - TATA HITACHI ZX220","HYDROLIC PUMP PROBLEM","Indent not done","28","Owned"],
+["Aurangabad","2026-07-11","Hmv Tipper","MH34BZ-0428","CLUTCH PLATE PROBLEM","Breakdown under inspection","4","Owned"],
+["Ircon 1A","2026-05-22","Hmv Tipper","MH34BZ-1522","ENGINE SEIZED","Mechanic not available","54","Owned"],
+["Ircon 1A","2026-06-08","Hydra Crane","MH34BV-4286","DIFFRENTIAL DAMAGE","Material received repair pending","37","Hired"],
+["Ircon 1A","2026-07-01","Hmv Tipper","MH34BZ-0651","CLUTCH DISMENTAL","Mechanic not available","14","Owned"],
+["Ircon 1A","2026-06-25","Hmv Tipper","MH34BZ-0650","PICK UP NOT GENERATE CLUTCH ISSUE","Mechanic not available","20","Owned"],
+["Ircon 1A","2026-06-26","TM","MH34BZ-1523","ENGINE HEAD DISMENATL AND WATER PUMP","Indent not done","19","Hired"],
+["Ircon 1A","2026-06-30","Tractor","MH34BZ-1420","CLUTCH PROBLEM","Mechanica not available","15","Owned"],
+["Ircon 1A","2026-06-29","Backhoe Loader","MH34BV-8531","TRANSMISSION PROBLEM AND PIN BUSING","Breakdown under inspection","16","Owned"],
+["Ircon 1A","2026-07-11","Transit Mixer","MH34BZ-503","MIXER DRUM UNBALANCED","Mechanic not available","4","Hired"],
+["Ircon 1A","2026-07-12","Transit Mixer","MH35BZ-2689","SELF STARTER PROBLEM","Mechanic not available","1","Owned"],
+["Ircon 1A","2026-07-14","Boom Placer","MH34BZ-0736","END HOSE DAMAGE AND","Indent not done","1","Owned"],
+["Ircon 1B","2026-01-20","Diesel Generator","15KVA DG (92190004)","ENGINE REPAIR","WIP at site","176","Hired"],
+["Ircon 1B","2026-01-30","Tower Light","COOPER COP (92360006)","ENGINE RPM UP & DOWN","WIP at site","166","Hired"],
+["Ircon 1B","2026-07-02","Lmv Camper/Pickup","MH34BZ0708","STARTING PROBLEM IN DEISEL LINE","Mechanic not available","13","Owned"],
+["Ircon 1B","2026-07-14","Lmv Camper/Pickup","CG04NM1175","STARTING PROBLEM","Mechanic not available","1","Owned"],
+["Nagpur","2026-01-01","Tower Light","KAHMC02042","Engine overhauling and full body","Indent not done","195","Hired"],
+];
 
-const allData = JSON.parse(document.getElementById("pendingData").textContent);
-const RESOLVED_SAMPLE = JSON.parse(document.getElementById("resolvedData").textContent);
-
-// ---- date parsing (handles DD-MM-YYYY, DD/MM/YYYY, YYYY-MM-DD) ----
-function parseDate(str){
-  if(!str) return null;
-  const s = String(str).trim();
-  let m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-  if(m){ return new Date(+m[3], +m[2]-1, +m[1]); }
-  m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
-  if(m){ return new Date(+m[1], +m[2]-1, +m[3]); }
-  const d = new Date(s);
-  return isNaN(d) ? null : d;
+function alertLevel(days){
+  if(days>30) return "High";
+  if(days>=6) return "Medium";
+  return "Low";
 }
-allData.forEach(r=>{ r._date = parseDate(r.date); });
 
-function alertInfo(days){
-  if(days>30) return {label:"High Alert", color:"#ff2d55"};
-  if(days>=16) return {label:"Medium Alert", color:"#ffaa00"};
-  return {label:"Low Alert", color:"#00e05a"};
-}
+const data = raw.map((r,i)=>({
+  no:i+1, site:r[0], date:r[1], category:r[2], vehicle:r[3], details:r[4],
+  reason:r[5], days:parseInt(r[6],10), owned:r[7], alert:alertLevel(parseInt(r[6],10))
+}));
 
-const filters = {site:"All", machine:null, reason:null, range:null, ownedHired:"All", dateFrom:null, dateTo:null, alert:null};
-const RANGE_COLORS = {"0-5 Days":"#00e05a","6-30 Days":"#ffaa00","31+ Days":"#ff2d55"};
-function rangeOf(d){ if(d<=5) return "0-5 Days"; if(d<=30) return "6-30 Days"; return "31+ Days"; }
+/* ---------- FILTER SETUP ---------- */
+const siteSel=document.getElementById('fSite');
+[...new Set(data.map(d=>d.site))].sort().forEach(s=>siteSel.innerHTML+=`<option value="${s}">${s}</option>`);
+const ownedSel=document.getElementById('fOwned');
+const fromInp=document.getElementById('fFrom');
+const toInp=document.getElementById('fTo');
 
-function getBase(excludeType){
-  return allData.filter(r=>{
-    if(filters.site!=="All" && r.site!==filters.site) return false;
-    if(filters.ownedHired!=="All" && r.ownedHired!==filters.ownedHired) return false;
-    if(filters.dateFrom && (!r._date || r._date < filters.dateFrom)) return false;
-    if(filters.dateTo && (!r._date || r._date > filters.dateTo)) return false;
-    if(excludeType!=="machine" && filters.machine && r.category!==filters.machine) return false;
-    if(excludeType!=="reason" && filters.reason && r.reason!==filters.reason) return false;
-    if(excludeType!=="range" && filters.range && rangeOf(r.days)!==filters.range) return false;
+document.getElementById('clearFilters').onclick=()=>{
+  siteSel.value="All"; ownedSel.value="All"; fromInp.value=""; toInp.value="";
+  applyFilters();
+};
+
+function getFiltered(){
+  return data.filter(d=>{
+    if(siteSel.value!=="All" && d.site!==siteSel.value) return false;
+    if(ownedSel.value!=="All" && d.owned!==ownedSel.value) return false;
+    if(fromInp.value && d.date < fromInp.value) return false;
+    if(toInp.value && d.date > toInp.value) return false;
     return true;
   });
 }
-function countBy(arr, key){ const m={}; arr.forEach(r=>{ m[r[key]]=(m[r[key]]||0)+1; }); return m; }
-function toggleFilter(type, value){
-  filters[type] = (filters[type]===value) ? null : value;
-  if(type==="site"){ document.getElementById("siteSlicer").value = filters.site || "All"; }
-  renderAll();
-}
 
-const sites = ["All", ...new Set(allData.map(r=>r.site))];
-const siteSel = document.getElementById("siteSlicer");
-sites.forEach(s=>{ const o=document.createElement("option"); o.value=s; o.textContent=s; siteSel.appendChild(o); });
-siteSel.addEventListener("change", ()=>{ filters.site = siteSel.value; renderAll(); });
-
-const ownedVals = ["All", ...new Set(allData.map(r=>r.ownedHired).filter(Boolean))];
-const ownedSel = document.getElementById("ownedSlicer");
-ownedVals.forEach(s=>{ const o=document.createElement("option"); o.value=s; o.textContent=s; ownedSel.appendChild(o); });
-ownedSel.addEventListener("change", ()=>{ filters.ownedHired = ownedSel.value; renderAll(); });
-
-
-document.getElementById("clearFiltersBtn").addEventListener("click", ()=>{
-  filters.machine=null; filters.reason=null; filters.range=null; filters.site="All"; filters.ownedHired="All";
-  filters.dateFrom=null; filters.dateTo=null; filters.alert=null;
-  siteSel.value="All"; ownedSel.value="All"; dateFromEl.value=""; dateToEl.value="";
-  renderAll();
+/* ---------- TABS ---------- */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.onclick=()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-'+btn.dataset.view).classList.add('active');
+    if(btn.dataset.view==='details') renderTable();
+    else renderAnalysis();
+  };
 });
 
-document.querySelectorAll(".tab-btn").forEach(btn=>{
-  btn.addEventListener("click", ()=>{
-    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
-    btn.classList.add("active");
-    const tab = btn.dataset.tab;
-    document.getElementById("tab-analysis").style.display = tab==="analysis" ? "" : "none";
-    document.getElementById("tab-details").style.display = tab==="details" ? "" : "none";
-    if(tab==="details"){
-      renderDetails();
-      // force chart resize fix isn't needed here since charts live in analysis tab only
-    } else {
-      // re-sync chart sizes when coming back to analysis tab
-      requestAnimationFrame(()=>{ machineChart.resize(); siteChart.resize(); reasonChart.resize(); });
-    }
-  });
-});
-
-const commonOpts = {
-  responsive:true, maintainAspectRatio:false, resizeDelay:100,
-  plugins:{ legend:{labels:{color:"#fff",font:{size:11,weight:"bold"}}},
-    datalabels:{color:"#fff",font:{size:11,weight:"bold"},formatter:v=>v} },
-  scales:{ x:{ticks:{color:"#fff",font:{size:10}},grid:{color:"rgba(255,255,255,.15)"}},
-           y:{ticks:{color:"#fff",font:{size:10}},grid:{color:"rgba(255,255,255,.15)"},beginAtZero:true} }
-};
-const centerTotal = { id:"centerTotal", beforeDraw(chart){
-  const {ctx}=chart, {left,right,top,bottom}=chart.chartArea;
-  const cx=(left+right)/2, cy=(top+bottom)/2;
-  const total = chart.data.datasets[0].data.reduce((a,b)=>a+b,0);
-  ctx.save(); ctx.fillStyle="#fff"; ctx.textAlign="center"; ctx.textBaseline="middle";
-  ctx.font="bold 11px Segoe UI"; ctx.fillText("TOTAL",cx,cy-10);
-  ctx.font="bold 20px Segoe UI"; ctx.fillText(total,cx,cy+11);
-  ctx.restore();
-}};
-const donutOpts = { responsive:true, maintainAspectRatio:false, resizeDelay:100, cutout:"62%",
-  layout:{padding:4},
-  plugins:{ legend:{position:"bottom",labels:{color:"#fff",boxWidth:9,padding:6,font:{size:10,weight:"bold"}}},
-            datalabels:{display:true,color:"#fff",font:{size:11,weight:"bold"}} } };
-
-const machineChart = new Chart(document.getElementById("machineChart"), {
-  type:"bar",
-  data:{ labels:[], datasets:[{ label:"Cases", data:[], borderRadius:8,
-    backgroundColor:["#ff5fa8","#e6cf3c","#3b4d9c","#1e90ff","#7a2ea1","#7d7d7d","#b39ddb","#d9756a","#1e90ff","#00c6ff"] }] },
-  options:{ ...commonOpts, onClick:(evt,els,chart)=>{ if(els.length){ toggleFilter("machine", chart.data.labels[els[0].index]); } } }
-});
-const siteChart = new Chart(document.getElementById("siteChart"), {
-  type:"doughnut", plugins:[centerTotal],
-  data:{ labels:[], datasets:[{ data:[], backgroundColor:["#00ffff","#0077ff","#00ff88","#ffaa00","#ff0055","#7a2ea1","#e6cf3c"] }] },
-  options:{ ...donutOpts, onClick:(evt,els,chart)=>{ if(els.length){ toggleFilter("site", chart.data.labels[els[0].index]); } } }
-});
-const reasonChart = new Chart(document.getElementById("reasonChart"), {
-  type:"doughnut", plugins:[centerTotal],
-  data:{ labels:[], datasets:[{ data:[], backgroundColor:["#ff0055","#ffaa00","#00ffff","#00ff88","#0077ff","#7a2ea1"] }] },
-  options:{ ...donutOpts, onClick:(evt,els,chart)=>{ if(els.length){ toggleFilter("reason", chart.data.labels[els[0].index]); } } }
-});
-
-function renderRangeBars(){
-  const data = getBase("range");
-  const buckets = {"0-5 Days":0,"6-30 Days":0,"31+ Days":0};
-  data.forEach(r=>{ buckets[rangeOf(r.days)]++; });
-  const wrap = document.getElementById("rangeBars");
-  wrap.innerHTML = "";
-  Object.entries(buckets).forEach(([label,count])=>{
-    const seg = document.createElement("div");
-    seg.className = "range-seg" + (filters.range && filters.range!==label ? " dim":"") + (filters.range===label ? " sel":"");
-    seg.style.background = RANGE_COLORS[label];
-    seg.style.flexGrow = Math.max(count,0.3);
-    seg.textContent = count;
-    seg.title = label;
-    seg.addEventListener("click", ()=>toggleFilter("range", label));
-    wrap.appendChild(seg);
-  });
-}
-
-function renderAll(){
-  const kpiBase = getBase(null);
-  document.getElementById("kpiPending").textContent = kpiBase.length;
-  document.getElementById("kpiPending15").textContent = kpiBase.filter(d=>d.days>15).length;
-
-  renderRangeBars();
-
-  const machineSrc = getBase("machine").filter(d=>d.days>15);
-  const machineCounts = countBy(machineSrc, "category");
-  const machineEntries = Object.entries(machineCounts).sort((a,b)=>b[1]-a[1]).slice(0,10);
-  machineChart.data.labels = machineEntries.map(e=>e[0]);
-  machineChart.data.datasets[0].data = machineEntries.map(e=>e[1]);
-  machineChart.data.datasets[0].borderWidth = machineEntries.map(e=> filters.machine===e[0] ? 3:0);
-  machineChart.data.datasets[0].borderColor = "#fff";
-  machineChart.update();
-
-  const siteSrc = getBase("site");
-  const siteCounts = countBy(siteSrc, "site");
-  const siteEntries = Object.entries(siteCounts);
-  siteChart.data.labels = siteEntries.map(e=>e[0]);
-  siteChart.data.datasets[0].data = siteEntries.map(e=>e[1]);
-  siteChart.update();
-
-  const reasonSrc = getBase("reason").filter(d=>d.days>15);
-  const reasonCounts = countBy(reasonSrc, "reason");
-  const reasonEntries = Object.entries(reasonCounts);
-  reasonChart.data.labels = reasonEntries.map(e=>e[0]);
-  reasonChart.data.datasets[0].data = reasonEntries.map(e=>e[1]);
-  reasonChart.update();
-
-  const days = kpiBase.map(d=>d.days);
-  document.getElementById("kpiAvg").textContent = days.length ? (days.reduce((a,b)=>a+b,0)/days.length).toFixed(1) : "--";
-  document.getElementById("kpiHigh").textContent = kpiBase.filter(d=>d.days>30).length;
-  document.getElementById("kpiMed").textContent = kpiBase.filter(d=>d.days>=8 && d.days<=30).length;
-  document.getElementById("kpiLow").textContent = kpiBase.filter(d=>d.days>=0 && d.days<=7).length;
-  const resolvedFiltered = RESOLVED_SAMPLE.filter(r=> filters.site==="All" || r.site===filters.site);
-  document.getElementById("kpiResolved").textContent = resolvedFiltered.length;
-
-  const anyChartFilter = filters.machine || filters.reason || filters.range || filters.site!=="All" ||
-    filters.ownedHired!=="All" || filters.dateFrom || filters.dateTo || filters.alert;
-  document.getElementById("clearFiltersBtn").classList.toggle("show", !!anyChartFilter);
-
-  if(document.getElementById("tab-details").style.display !== "none") renderDetails();
-}
-
-// ---- BD Details tab: table, sorting, alert badges, export ----
-const detailsSort = { key:null, dir:1 };
-
-function getDetailsData(){
-  let data = getBase(null);
-  if(filters.alert) data = data.filter(r=> alertInfo(r.days).label === filters.alert);
-  if(detailsSort.key){
-    data = [...data].sort((a,b)=>{
-      let av = a[detailsSort.key], bv = b[detailsSort.key];
-      if(detailsSort.key==="days") return (av-bv)*detailsSort.dir;
-      if(detailsSort.key==="alert") { av = alertInfo(a.days).label; bv = alertInfo(b.days).label; }
-      return String(av).localeCompare(String(bv)) * detailsSort.dir;
-    });
+/* ---------- CHARTS ---------- */
+let machineChart, siteDonut, reasonDonut;
+const centerTextPlugin = {
+  id:'centerText',
+  afterDraw(chart){
+    if(!chart.config._centerText) return;
+    const {ctx, chartArea:{left,right,top,bottom}} = chart;
+    ctx.save();
+    const cx=(left+right)/2, cy=(top+bottom)/2;
+    ctx.font='700 20px Segoe UI'; ctx.fillStyle='#EAF1FB'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(chart.config._centerText.value, cx, cy-8);
+    ctx.font='500 10px Segoe UI'; ctx.fillStyle='#8CA3C4';
+    ctx.fillText(chart.config._centerText.label, cx, cy+10);
+    ctx.restore();
   }
-  return data;
-}
+};
+Chart.register(centerTextPlugin);
 
-function renderDetails(){
-  const data = getDetailsData();
-  const body = document.getElementById("detailsBody");
-  body.innerHTML = data.map((r,i)=>{
-    const info = alertInfo(r.days);
-    return `<tr>
-      <td>${i+1}</td>
-      <td class="clickable-cell" data-type="site" data-value="${r.site}">${r.site}</td>
-      <td>${r.date || ""}</td>
-      <td>${r.category}</td>
-      <td>${r.vehicleNo || ""}</td>
-      <td>${r.details || ""}</td>
-      <td>${r.reason}</td>
-      <td>${r.days}</td>
-      <td><span class="alert-badge clickable-cell" data-type="alert" data-value="${info.label}" style="background:${info.color}">${info.label}</span></td>
-    </tr>`;
-  }).join("");
+const palette=['#2DD4BF','#4E7FDB','#F2994A','#E5484D','#9B59B6','#27AE60','#F2C94C','#EB5757'];
 
-  body.querySelectorAll(".clickable-cell").forEach(el=>{
-    el.addEventListener("click", ()=>{
-      const type = el.dataset.type, value = el.dataset.value;
-      if(type==="site"){ toggleFilter("site", value); }
-      else if(type==="alert"){ filters.alert = (filters.alert===value) ? null : value; renderAll(); }
-    });
+function renderAnalysis(){
+  const f=getFiltered();
+  const pending=f.filter(d=>d.days>0); // all rows are "pending" (Resolved: NO) per source sheet
+  const total=pending.length;
+  const critical=pending.filter(d=>d.days>15).length;
+  const low=pending.filter(d=>d.days<=5).length;
+  const med=pending.filter(d=>d.days>=6 && d.days<=30).length;
+  const high=pending.filter(d=>d.days>30).length;
+  const avg=pending.length? (pending.reduce((a,d)=>a+d.days,0)/pending.length).toFixed(1):0;
+  const hi30=pending.filter(d=>d.days>30).length;
+  const med830=pending.filter(d=>d.days>=8 && d.days<=30).length;
+  const low07=pending.filter(d=>d.days>=0 && d.days<=7).length;
+
+  document.getElementById('kTotal').textContent=total;
+  document.getElementById('kCritical').textContent=critical;
+  document.getElementById('bLow').innerHTML=low+"<small>0-5 Days</small>";
+  document.getElementById('bMed').innerHTML=med+"<small>6-30 Days</small>";
+  document.getElementById('bHigh').innerHTML=high+"<small>Over &gt; 30</small>";
+  document.getElementById('kAvg').textContent=avg;
+  document.getElementById('kHigh').textContent=hi30;
+  document.getElementById('kMed').textContent=med830;
+  document.getElementById('kLow').textContent=low07;
+  document.getElementById('kResolved').textContent=0;
+
+  // Machine-wise pending (> 15 days), grouped by category
+  const gt15 = pending.filter(d=>d.days>15);
+  const byCat={};
+  gt15.forEach(d=>byCat[d.category]=(byCat[d.category]||0)+1);
+  const catLabels=Object.keys(byCat);
+  const catValues=catLabels.map(l=>byCat[l]);
+
+  if(machineChart) machineChart.destroy();
+  machineChart=new Chart(document.getElementById('machineChart'),{
+    type:'bar',
+    data:{labels:catLabels,datasets:[{data:catValues,backgroundColor:catLabels.map((_,i)=>palette[i%palette.length]),borderRadius:5}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{display:false},datalabels:{}},
+      scales:{y:{beginAtZero:true,ticks:{precision:0,color:'#8CA3C4'},grid:{color:'#1D3E68'}},
+               x:{ticks:{color:'#EAF1FB',font:{size:10}},grid:{display:false}}}}
+  });
+
+  // Site donut
+  const bySite={};
+  f.forEach(d=>bySite[d.site]=(bySite[d.site]||0)+1);
+  const siteLabels=Object.keys(bySite);
+  if(siteDonut) siteDonut.destroy();
+  siteDonut=new Chart(document.getElementById('siteDonut'),{
+    type:'doughnut',
+    data:{labels:siteLabels,datasets:[{data:siteLabels.map(l=>bySite[l]),backgroundColor:palette,borderColor:'#0F2A52',borderWidth:2}]},
+    options:{maintainAspectRatio:false,cutout:'62%',
+      plugins:{legend:{position:'bottom',labels:{color:'#EAF1FB',boxWidth:10,font:{size:10},padding:8}}}},
+    _centerText:{value:total,label:'TOTAL'}
+  });
+
+  // Reason donut (pending distribution > 15 days)
+  const byReason={};
+  gt15.forEach(d=>byReason[d.reason]=(byReason[d.reason]||0)+1);
+  const reasonLabels=Object.keys(byReason);
+  if(reasonDonut) reasonDonut.destroy();
+  reasonDonut=new Chart(document.getElementById('reasonDonut'),{
+    type:'doughnut',
+    data:{labels:reasonLabels,datasets:[{data:reasonLabels.map(l=>byReason[l]),backgroundColor:palette.slice().reverse(),borderColor:'#0F2A52',borderWidth:2}]},
+    options:{maintainAspectRatio:false,cutout:'62%',
+      plugins:{legend:{position:'bottom',labels:{color:'#EAF1FB',boxWidth:10,font:{size:9.5},padding:6}}}},
+    _centerText:{value:gt15.length,label:'CASES'}
   });
 }
 
-document.querySelectorAll(".details-table th").forEach(th=>{
-  th.addEventListener("click", ()=>{
-    const key = th.dataset.key;
-    if(key==="no") return;
-    if(detailsSort.key===key){ detailsSort.dir *= -1; } else { detailsSort.key = key; detailsSort.dir = 1; }
-    renderDetails();
+/* ---------- BD DETAILS TABLE (sortable, filterable, exportable) ---------- */
+let sortKey='no', sortDir=1;
+
+function renderTable(){
+  let f=getFiltered();
+  f.sort((a,b)=>{
+    let va=a[sortKey], vb=b[sortKey];
+    if(typeof va==='string'){ va=va.toLowerCase(); vb=vb.toLowerCase(); }
+    if(va<vb) return -1*sortDir;
+    if(va>vb) return 1*sortDir;
+    return 0;
+  });
+  const body=document.getElementById('bdBody');
+  body.innerHTML=f.map(d=>`<tr>
+    <td>${d.no}</td><td>${d.site}</td><td>${d.date}</td><td>${d.category}</td>
+    <td>${d.vehicle}</td><td>${d.details}</td><td>${d.reason}</td><td>${d.days}</td>
+    <td><span class="pill ${d.alert}">${d.alert} Alert</span></td>
+  </tr>`).join('');
+  document.querySelectorAll('#bdTable thead th').forEach(th=>{
+    th.innerHTML = th.textContent.replace(' ▲','').replace(' ▼','') + (th.dataset.key===sortKey ? (sortDir===1?' ▲':' ▼') : '');
+  });
+}
+
+document.querySelectorAll('#bdTable thead th').forEach(th=>{
+  th.addEventListener('click',()=>{
+    const key=th.dataset.key;
+    if(sortKey===key) sortDir*=-1; else { sortKey=key; sortDir=1; }
+    renderTable();
   });
 });
 
-document.getElementById("exportExcelBtn").addEventListener("click", ()=>{
-  const data = getDetailsData();
-  const rows = data.map((r,i)=>({
-    "No": i+1, "Site": r.site, "Date of breakdown": r.date, "Category": r.category,
-    "Vehicle No": r.vehicleNo, "Breakdown Details": r.details, "Reason for pendency": r.reason,
-    "Pending for (no of days)": r.days, "Breakdown Alert": alertInfo(r.days).label
+function currentTableRows(){
+  let f=getFiltered();
+  f.sort((a,b)=>{
+    let va=a[sortKey], vb=b[sortKey];
+    if(typeof va==='string'){ va=va.toLowerCase(); vb=vb.toLowerCase(); }
+    if(va<vb) return -1*sortDir;
+    if(va>vb) return 1*sortDir;
+    return 0;
+  });
+  return f;
+}
+
+document.getElementById('exportExcel').onclick=()=>{
+  const rows=currentTableRows().map(d=>({
+    "No":d.no,"Site":d.site,"Date of breakdown":d.date,"Category":d.category,
+    "Vehcile No":d.vehicle,"Breakdown Details":d.details,"Reason for pendency":d.reason,
+    "Pending for (no of days)":d.days,"Breakdown Alert Icon":d.alert+" Alert"
   }));
-  const ws = XLSX.utils.json_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "BD Details");
-  XLSX.writeFile(wb, "BD_Details_Filtered.xlsx");
-});
+  const ws=XLSX.utils.json_to_sheet(rows);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,"BD Details");
+  XLSX.writeFile(wb,"BD_Details_Export.xlsx");
+};
 
-document.getElementById("exportPdfBtn").addEventListener("click", ()=>{
-  const data = getDetailsData();
+document.getElementById('exportPdf').onclick=()=>{
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({orientation:"landscape"});
-  const rows = data.map((r,i)=>[i+1, r.site, r.date||"", r.category, r.vehicleNo||"", r.details||"", r.reason, r.days, alertInfo(r.days).label]);
+  const doc=new jsPDF({orientation:'landscape'});
+  const rows=currentTableRows().map(d=>[d.no,d.site,d.date,d.category,d.vehicle,d.details,d.reason,d.days,d.alert+" Alert"]);
+  doc.text("Machine Breakdown Details",14,12);
   doc.autoTable({
-    head:[["No","Site","Date","Category","Vehicle No","Breakdown Details","Reason","Pending Days","Alert"]],
-    body: rows, styles:{fontSize:8}
+    startY:18,
+    head:[["No","Site","Date","Category","Vehicle No","Breakdown Details","Reason for pendency","Pending Days","Alert"]],
+    body:rows, styles:{fontSize:7}, headStyles:{fillColor:[10,31,61]}
   });
-  doc.save("BD_Details_Filtered.pdf");
-});
+  doc.save("BD_Details_Export.pdf");
+};
 
-renderAll();
+/* ---------- WIRE FILTERS ---------- */
+[siteSel,ownedSel,fromInp,toInp].forEach(el=>el.addEventListener('change',()=>{
+  renderAnalysis(); renderTable();
+}));
+
+renderAnalysis();
+renderTable();
 </script>
-{% endblock %}
+</body>
+</html>
