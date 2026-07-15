@@ -30,7 +30,7 @@ def home():
 
 
 # ==========================
-# EXCEL DOWNLOAD (full master export - unchanged)
+# EXCEL DOWNLOAD
 # ==========================
 
 @app.route("/download_excel")
@@ -46,7 +46,7 @@ def download_excel():
 
 
 # ==========================
-# PDF DOWNLOAD (full master export - unchanged)
+# PDF DOWNLOAD
 # ==========================
 
 @app.route("/download_pdf")
@@ -77,11 +77,8 @@ def reports():
 
 # ==========================
 # BREAKDOWN DASHBOARD
-# (sends ROW-LEVEL data as JSON so the client can cross-filter
-#  KPIs + all 4 charts + BD Details table together on every
-#  click / slicer change, including Owned/Hired + Date range +
-#  Breakdown Alert Icon filters, and export filtered Excel/PDF
-#  directly in the browser)
+# (now sends ROW-LEVEL data as JSON so the client can cross-filter
+#  KPIs + all 4 charts together on every click / slicer change)
 # ==========================
 
 @app.route("/breakdown")
@@ -108,62 +105,21 @@ def breakdown():
         master = MASTER_CACHE.copy()
         master.columns = master.columns.astype(str).str.strip()
 
-        # ---- DEBUG INFO shown directly on the page (top banner) so no
-        # terminal access is needed to diagnose an empty dashboard ----
-        debug_info = {
-            "total_rows": len(master),
-            "columns": list(master.columns),
-            "resolved_values": [],
-            "resolved_no_count": 0,
-            "dropped_non_numeric": 0,
-        }
-
-        if "Resolved" not in master.columns:
-            debug_info["error"] = "'Resolved' column NOT FOUND in sheet."
-            return render_template(
-                "breakdown.html",
-                pending_records=[],
-                resolved_records=[],
-                debug_info=debug_info,
-            )
-
-        debug_info["resolved_values"] = (
-            master["Resolved"].astype(str).str.strip().unique().tolist()
-        )
-
         # ======================
         # RESOLVED = NO FILTER (pending set)
         # ======================
         resolved_col = master["Resolved"].astype(str).str.strip().str.upper()
         pending = master[resolved_col == "NO"].copy()
         resolved = master[resolved_col == "YES"].copy()
-        debug_info["resolved_no_count"] = len(pending)
-
-        if "Pending for (no of days)" not in master.columns:
-            debug_info["error"] = "'Pending for (no of days)' column NOT FOUND in sheet."
-            return render_template(
-                "breakdown.html",
-                pending_records=[],
-                resolved_records=[],
-                debug_info=debug_info,
-            )
 
         pending["Pending Days"] = pd.to_numeric(
             pending["Pending for (no of days)"], errors="coerce"
         )
-        before_drop = len(pending)
         pending = pending.dropna(subset=["Pending Days"])
-        debug_info["dropped_non_numeric"] = before_drop - len(pending)
         pending["Pending Days"] = pending["Pending Days"].astype(int)
 
         # ======================
         # ROW-LEVEL RECORDS FOR CLIENT-SIDE FILTERING
-        # NOTE: added date / vehicleNo / details / ownedHired fields
-        # so the client can build the "Owned/Hired" slicer, the
-        # date-range slicer, and the BD Details table exactly like
-        # the reference screenshot (minus "Stock Alert Level").
-        # If your Google Sheet uses different header names than the
-        # ones below, just update the .get(...) keys accordingly.
         # ======================
         pending_records = [
             {
@@ -171,12 +127,6 @@ def breakdown():
                 "site": str(row.get("Site", "Not Defined") or "Not Defined"),
                 "days": int(row["Pending Days"]),
                 "reason": str(row.get("Reason for pendency", "Not Defined") or "Not Defined"),
-                "date": str(row.get("Date of breakdown", "") or ""),
-                "vehicleNo": str(
-                    row.get("Vehcile No", row.get("Vehicle No", "Not Defined")) or "Not Defined"
-                ),
-                "details": str(row.get("Breakdown Details", "Not Defined") or "Not Defined"),
-                "ownedHired": str(row.get("Owned/Hired", "Not Defined") or "Not Defined"),
             }
             for _, row in pending.iterrows()
         ]
@@ -186,12 +136,10 @@ def breakdown():
             for _, row in resolved.iterrows()
         ]
 
-        debug_info["final_pending_records"] = len(pending_records)
         return render_template(
             "breakdown.html",
             pending_records=pending_records,
             resolved_records=resolved_records,
-            debug_info=debug_info,
         )
 
     except Exception as e:
