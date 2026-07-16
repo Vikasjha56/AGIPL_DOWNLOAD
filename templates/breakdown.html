@@ -61,8 +61,6 @@
   .bucket small{display:block;font-weight:500;font-size:9px;margin-top:1px;color:#08131f;}
   .b-green{background:#27AE60;} .b-orange{background:#F2994A;} .b-red{background:#E5484D;}
 
-  /* Bar chart gets a modest height; donut row gets more, since KPI cards
-     are now smaller there's extra vertical room to give the donuts. */
   .mid-row{flex:1.05 1 0;min-height:0;display:flex;flex-direction:column;}
   .donut-row{flex:1.6 1 0;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:8px;}
   .panel{background:rgba(255,255,255,.12);border:1px solid rgba(0,255,255,.35);border-radius:12px;
@@ -102,18 +100,12 @@
   .pill{padding:3px 10px;border-radius:12px;font-size:10.5px;font-weight:700;color:#fff;display:inline-block;}
   .pill.High{background:#E5484D;} .pill.Medium{background:#F2994A;} .pill.Low{background:#1E9E63;}
 
-  /* ===== Tablet / small-laptop ===== */
   @media(max-width:900px){
     .kpi-row{grid-template-columns:1fr;}
     .donut-row{grid-template-columns:1fr;}
     .priority-row{grid-template-columns:repeat(2,1fr);}
   }
 
-  /* ===== Mobile phones =====
-     The dashboard is normally squeezed into one fixed-height screen (overflow:hidden)
-     which works on laptops/PC but crushes/overlaps content on small phones.
-     Below 640px we drop that constraint and let the page scroll naturally instead,
-     giving every chart/table a safe minimum height so nothing overlaps. */
   @media(max-width:640px){
     .bd-wrap{overflow:visible;min-height:auto;height:auto;}
     .view.active{overflow:visible;}
@@ -275,8 +267,6 @@ function rangeOf(d){ if(d<=5) return "0-5"; if(d<=30) return "6-30"; return "31+
 function alertShort(a){ return (a||"Low Alert").split(" ")[0]; }
 function priorityLabel(days){ if(days>30) return "High"; if(days>=8) return "Medium"; return "Low"; }
 
-// Wraps a long x-axis label into multiple short lines (word-wrap style)
-// instead of rotating it vertically, so machine names stay horizontal/front-facing.
 function wrapLabel(label, maxLen){
   maxLen = maxLen || 10;
   label = String(label);
@@ -297,7 +287,6 @@ function wrapLabel(label, maxLen){
   return chunks;
 }
 
-/* dropdown filters (Site / Owned) + chart-click cross-filters (all combine) */
 const filters = {site:"All", owned:"All", category:null, siteClick:null, reason:null, range:null, critical:false};
 
 const siteSel=document.getElementById('fSite');
@@ -319,9 +308,6 @@ function toggle(type,value){
   renderAll();
 }
 
-/* base filtered set — excludeType lets a chart ignore its own filter so its own options stay visible.
-   "Total Pending Cases" (kTotal) is computed from getBase(null), i.e. EVERY active filter
-   (site, owned, category, reason, range, critical) applies to it — fully connected. */
 function getBase(excludeType){
   return allData.filter(r=>{
     const site = filters.siteClick || filters.site;
@@ -336,10 +322,6 @@ function getBase(excludeType){
 }
 function countBy(arr,key){ const m={}; arr.forEach(r=>{ m[r[key]]=(m[r[key]]||0)+1; }); return m; }
 
-/* ===== Dynamic page title: "🛠 Breakdown Analysis Dashboard" on the
-   Breakdown Analysis tab, "Breakdown Report" on the BD Details tab.
-   We locate the heading by its known text instead of a fixed selector,
-   so this keeps working no matter how base.html renders {% block page_title %}. */
 const ANALYSIS_TITLE = "🛠 Breakdown Analysis Dashboard";
 const DETAILS_TITLE = "Breakdown Report";
 function findPageTitleEl(){
@@ -356,7 +338,6 @@ function setPageTitle(view){
   pageTitleEl.textContent = (view === 'details') ? DETAILS_TITLE : ANALYSIS_TITLE;
 }
 
-/* ===== Tabs ===== */
 document.querySelectorAll('.tab-btn').forEach(btn=>{
   btn.onclick=()=>{
     document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
@@ -368,7 +349,6 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
   };
 });
 
-/* ===== KPI card + bucket clicks ===== */
 document.getElementById('kCriticalCard').onclick=()=>{
   filters.critical=!filters.critical;
   document.getElementById('kCriticalCard').classList.toggle('selected',filters.critical);
@@ -378,7 +358,6 @@ document.getElementById('kCriticalCard').onclick=()=>{
   document.getElementById(id).addEventListener('click',()=>toggle('range',document.getElementById(id).dataset.range));
 });
 
-/* ===== Charts ===== */
 let machineChart, siteDonut, reasonDonut;
 const centerTextPlugin = {
   id:'centerText',
@@ -395,7 +374,7 @@ const centerTextPlugin = {
   }
 };
 Chart.register(centerTextPlugin, ChartDataLabels);
-Chart.defaults.set('plugins.datalabels', {display:false}); // off by default; enabled per-chart below
+Chart.defaults.set('plugins.datalabels', {display:false});
 Chart.defaults.animation = false;
 Chart.defaults.transitions.active.animation.duration = 0;
 const palette=['#2DD4BF','#4E7FDB','#F2994A','#E5484D','#9B59B6','#27AE60','#F2C94C','#EB5757'];
@@ -433,12 +412,10 @@ function renderAnalysis(){
   const anyFilter = filters.category||filters.siteClick||filters.reason||filters.range||filters.critical||filters.site!=="All"||filters.owned!=="All";
   document.getElementById('clearFilters').disabled = !anyFilter;
 
-  // ===== Machine-wise pending (> 15 days) — bar chart =====
   const gt15 = getBase('category').filter(d=>d.days>15);
   const byCat = countBy(gt15,'category');
   const catLabels = Object.keys(byCat);
 
-  // Enough width per bar for a wrapped, horizontal (non-rotated) label.
   const scrollWrap = document.getElementById('machineChartScroll');
   const innerWrap = document.getElementById('machineChartInner');
   const perBar = 90;
@@ -477,7 +454,7 @@ function renderAnalysis(){
             color:'#EAF1FB',
             font:{size:10},
             autoSkip:false,
-            maxRotation:0,     // keep labels horizontal / front-facing
+            maxRotation:0,
             minRotation:0,
             callback:function(value){
               return wrapLabel(this.getLabelForValue(value), 9);
@@ -489,7 +466,6 @@ function renderAnalysis(){
     }
   });
 
-  // Site donut
   const siteSrc = getBase('site');
   const bySite = countBy(siteSrc,'site');
   const siteLabels = Object.keys(bySite);
@@ -507,7 +483,6 @@ function renderAnalysis(){
     _centerText:{value:siteSrc.length,label:'TOTAL'}
   });
 
-  // Reason donut
   const reasonSrc = getBase('reason').filter(d=>d.days>15);
   const byReason = countBy(reasonSrc,'reason');
   const reasonLabels = Object.keys(byReason);
@@ -526,15 +501,11 @@ function renderAnalysis(){
   });
 }
 
-/* ===== Master re-render: updates KPIs/charts AND the table (if visible). ===== */
 function renderAll(){
   renderAnalysis();
   if(document.getElementById('view-details').classList.contains('active')) renderTable();
 }
 
-/* ===== BD Details table — sortable, respects all the same filters =====
-   The displayed "No" column is ALWAYS the row's position in the current
-   filtered + sorted list (1,2,3,4...), never the raw sheet number. */
 let sortKey='no', sortDir=1;
 
 function sortedRows(){
@@ -570,12 +541,6 @@ document.querySelectorAll('#bdTable thead th').forEach(th=>{
   });
 });
 
-/* ===== Export — current filtered + sorted rows, client-side ===== */
-
-// Excel export via ExcelJS: real colored/bold title banner, subtitle with
-// generation date + applied filters, colored header row, alternating row
-// shading, color-coded Priority column, autofilter, frozen header.
-// NOTE: "Alert Status" column intentionally removed from the Excel export per request.
 document.getElementById('exportExcel').onclick=async ()=>{
   const btn = document.getElementById('exportExcel');
   btn.disabled = true; const oldTxt = btn.textContent; btn.textContent = '⏳ Preparing...';
@@ -597,7 +562,6 @@ document.getElementById('exportExcel').onclick=async ()=>{
       {width:38},{width:26},{width:12},{width:10}
     ];
 
-    // Row 1 — title banner
     sheet.mergeCells(1,1,1,9);
     const titleCell = sheet.getCell(1,1);
     titleCell.value = 'Machine Breakdown Details Report';
@@ -606,7 +570,6 @@ document.getElementById('exportExcel').onclick=async ()=>{
     titleCell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF0C2A54'} };
     sheet.getRow(1).height = 30;
 
-    // Row 2 — subtitle with generation date + active filters
     sheet.mergeCells(2,1,2,9);
     const siteInUse = filters.siteClick || filters.site;
     const subCell = sheet.getCell(2,1);
@@ -616,10 +579,8 @@ document.getElementById('exportExcel').onclick=async ()=>{
     subCell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF13315C'} };
     sheet.getRow(2).height = 18;
 
-    // Row 3 — spacer
     sheet.getRow(3).height = 6;
 
-    // Row 4 — column headers
     const headerRow = sheet.getRow(4);
     headers.forEach((h,idx)=>{ headerRow.getCell(idx+1).value = h; });
     headerRow.height = 22;
