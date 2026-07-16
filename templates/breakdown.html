@@ -336,6 +336,26 @@ function getBase(excludeType){
 }
 function countBy(arr,key){ const m={}; arr.forEach(r=>{ m[r[key]]=(m[r[key]]||0)+1; }); return m; }
 
+/* ===== Dynamic page title: "🛠 Breakdown Analysis Dashboard" on the
+   Breakdown Analysis tab, "Breakdown Report" on the BD Details tab.
+   We locate the heading by its known text instead of a fixed selector,
+   so this keeps working no matter how base.html renders {% block page_title %}. */
+const ANALYSIS_TITLE = "🛠 Breakdown Analysis Dashboard";
+const DETAILS_TITLE = "Breakdown Report";
+function findPageTitleEl(){
+  const candidates = document.querySelectorAll('h1,h2,h3,.page-title,[class*="page-title"]');
+  for(const el of candidates){
+    const t = el.textContent.trim();
+    if(t === ANALYSIS_TITLE || t === DETAILS_TITLE) return el;
+  }
+  return null;
+}
+const pageTitleEl = findPageTitleEl();
+function setPageTitle(view){
+  if(!pageTitleEl) return;
+  pageTitleEl.textContent = (view === 'details') ? DETAILS_TITLE : ANALYSIS_TITLE;
+}
+
 /* ===== Tabs ===== */
 document.querySelectorAll('.tab-btn').forEach(btn=>{
   btn.onclick=()=>{
@@ -343,6 +363,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     btn.classList.add('active');
     document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
     document.getElementById('view-'+btn.dataset.view).classList.add('active');
+    setPageTitle(btn.dataset.view);
     if(btn.dataset.view==='details') renderTable();
   };
 });
