@@ -1,20 +1,20 @@
 {% extends "base.html" %}
-
 {% block page_title %}
 AGIPL Digital Command Center
 {% endblock %}
-
 {% block page_subtitle %}
 {% endblock %}
-
 {% block content %}
-
 <div class="home-title">
   <h1>AGIPL Digital Command Center</h1>
   <p>Integrated Business Intelligence &amp; Analytics Platform</p>
 </div>
-
 <div class="modules">
+  <a href="/critical-pending" class="card">
+    <div class="icon">🚨</div>
+    <h2>Critical Pending Task</h2>
+    <p>Task Allotment &amp; Pending Follow-up Tracker</p>
+  </a>
   <a href="/breakdown" class="card">
     <div class="icon">🛠</div>
     <h2>Breakdown Analysis</h2>
@@ -56,5 +56,4 @@ AGIPL Digital Command Center
     <p>IT Assets &amp; Support Tracking</p>
   </a>
 </div>
-
 {% endblock %}
