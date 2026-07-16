@@ -17,14 +17,6 @@
     color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;}
   .no-data-banner.show{display:block;}
 
-  .back-bar{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:2px 4px;margin-top:-6px;flex-wrap:wrap;}
-  .back-btn{
-    display:inline-flex;align-items:center;gap:6px;
-    background:rgba(255,255,255,.1);border:1px solid rgba(0,255,255,.4);color:#fff;
-    padding:6px 14px;border-radius:9px;font-size:12.5px;font-weight:600;
-    text-decoration:none;transition:.25s;}
-  .back-btn:hover{background:rgba(0,255,255,.25);box-shadow:0 0 12px cyan;transform:translateX(-2px);}
-
   .filters{flex:0 0 auto;display:flex;gap:10px;flex-wrap:wrap;align-items:center;
     padding:8px 18px;border-radius:14px;background:rgba(255,255,255,.12);
     backdrop-filter:blur(20px);box-shadow:0 10px 25px #0007;}
@@ -125,7 +117,6 @@
   @media(max-width:640px){
     .bd-wrap{overflow:visible;min-height:auto;height:auto;}
     .view.active{overflow:visible;}
-    .back-bar{gap:6px;}
     .filters{padding:8px 10px;gap:8px;}
     .filter-group{width:100%;}
     .filter-group select{flex:1;}
@@ -154,10 +145,6 @@
 </style>
 
 <div class="bd-wrap">
-
-  <div class="back-bar">
-    <a href="/" class="back-btn">🏠 ← Back to Home</a>
-  </div>
 
   <div class="no-data-banner" id="noDataBanner">
     ⚠ No records loaded from the Master Table. Check: (1) sheet has rows where <b>Resolved = NO</b>,
