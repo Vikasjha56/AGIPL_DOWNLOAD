@@ -210,31 +210,26 @@
 
 <script>
 /* ---------- REAL DATA (from your Machine Breakdown Details sheet) ---------- */
-const raw = [
-["AMO","2026-07-01","Excavator","EX-1798","ACCIDENTLE","WIP","14","Owned"],
-["AMO","2026-07-09","Backhoe Loader","MH35AW 0304","FUEL PUMP ISSUE","WIP","6","Owned"],
-["AMO","2026-07-10","Transit Mixer","MH35AJ-2865","FUEL SUCTION PIPE ASSY DAMAGE","WIP","3","Hired"],
-["AMO","2026-07-12","Diesel Generator","DG-SET 140KVA","DISPLAY COMMAND BUTTON NOT WORKING","WIP","3","Owned"],
-["Aurangabad","2025-12-13","Lmv Camper/Pickup","MH34BZ-0727","ENGINE REPARING WORK","Material not received","214","Hired"],
-["Aurangabad","2026-06-17","Lmv Camper/Pickup","MH34BZ-0730","INJECTER REPARING WORK","Material not received","28","Hired"],
-["Aurangabad","2026-06-17","Excavator","EXCAVATOR - TATA HITACHI ZX220","HYDROLIC PUMP PROBLEM","Indent not done","28","Owned"],
-["Aurangabad","2026-07-11","Hmv Tipper","MH34BZ-0428","CLUTCH PLATE PROBLEM","Breakdown under inspection","4","Owned"],
-["Ircon 1A","2026-05-22","Hmv Tipper","MH34BZ-1522","ENGINE SEIZED","Mechanic not available","54","Owned"],
-["Ircon 1A","2026-06-08","Hydra Crane","MH34BV-4286","DIFFRENTIAL DAMAGE","Material received repair pending","37","Hired"],
-["Ircon 1A","2026-07-01","Hmv Tipper","MH34BZ-0651","CLUTCH DISMENTAL","Mechanic not available","14","Owned"],
-["Ircon 1A","2026-06-25","Hmv Tipper","MH34BZ-0650","PICK UP NOT GENERATE CLUTCH ISSUE","Mechanic not available","20","Owned"],
-["Ircon 1A","2026-06-26","TM","MH34BZ-1523","ENGINE HEAD DISMENATL AND WATER PUMP","Indent not done","19","Hired"],
-["Ircon 1A","2026-06-30","Tractor","MH34BZ-1420","CLUTCH PROBLEM","Mechanica not available","15","Owned"],
-["Ircon 1A","2026-06-29","Backhoe Loader","MH34BV-8531","TRANSMISSION PROBLEM AND PIN BUSING","Breakdown under inspection","16","Owned"],
-["Ircon 1A","2026-07-11","Transit Mixer","MH34BZ-503","MIXER DRUM UNBALANCED","Mechanic not available","4","Hired"],
-["Ircon 1A","2026-07-12","Transit Mixer","MH35BZ-2689","SELF STARTER PROBLEM","Mechanic not available","1","Owned"],
-["Ircon 1A","2026-07-14","Boom Placer","MH34BZ-0736","END HOSE DAMAGE AND","Indent not done","1","Owned"],
-["Ircon 1B","2026-01-20","Diesel Generator","15KVA DG (92190004)","ENGINE REPAIR","WIP at site","176","Hired"],
-["Ircon 1B","2026-01-30","Tower Light","COOPER COP (92360006)","ENGINE RPM UP & DOWN","WIP at site","166","Hired"],
-["Ircon 1B","2026-07-02","Lmv Camper/Pickup","MH34BZ0708","STARTING PROBLEM IN DEISEL LINE","Mechanic not available","13","Owned"],
-["Ircon 1B","2026-07-14","Lmv Camper/Pickup","CG04NM1175","STARTING PROBLEM","Mechanic not available","1","Owned"],
-["Nagpur","2026-01-01","Tower Light","KAHMC02042","Engine overhauling and full body","Indent not done","195","Hired"],
-];
+
+<!-- Row-level data rendered once by Flask; ALL filtering/aggregation happens client-side -->
+<script id="pendingData" type="application/json">{{ pending_records|tojson }}</script>
+<script id="resolvedData" type="application/json">{{ resolved_records|tojson }}</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+<script>
+Chart.register(ChartDataLabels);
+
+const allData = JSON.parse(document.getElementById("pendingData").textContent);
+const RESOLVED_SAMPLE = JSON.parse(document.getElementById("resolvedData").textContent);
+
+
+
+
+
+
+
+
 
 function alertLevel(days){
   if(days>30) return "High";
