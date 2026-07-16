@@ -1,109 +1,123 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>AGIPL Digital Portal — Breakdown Analysis</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+{% extends "base.html" %}
+
+{% block page_title %}
+🛠 Breakdown Analysis Dashboard
+{% endblock %}
+
+{% block page_subtitle %}
+<p>Live Machine Breakdown Monitoring System</p>
+{% endblock %}
+
+{% block content %}
 <style>
-  :root{
-    --bg:#0A1F3D; --panel:#0F2A52; --panel-2:#0C2444; --border:#1D3E68; --teal:#2DD4BF;
-    --teal-dim:#1B8F80; --text:#EAF1FB; --muted:#8CA3C4;
-    --red:#E5484D; --orange:#F2994A; --yellow:#F2C94C; --green:#27AE60; --blue:#4E7FDB;
-  }
-  *{box-sizing:border-box;}
-  html,body{height:100%;}
-  body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);}
-  .app{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
-  .topbar{background:#081733;padding:10px 22px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);}
-  .brand{display:flex;align-items:center;gap:10px;}
-  .brand .logo{width:34px;height:34px;border-radius:50%;background:var(--panel);border:2px solid var(--teal);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--teal);font-size:13px;}
-  .brand h1{font-size:16px;margin:0;}
-  .status{background:rgba(39,174,96,.15);color:var(--green);border:1px solid var(--green);padding:5px 12px;border-radius:14px;font-size:11px;display:flex;align-items:center;gap:6px;}
-  .dot{width:7px;height:7px;border-radius:50%;background:var(--green);}
+  .bd-wrap{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:10px;overflow:hidden;}
 
-  .headerrow{padding:10px 22px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;}
-  .headerrow h2{margin:0;font-size:18px;}
-  .headerrow .sub{font-size:11px;color:var(--muted);}
-  .tabs{display:flex;gap:6px;}
-  .tab-btn{background:var(--panel-2);border:1px solid var(--border);color:var(--muted);padding:7px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;font-weight:600;}
-  .tab-btn.active{background:var(--teal);color:#04211C;border-color:var(--teal);}
+  .no-data-banner{
+    display:none;flex:0 0 auto;background:rgba(229,72,77,.15);border:1px solid #E5484D;
+    color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;}
+  .no-data-banner.show{display:block;}
 
-  .filters{padding:0 22px 10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
-  .filters label{font-size:11px;color:var(--muted);margin-right:6px;}
-  .filters select,.filters input{background:var(--panel-2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12.5px;}
-  .filter-group{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:6px 10px;display:flex;align-items:center;}
-  .clear-btn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;}
+  .back-bar{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:2px 4px;}
+  .back-btn{
+    display:inline-flex;align-items:center;gap:6px;
+    background:rgba(255,255,255,.1);border:1px solid rgba(0,255,255,.4);color:#fff;
+    padding:6px 14px;border-radius:9px;font-size:12.5px;font-weight:600;
+    text-decoration:none;transition:.25s;}
+  .back-btn:hover{background:rgba(0,255,255,.25);box-shadow:0 0 12px cyan;transform:translateX(-2px);}
+  .breadcrumb{font-size:11.5px;color:#8CA3C4;}
+  .breadcrumb span{color:#2DD4BF;}
 
-  .content{flex:1;overflow:hidden;padding:0 22px 14px;}
-  .view{display:none;height:100%;}
-  .view.active{display:flex;flex-direction:column;gap:10px;height:100%;}
+  .filters{flex:0 0 auto;display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+    padding:10px 18px;border-radius:14px;background:rgba(255,255,255,.12);
+    backdrop-filter:blur(20px);box-shadow:0 10px 25px #0007;}
+  .filters label{font-size:11px;font-weight:600;opacity:.85;margin-right:6px;}
+  .filter-group{display:flex;align-items:center;gap:8px;}
+  .filter-group select{
+    padding:7px 12px;border-radius:9px;border:1px solid rgba(0,255,255,.5);
+    background:rgba(255,255,255,.1);color:#fff;font-size:13px;outline:none;}
+  .filter-group select option{color:#000;}
+  .clear-btn{
+    border:1px solid rgba(255,80,80,.6);background:rgba(255,60,60,.15);color:#fff;
+    padding:7px 13px;border-radius:9px;font-size:12px;cursor:pointer;margin-left:auto;display:none;}
+  .clear-btn.show{display:inline-block;}
+  .tabs{display:flex;gap:6px;background:rgba(255,255,255,.08);padding:4px;border-radius:11px;}
+  .tab-btn{border:none;padding:7px 16px;border-radius:8px;font-size:12.5px;font-weight:600;
+    cursor:pointer;background:transparent;color:#fff;opacity:.7;transition:.25s;}
+  .tab-btn.active{background:linear-gradient(135deg,#0077ff,#00c6ff);opacity:1;box-shadow:0 0 14px cyan;}
+  .tab-btn:hover{opacity:1;}
 
-  .kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;flex:0 0 auto;}
-  .kpi{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px 14px;}
-  .kpi-label{font-size:11px;color:var(--muted);}
-  .kpi-value{font-size:24px;font-weight:700;color:var(--text);margin-top:2px;}
-  .kpi-sub{font-size:10.5px;color:var(--muted);margin-top:2px;}
+  .view{display:none;flex:1 1 auto;min-height:0;flex-direction:column;gap:10px;}
+  .view.active{display:flex;}
+
+  .kpi-row{flex:0 0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .kpi{background:rgba(255,255,255,.1);border:1px solid rgba(0,255,255,.35);border-radius:12px;
+    padding:10px 16px;text-align:center;transition:.3s;}
+  .kpi:hover{transform:translateY(-2px);box-shadow:0 0 14px cyan;}
+  .kpi.clickable{cursor:pointer;}
+  .kpi.selected{border-color:#fff;box-shadow:0 0 14px #fff8;}
+  .kpi-label{font-size:11px;color:#8CA3C4;text-transform:uppercase;letter-spacing:.3px;}
+  .kpi-value{font-size:24px;font-weight:700;text-shadow:0 0 8px cyan;margin-top:4px;}
+  .kpi-sub{font-size:10.5px;color:#8CA3C4;margin-top:2px;}
   .bucket-row{display:flex;gap:8px;margin-top:8px;}
-  .bucket{flex:1;text-align:center;border-radius:6px;padding:8px 4px;font-weight:700;font-size:16px;color:#08131f;}
+  .bucket{flex:1;text-align:center;border-radius:8px;padding:8px 4px;font-weight:700;font-size:16px;
+    color:#08131f;cursor:pointer;transition:.2s;border:2px solid transparent;}
+  .bucket:hover{transform:translateY(-2px);}
+  .bucket.sel{border-color:#fff;box-shadow:0 0 12px #fff8;}
+  .bucket.dim{opacity:.35;}
   .bucket small{display:block;font-weight:500;font-size:9.5px;margin-top:2px;color:#08131f;}
-  .b-green{background:var(--green);} .b-orange{background:var(--orange);} .b-red{background:var(--red);}
+  .b-green{background:#27AE60;} .b-orange{background:#F2994A;} .b-red{background:#E5484D;}
 
-  .mid-row{display:grid;grid-template-columns:1fr;gap:10px;flex:1 1 auto;min-height:0;}
-  .panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;min-height:0;}
-  .panel h3{margin:0 0 6px;font-size:12px;color:var(--teal);text-transform:uppercase;letter-spacing:.4px;text-align:center;}
+  .mid-row{flex:1 1 0;min-height:0;display:flex;flex-direction:column;}
+  .donut-row{flex:1 1 0;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .panel{background:rgba(255,255,255,.12);border:1px solid rgba(0,255,255,.35);border-radius:12px;
+    padding:10px 12px;display:flex;flex-direction:column;min-height:0;backdrop-filter:blur(20px);}
+  .panel h3{margin:0 0 6px;font-size:12px;color:#2DD4BF;text-transform:uppercase;letter-spacing:.4px;text-align:center;}
   .chart-wrap{flex:1;min-height:0;position:relative;}
 
-  .donut-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1 1 auto;min-height:0;}
+  .priority-row{flex:0 0 auto;display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+  .priority-row .kpi-value{font-size:19px;}
 
-  .priority-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;flex:0 0 auto;}
-  .priority-row .kpi-value{font-size:20px;}
-
-  /* BD Details */
-  .details-panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;flex:1;display:flex;flex-direction:column;min-height:0;padding:10px 14px;}
+  .details-panel{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;
+    background:rgba(255,255,255,.12);border:1px solid rgba(0,255,255,.35);border-radius:12px;
+    padding:10px 14px;backdrop-filter:blur(20px);}
   .details-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;}
   .details-top h3{margin:0;font-size:14px;}
   .export-btns{display:flex;gap:8px;}
-  .export-btns button{background:var(--panel-2);border:1px solid var(--teal);color:var(--teal);padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;font-weight:600;}
-  .export-btns button:hover{background:var(--teal);color:#04211C;}
-  .table-scroll{flex:1;overflow:auto;border:1px solid var(--border);border-radius:6px;}
+  .export-btns button{background:rgba(0,255,255,.1);border:1px solid #2DD4BF;color:#2DD4BF;
+    padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600;}
+  .export-btns button:hover{background:#2DD4BF;color:#04211C;}
+  .table-scroll{flex:1;overflow:auto;border:1px solid rgba(0,255,255,.25);border-radius:8px;}
   table{width:100%;border-collapse:collapse;font-size:12px;}
-  thead th{position:sticky;top:0;background:#0C2A54;color:var(--teal);padding:8px 10px;text-align:left;cursor:pointer;user-select:none;white-space:nowrap;border-bottom:1px solid var(--border);}
-  thead th .arrow{font-size:10px;color:var(--muted);margin-left:4px;}
-  tbody td{padding:6px 10px;border-bottom:1px solid var(--border);white-space:nowrap;}
-  tbody tr:nth-child(even){background:rgba(255,255,255,.02);}
-  tbody tr:hover{background:rgba(45,212,191,.08);}
+  thead th{position:sticky;top:0;background:#0C2A54;color:#2DD4BF;padding:8px 10px;text-align:left;
+    cursor:pointer;user-select:none;white-space:nowrap;border-bottom:1px solid rgba(0,255,255,.25);}
+  thead th:hover{background:#123a70;}
+  tbody td{padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.1);white-space:nowrap;}
+  tbody tr:nth-child(even){background:rgba(255,255,255,.03);}
+  tbody tr:hover{background:rgba(45,212,191,.1);}
   .pill{padding:3px 10px;border-radius:12px;font-size:10.5px;font-weight:700;color:#fff;display:inline-block;}
-  .pill.High{background:var(--red);}
-  .pill.Medium{background:var(--orange);}
-  .pill.Low{background:#C9A400;}
+  .pill.High{background:#E5484D;} .pill.Medium{background:#F2994A;} .pill.Low{background:#1E9E63;}
   .oh{padding:2px 9px;border-radius:5px;font-size:10.5px;font-weight:600;}
-  .oh.Owned{background:rgba(78,127,219,.2);color:#8FB0EE;}
-  .oh.Hired{background:rgba(242,153,74,.2);color:var(--orange);}
-</style>
-</head>
-<body>
-<div class="app">
+  .oh.Owned{background:rgba(78,127,219,.25);color:#8FB0EE;}
+  .oh.Hired{background:rgba(242,153,74,.25);color:#F2994A;}
 
-  <div class="topbar">
-    <div class="brand">
-      <div class="logo">AG</div>
-      <h1>AGIPL Digital Portal</h1>
-    </div>
-    <div class="status"><span class="dot"></span>System Online</div>
+  @media(max-width:900px){
+    .kpi-row{grid-template-columns:1fr;}
+    .donut-row{grid-template-columns:1fr;}
+    .priority-row{grid-template-columns:repeat(2,1fr);}
+  }
+</style>
+
+<div class="bd-wrap">
+
+  <div class="back-bar">
+    <a href="/" class="back-btn">🏠 ← Back to Home</a>
+    <div class="breadcrumb">Home <span>/</span> Business Modules <span>/</span> Breakdown Analysis</div>
   </div>
 
-  <div class="headerrow">
-    <div>
-      <h2>🛠 Breakdown Analysis Dashboard</h2>
-      <div class="sub">Live Machine Breakdown Monitoring System</div>
-    </div>
-    <div class="tabs">
-      <button class="tab-btn active" data-view="analysis">Breakdown Analysis</button>
-      <button class="tab-btn" data-view="details">BD Details</button>
-    </div>
+  <div class="no-data-banner" id="noDataBanner">
+    ⚠ No records loaded from the Master Table. Check: (1) sheet has rows where <b>Resolved = NO</b>,
+    (2) column names exactly match <b>Site, Category, Reason for pendency, Pending for (no of days), Resolved</b>,
+    (3) Render logs show "Rows fetched" &gt; 0.
   </div>
 
   <div class="filters">
@@ -111,165 +125,155 @@
       <select id="fSite"><option value="All">All</option></select>
     </div>
     <div class="filter-group"><label>Owned/Hired</label>
-      <select id="fOwned"><option value="All">All</option><option value="Owned">Owned</option><option value="Hired">Hired</option></select>
+      <select id="fOwned">
+        <option value="All">All</option>
+        {% for o in owned_options %}
+        <option value="{{ o }}">{{ o }}</option>
+        {% endfor %}
+      </select>
     </div>
-    <div class="filter-group"><label>From</label>
-      <input type="date" id="fFrom">
+    <div class="tabs">
+      <button class="tab-btn active" data-view="analysis">Breakdown Analysis</button>
+      <button class="tab-btn" data-view="details">BD Details</button>
     </div>
-    <div class="filter-group"><label>To</label>
-      <input type="date" id="fTo">
-    </div>
-    <button class="clear-btn" id="clearFilters">Clear filters</button>
+    <button class="clear-btn" id="clearFilters">✕ Clear chart filters</button>
   </div>
 
-  <div class="content">
-
-    <!-- BREAKDOWN ANALYSIS VIEW -->
-    <div class="view active" id="view-analysis">
-      <div class="kpi-row">
-        <div class="kpi">
-          <div class="kpi-label">Total Pending Cases</div>
-          <div class="kpi-value" id="kTotal">0</div>
-          <div class="kpi-sub">Resolved : NO</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">Critical Pending &gt; 15 Days</div>
-          <div class="kpi-value" id="kCritical">0</div>
-          <div class="kpi-sub">Pending Ageing</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">Machine Count by Pending Days Range</div>
-          <div class="bucket-row">
-            <div class="bucket b-green" id="bLow">0<small>0-5 Days</small></div>
-            <div class="bucket b-orange" id="bMed">0<small>6-30 Days</small></div>
-            <div class="bucket b-red" id="bHigh">0<small>Over &gt; 30</small></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="mid-row">
-        <div class="panel">
-          <h3>Machine-wise Pending Cases (&gt; 15 days)</h3>
-          <div class="chart-wrap"><canvas id="machineChart"></canvas></div>
-        </div>
-      </div>
-
-      <div class="donut-row">
-        <div class="panel">
-          <h3>Breakdown Machine Count by Site</h3>
-          <div class="chart-wrap"><canvas id="siteDonut"></canvas></div>
-        </div>
-        <div class="panel">
-          <h3>Pending Distribution (&gt; 15 Days)</h3>
-          <div class="chart-wrap"><canvas id="reasonDonut"></canvas></div>
-        </div>
-      </div>
-
-      <div class="priority-row">
-        <div class="kpi"><div class="kpi-label">Avg. Days Pending</div><div class="kpi-value" id="kAvg">0</div></div>
-        <div class="kpi"><div class="kpi-label">High Priority (&gt;30d)</div><div class="kpi-value" id="kHigh">0</div></div>
-        <div class="kpi"><div class="kpi-label">Medium Priority (8-30d)</div><div class="kpi-value" id="kMed">0</div></div>
-        <div class="kpi"><div class="kpi-label">Low Priority (0-7d)</div><div class="kpi-value" id="kLow">0</div></div>
-        <div class="kpi"><div class="kpi-label">Resolved</div><div class="kpi-value" id="kResolved">0</div></div>
-      </div>
-    </div>
-
-    <!-- BD DETAILS VIEW -->
-    <div class="view" id="view-details">
-      <div class="details-panel">
-        <div class="details-top">
-          <h3>Machine Breakdown Details</h3>
-          <div class="export-btns">
-            <button id="exportExcel">⬇ Export Excel</button>
-            <button id="exportPdf">⬇ Export PDF</button>
-          </div>
-        </div>
-        <div class="table-scroll">
-          <table id="bdTable">
-            <thead>
-              <tr>
-                <th data-key="no">No</th>
-                <th data-key="site">Site</th>
-                <th data-key="date">Date of breakdown</th>
-                <th data-key="category">Category</th>
-                <th data-key="vehicle">Vehcile No</th>
-                <th data-key="details">Breakdown Details</th>
-                <th data-key="reason">Reason for pendency</th>
-                <th data-key="days">Pending for (no of days)</th>
-                <th data-key="alert">Breakdown Alert Icon</th>
-              </tr>
-            </thead>
-            <tbody id="bdBody"></tbody>
-          </table>
+  <!-- BREAKDOWN ANALYSIS -->
+  <div class="view active" id="view-analysis">
+    <div class="kpi-row">
+      <div class="kpi"><div class="kpi-label">Total Pending Cases</div>
+        <div class="kpi-value" id="kTotal">0</div><div class="kpi-sub">Resolved : NO</div></div>
+      <div class="kpi clickable" id="kCriticalCard"><div class="kpi-label">Critical Pending &gt; 15 Days</div>
+        <div class="kpi-value" id="kCritical">0</div><div class="kpi-sub">Click to filter</div></div>
+      <div class="kpi">
+        <div class="kpi-label">Machine Count by Pending Days Range</div>
+        <div class="bucket-row">
+          <div class="bucket b-green" id="bLow" data-range="0-5">0<small>0-5 Days</small></div>
+          <div class="bucket b-orange" id="bMed" data-range="6-30">0<small>6-30 Days</small></div>
+          <div class="bucket b-red" id="bHigh" data-range="31+">0<small>Over &gt; 30</small></div>
         </div>
       </div>
     </div>
 
+    <div class="mid-row">
+      <div class="panel">
+        <h3>Machine-wise Pending Cases (&gt; 15 days) — click a bar to filter</h3>
+        <div class="chart-wrap"><canvas id="machineChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="donut-row">
+      <div class="panel">
+        <h3>Breakdown Machine Count by Site — click a slice to filter</h3>
+        <div class="chart-wrap"><canvas id="siteDonut"></canvas></div>
+      </div>
+      <div class="panel">
+        <h3>Pending Distribution (&gt; 15 Days) — click a slice to filter</h3>
+        <div class="chart-wrap"><canvas id="reasonDonut"></canvas></div>
+      </div>
+    </div>
+
+    <div class="priority-row">
+      <div class="kpi"><div class="kpi-label">Avg. Days Pending</div><div class="kpi-value" id="kAvg">0</div></div>
+      <div class="kpi"><div class="kpi-label">High Priority (&gt;30d)</div><div class="kpi-value" id="kHigh">0</div></div>
+      <div class="kpi"><div class="kpi-label">Medium Priority (8-30d)</div><div class="kpi-value" id="kMed">0</div></div>
+      <div class="kpi"><div class="kpi-label">Low Priority (0-7d)</div><div class="kpi-value" id="kLow">0</div></div>
+      <div class="kpi"><div class="kpi-label">Resolved</div><div class="kpi-value" id="kResolved">0</div></div>
+    </div>
   </div>
+
+  <!-- BD DETAILS -->
+  <div class="view" id="view-details">
+    <div class="details-panel">
+      <div class="details-top">
+        <h3>Machine Breakdown Details (filtered)</h3>
+        <div class="export-btns">
+          <button id="exportExcel">⬇ Export Excel</button>
+          <button id="exportPdf">⬇ Export PDF</button>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table id="bdTable">
+          <thead>
+            <tr>
+              <th data-key="no">No</th>
+              <th data-key="site">Site</th>
+              <th data-key="date">Date of breakdown</th>
+              <th data-key="category">Category</th>
+              <th data-key="vehicle">Vehcile No</th>
+              <th data-key="details">Breakdown Details</th>
+              <th data-key="reason">Reason for pendency</th>
+              <th data-key="days">Pending for (no of days)</th>
+              <th data-key="owned">Owned/Hired</th>
+              <th data-key="alert">Breakdown Alert Icon</th>
+            </tr>
+          </thead>
+          <tbody id="bdBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
 </div>
 
-<script>
-/* ---------- REAL DATA (from your Machine Breakdown Details sheet) ---------- */
-const raw = [
-["AMO","2026-07-01","Excavator","EX-1798","ACCIDENTLE","WIP","14","Owned"],
-["AMO","2026-07-09","Backhoe Loader","MH35AW 0304","FUEL PUMP ISSUE","WIP","6","Owned"],
-["AMO","2026-07-10","Transit Mixer","MH35AJ-2865","FUEL SUCTION PIPE ASSY DAMAGE","WIP","3","Hired"],
-["AMO","2026-07-12","Diesel Generator","DG-SET 140KVA","DISPLAY COMMAND BUTTON NOT WORKING","WIP","3","Owned"],
-["Aurangabad","2025-12-13","Lmv Camper/Pickup","MH34BZ-0727","ENGINE REPARING WORK","Material not received","214","Hired"],
-["Aurangabad","2026-06-17","Lmv Camper/Pickup","MH34BZ-0730","INJECTER REPARING WORK","Material not received","28","Hired"],
-["Aurangabad","2026-06-17","Excavator","EXCAVATOR - TATA HITACHI ZX220","HYDROLIC PUMP PROBLEM","Indent not done","28","Owned"],
-["Aurangabad","2026-07-11","Hmv Tipper","MH34BZ-0428","CLUTCH PLATE PROBLEM","Breakdown under inspection","4","Owned"],
-["Ircon 1A","2026-05-22","Hmv Tipper","MH34BZ-1522","ENGINE SEIZED","Mechanic not available","54","Owned"],
-["Ircon 1A","2026-06-08","Hydra Crane","MH34BV-4286","DIFFRENTIAL DAMAGE","Material received repair pending","37","Hired"],
-["Ircon 1A","2026-07-01","Hmv Tipper","MH34BZ-0651","CLUTCH DISMENTAL","Mechanic not available","14","Owned"],
-["Ircon 1A","2026-06-25","Hmv Tipper","MH34BZ-0650","PICK UP NOT GENERATE CLUTCH ISSUE","Mechanic not available","20","Owned"],
-["Ircon 1A","2026-06-26","TM","MH34BZ-1523","ENGINE HEAD DISMENATL AND WATER PUMP","Indent not done","19","Hired"],
-["Ircon 1A","2026-06-30","Tractor","MH34BZ-1420","CLUTCH PROBLEM","Mechanica not available","15","Owned"],
-["Ircon 1A","2026-06-29","Backhoe Loader","MH34BV-8531","TRANSMISSION PROBLEM AND PIN BUSING","Breakdown under inspection","16","Owned"],
-["Ircon 1A","2026-07-11","Transit Mixer","MH34BZ-503","MIXER DRUM UNBALANCED","Mechanic not available","4","Hired"],
-["Ircon 1A","2026-07-12","Transit Mixer","MH35BZ-2689","SELF STARTER PROBLEM","Mechanic not available","1","Owned"],
-["Ircon 1A","2026-07-14","Boom Placer","MH34BZ-0736","END HOSE DAMAGE AND","Indent not done","1","Owned"],
-["Ircon 1B","2026-01-20","Diesel Generator","15KVA DG (92190004)","ENGINE REPAIR","WIP at site","176","Hired"],
-["Ircon 1B","2026-01-30","Tower Light","COOPER COP (92360006)","ENGINE RPM UP & DOWN","WIP at site","166","Hired"],
-["Ircon 1B","2026-07-02","Lmv Camper/Pickup","MH34BZ0708","STARTING PROBLEM IN DEISEL LINE","Mechanic not available","13","Owned"],
-["Ircon 1B","2026-07-14","Lmv Camper/Pickup","CG04NM1175","STARTING PROBLEM","Mechanic not available","1","Owned"],
-["Nagpur","2026-01-01","Tower Light","KAHMC02042","Engine overhauling and full body","Indent not done","195","Hired"],
-];
+<!-- LIVE data from Flask (Google Sheets Master Table) -->
+<script id="pendingData" type="application/json">{{ pending_records|tojson }}</script>
+<script id="resolvedData" type="application/json">{{ resolved_records|tojson }}</script>
 
-function alertLevel(days){
-  if(days>30) return "High";
-  if(days>=6) return "Medium";
-  return "Low";
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script>
+const allData = JSON.parse(document.getElementById("pendingData").textContent);
+const RESOLVED_SAMPLE = JSON.parse(document.getElementById("resolvedData").textContent);
+
+if(allData.length === 0){
+  document.getElementById('noDataBanner').classList.add('show');
 }
 
-const data = raw.map((r,i)=>({
-  no:i+1, site:r[0], date:r[1], category:r[2], vehicle:r[3], details:r[4],
-  reason:r[5], days:parseInt(r[6],10), owned:r[7], alert:alertLevel(parseInt(r[6],10))
-}));
+function rangeOf(d){ if(d<=5) return "0-5"; if(d<=30) return "6-30"; return "31+"; }
+function alertShort(a){ return (a||"Low Alert").split(" ")[0]; }
 
-/* ---------- FILTER SETUP ---------- */
+/* dropdown filters (Site / Owned) + chart-click cross-filters (all combine) */
+const filters = {site:"All", owned:"All", category:null, siteClick:null, reason:null, range:null, critical:false};
+
 const siteSel=document.getElementById('fSite');
-[...new Set(data.map(d=>d.site))].sort().forEach(s=>siteSel.innerHTML+=`<option value="${s}">${s}</option>`);
+[...new Set(allData.map(d=>d.site))].sort().forEach(s=>siteSel.innerHTML+=`<option value="${s}">${s}</option>`);
 const ownedSel=document.getElementById('fOwned');
-const fromInp=document.getElementById('fFrom');
-const toInp=document.getElementById('fTo');
+
+siteSel.addEventListener('change',()=>{ filters.site=siteSel.value; filters.siteClick=null; renderAll(); });
+ownedSel.addEventListener('change',()=>{ filters.owned=ownedSel.value; renderAll(); });
 
 document.getElementById('clearFilters').onclick=()=>{
-  siteSel.value="All"; ownedSel.value="All"; fromInp.value=""; toInp.value="";
-  applyFilters();
+  filters.category=null; filters.siteClick=null; filters.reason=null; filters.range=null; filters.critical=false;
+  filters.site="All"; filters.owned="All"; siteSel.value="All"; ownedSel.value="All";
+  renderAll();
 };
 
-function getFiltered(){
-  return data.filter(d=>{
-    if(siteSel.value!=="All" && d.site!==siteSel.value) return false;
-    if(ownedSel.value!=="All" && d.owned!==ownedSel.value) return false;
-    if(fromInp.value && d.date < fromInp.value) return false;
-    if(toInp.value && d.date > toInp.value) return false;
+function toggle(type,value){
+  filters[type] = (filters[type]===value) ? null : value;
+  if(type==='siteClick'){ siteSel.value = filters.siteClick || "All"; filters.site = filters.siteClick || "All"; }
+  renderAll();
+}
+
+/* base filtered set — excludeType lets a chart ignore its own filter so its own options stay visible */
+function getBase(excludeType){
+  return allData.filter(r=>{
+    const site = filters.siteClick || filters.site;
+    if(site!=="All" && r.site!==site) return false;
+    if(filters.owned!=="All" && r.owned!==filters.owned) return false;
+    if(excludeType!=="category" && filters.category && r.category!==filters.category) return false;
+    if(excludeType!=="reason" && filters.reason && r.reason!==filters.reason) return false;
+    if(excludeType!=="range" && filters.range && rangeOf(r.days)!==filters.range) return false;
+    if(filters.critical && !(r.days>15)) return false;
     return true;
   });
 }
+function countBy(arr,key){ const m={}; arr.forEach(r=>{ m[r[key]]=(m[r[key]]||0)+1; }); return m; }
 
-/* ---------- TABS ---------- */
+/* ===== Tabs ===== */
 document.querySelectorAll('.tab-btn').forEach(btn=>{
   btn.onclick=()=>{
     document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
@@ -277,11 +281,20 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
     document.getElementById('view-'+btn.dataset.view).classList.add('active');
     if(btn.dataset.view==='details') renderTable();
-    else renderAnalysis();
   };
 });
 
-/* ---------- CHARTS ---------- */
+/* ===== KPI card + bucket clicks ===== */
+document.getElementById('kCriticalCard').onclick=()=>{
+  filters.critical=!filters.critical;
+  document.getElementById('kCriticalCard').classList.toggle('selected',filters.critical);
+  renderAll();
+};
+['bLow','bMed','bHigh'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',()=>toggle('range',document.getElementById(id).dataset.range));
+});
+
+/* ===== Charts ===== */
 let machineChart, siteDonut, reasonDonut;
 const centerTextPlugin = {
   id:'centerText',
@@ -298,21 +311,16 @@ const centerTextPlugin = {
   }
 };
 Chart.register(centerTextPlugin);
-
 const palette=['#2DD4BF','#4E7FDB','#F2994A','#E5484D','#9B59B6','#27AE60','#F2C94C','#EB5757'];
 
 function renderAnalysis(){
-  const f=getFiltered();
-  const pending=f.filter(d=>d.days>0); // all rows are "pending" (Resolved: NO) per source sheet
-  const total=pending.length;
-  const critical=pending.filter(d=>d.days>15).length;
-  const low=pending.filter(d=>d.days<=5).length;
-  const med=pending.filter(d=>d.days>=6 && d.days<=30).length;
-  const high=pending.filter(d=>d.days>30).length;
-  const avg=pending.length? (pending.reduce((a,d)=>a+d.days,0)/pending.length).toFixed(1):0;
-  const hi30=pending.filter(d=>d.days>30).length;
-  const med830=pending.filter(d=>d.days>=8 && d.days<=30).length;
-  const low07=pending.filter(d=>d.days>=0 && d.days<=7).length;
+  const base = getBase(null);
+  const total = base.length;
+  const critical = base.filter(d=>d.days>15).length;
+  const low = base.filter(d=>d.days<=5).length;
+  const med = base.filter(d=>d.days>=6 && d.days<=30).length;
+  const high = base.filter(d=>d.days>30).length;
+  const avg = base.length ? (base.reduce((a,d)=>a+d.days,0)/base.length).toFixed(1) : 0;
 
   document.getElementById('kTotal').textContent=total;
   document.getElementById('kCritical').textContent=critical;
@@ -320,77 +328,100 @@ function renderAnalysis(){
   document.getElementById('bMed').innerHTML=med+"<small>6-30 Days</small>";
   document.getElementById('bHigh').innerHTML=high+"<small>Over &gt; 30</small>";
   document.getElementById('kAvg').textContent=avg;
-  document.getElementById('kHigh').textContent=hi30;
-  document.getElementById('kMed').textContent=med830;
-  document.getElementById('kLow').textContent=low07;
-  document.getElementById('kResolved').textContent=0;
+  document.getElementById('kHigh').textContent=high;
+  document.getElementById('kMed').textContent=base.filter(d=>d.days>=8 && d.days<=30).length;
+  document.getElementById('kLow').textContent=base.filter(d=>d.days>=0 && d.days<=7).length;
 
-  // Machine-wise pending (> 15 days), grouped by category
-  const gt15 = pending.filter(d=>d.days>15);
-  const byCat={};
-  gt15.forEach(d=>byCat[d.category]=(byCat[d.category]||0)+1);
-  const catLabels=Object.keys(byCat);
-  const catValues=catLabels.map(l=>byCat[l]);
+  const site = filters.siteClick || filters.site;
+  const resolvedFiltered = RESOLVED_SAMPLE.filter(r=> site==="All" || r.site===site);
+  document.getElementById('kResolved').textContent = resolvedFiltered.length;
 
+  ['bLow','bMed','bHigh'].forEach(id=>{
+    const el=document.getElementById(id);
+    el.classList.toggle('sel', filters.range===el.dataset.range);
+    el.classList.toggle('dim', !!filters.range && filters.range!==el.dataset.range);
+  });
+  document.getElementById('kCriticalCard').classList.toggle('selected', filters.critical);
+
+  const anyFilter = filters.category||filters.siteClick||filters.reason||filters.range||filters.critical||filters.site!=="All"||filters.owned!=="All";
+  document.getElementById('clearFilters').classList.toggle('show', !!anyFilter);
+
+  // Machine-wise pending (> 15 days)
+  const gt15 = getBase('category').filter(d=>d.days>15);
+  const byCat = countBy(gt15,'category');
+  const catLabels = Object.keys(byCat);
   if(machineChart) machineChart.destroy();
-  machineChart=new Chart(document.getElementById('machineChart'),{
+  machineChart = new Chart(document.getElementById('machineChart'),{
     type:'bar',
-    data:{labels:catLabels,datasets:[{data:catValues,backgroundColor:catLabels.map((_,i)=>palette[i%palette.length]),borderRadius:5}]},
-    options:{maintainAspectRatio:false,plugins:{legend:{display:false},datalabels:{}},
+    data:{labels:catLabels,datasets:[{data:catLabels.map(l=>byCat[l]),
+      backgroundColor:catLabels.map((l,i)=> filters.category && filters.category!==l ? '#33456b' : palette[i%palette.length]),
+      borderRadius:5}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{display:false}},
+      onClick:(evt,els)=>{ if(els.length) toggle('category', catLabels[els[0].index]); },
       scales:{y:{beginAtZero:true,ticks:{precision:0,color:'#8CA3C4'},grid:{color:'#1D3E68'}},
                x:{ticks:{color:'#EAF1FB',font:{size:10}},grid:{display:false}}}}
   });
 
   // Site donut
-  const bySite={};
-  f.forEach(d=>bySite[d.site]=(bySite[d.site]||0)+1);
-  const siteLabels=Object.keys(bySite);
+  const siteSrc = getBase('site');
+  const bySite = countBy(siteSrc,'site');
+  const siteLabels = Object.keys(bySite);
   if(siteDonut) siteDonut.destroy();
-  siteDonut=new Chart(document.getElementById('siteDonut'),{
+  siteDonut = new Chart(document.getElementById('siteDonut'),{
     type:'doughnut',
     data:{labels:siteLabels,datasets:[{data:siteLabels.map(l=>bySite[l]),backgroundColor:palette,borderColor:'#0F2A52',borderWidth:2}]},
-    options:{maintainAspectRatio:false,cutout:'62%',
+    options:{maintainAspectRatio:false,cutout:'68%',
+      onClick:(evt,els)=>{ if(els.length) toggle('siteClick', siteLabels[els[0].index]); },
       plugins:{legend:{position:'bottom',labels:{color:'#EAF1FB',boxWidth:10,font:{size:10},padding:8}}}},
-    _centerText:{value:total,label:'TOTAL'}
+    _centerText:{value:siteSrc.length,label:'TOTAL'}
   });
 
-  // Reason donut (pending distribution > 15 days)
-  const byReason={};
-  gt15.forEach(d=>byReason[d.reason]=(byReason[d.reason]||0)+1);
-  const reasonLabels=Object.keys(byReason);
+  // Reason donut
+  const reasonSrc = getBase('reason').filter(d=>d.days>15);
+  const byReason = countBy(reasonSrc,'reason');
+  const reasonLabels = Object.keys(byReason);
   if(reasonDonut) reasonDonut.destroy();
-  reasonDonut=new Chart(document.getElementById('reasonDonut'),{
+  reasonDonut = new Chart(document.getElementById('reasonDonut'),{
     type:'doughnut',
     data:{labels:reasonLabels,datasets:[{data:reasonLabels.map(l=>byReason[l]),backgroundColor:palette.slice().reverse(),borderColor:'#0F2A52',borderWidth:2}]},
-    options:{maintainAspectRatio:false,cutout:'62%',
+    options:{maintainAspectRatio:false,cutout:'68%',
+      onClick:(evt,els)=>{ if(els.length) toggle('reason', reasonLabels[els[0].index]); },
       plugins:{legend:{position:'bottom',labels:{color:'#EAF1FB',boxWidth:10,font:{size:9.5},padding:6}}}},
-    _centerText:{value:gt15.length,label:'CASES'}
+    _centerText:{value:reasonSrc.length,label:'CASES'}
   });
+
+  if(document.getElementById('view-details').classList.contains('active')) renderTable();
 }
 
-/* ---------- BD DETAILS TABLE (sortable, filterable, exportable) ---------- */
+/* ===== BD Details table — sortable, respects all the same filters ===== */
 let sortKey='no', sortDir=1;
 
-function renderTable(){
-  let f=getFiltered();
-  f.sort((a,b)=>{
+function sortedRows(){
+  const rows = getBase(null).slice();
+  rows.sort((a,b)=>{
     let va=a[sortKey], vb=b[sortKey];
     if(typeof va==='string'){ va=va.toLowerCase(); vb=vb.toLowerCase(); }
     if(va<vb) return -1*sortDir;
     if(va>vb) return 1*sortDir;
     return 0;
   });
-  const body=document.getElementById('bdBody');
-  body.innerHTML=f.map(d=>`<tr>
-    <td>${d.no}</td><td>${d.site}</td><td>${d.date}</td><td>${d.category}</td>
-    <td>${d.vehicle}</td><td>${d.details}</td><td>${d.reason}</td><td>${d.days}</td>
-    <td><span class="pill ${d.alert}">${d.alert} Alert</span></td>
-  </tr>`).join('');
-  document.querySelectorAll('#bdTable thead th').forEach(th=>{
-    th.innerHTML = th.textContent.replace(' ▲','').replace(' ▼','') + (th.dataset.key===sortKey ? (sortDir===1?' ▲':' ▼') : '');
-  });
+  return rows;
 }
 
+function renderTable(){
+  const rows = sortedRows();
+  document.getElementById('bdBody').innerHTML = rows.map(d=>`<tr>
+    <td>${d.no}</td><td>${d.site}</td><td>${d.date}</td><td>${d.category}</td>
+    <td>${d.vehicle}</td><td>${d.details}</td><td>${d.reason}</td><td>${d.days}</td>
+    <td><span class="oh ${d.owned}">${d.owned}</span></td>
+    <td><span class="pill ${alertShort(d.alert)}">${d.alert}</span></td>
+  </tr>`).join('');
+
+  document.querySelectorAll('#bdTable thead th').forEach(th=>{
+    const base = th.textContent.replace(' ▲','').replace(' ▼','').trim();
+    th.textContent = base + (th.dataset.key===sortKey ? (sortDir===1?' ▲':' ▼') : '');
+  });
+}
 document.querySelectorAll('#bdTable thead th').forEach(th=>{
   th.addEventListener('click',()=>{
     const key=th.dataset.key;
@@ -399,50 +430,31 @@ document.querySelectorAll('#bdTable thead th').forEach(th=>{
   });
 });
 
-function currentTableRows(){
-  let f=getFiltered();
-  f.sort((a,b)=>{
-    let va=a[sortKey], vb=b[sortKey];
-    if(typeof va==='string'){ va=va.toLowerCase(); vb=vb.toLowerCase(); }
-    if(va<vb) return -1*sortDir;
-    if(va>vb) return 1*sortDir;
-    return 0;
-  });
-  return f;
-}
-
+/* ===== Export — current filtered + sorted rows, client-side ===== */
 document.getElementById('exportExcel').onclick=()=>{
-  const rows=currentTableRows().map(d=>({
+  const rows = sortedRows().map(d=>({
     "No":d.no,"Site":d.site,"Date of breakdown":d.date,"Category":d.category,
     "Vehcile No":d.vehicle,"Breakdown Details":d.details,"Reason for pendency":d.reason,
-    "Pending for (no of days)":d.days,"Breakdown Alert Icon":d.alert+" Alert"
+    "Pending for (no of days)":d.days,"Owned/Hired":d.owned,"Breakdown Alert Icon":d.alert
   }));
   const ws=XLSX.utils.json_to_sheet(rows);
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,"BD Details");
   XLSX.writeFile(wb,"BD_Details_Export.xlsx");
 };
-
 document.getElementById('exportPdf').onclick=()=>{
   const { jsPDF } = window.jspdf;
   const doc=new jsPDF({orientation:'landscape'});
-  const rows=currentTableRows().map(d=>[d.no,d.site,d.date,d.category,d.vehicle,d.details,d.reason,d.days,d.alert+" Alert"]);
+  const rows=sortedRows().map(d=>[d.no,d.site,d.date,d.category,d.vehicle,d.details,d.reason,d.days,d.owned,d.alert]);
   doc.text("Machine Breakdown Details",14,12);
   doc.autoTable({
     startY:18,
-    head:[["No","Site","Date","Category","Vehicle No","Breakdown Details","Reason for pendency","Pending Days","Alert"]],
+    head:[["No","Site","Date","Category","Vehicle No","Breakdown Details","Reason for pendency","Pending Days","Owned/Hired","Alert"]],
     body:rows, styles:{fontSize:7}, headStyles:{fillColor:[10,31,61]}
   });
   doc.save("BD_Details_Export.pdf");
 };
 
-/* ---------- WIRE FILTERS ---------- */
-[siteSel,ownedSel,fromInp,toInp].forEach(el=>el.addEventListener('change',()=>{
-  renderAnalysis(); renderTable();
-}));
-
 renderAnalysis();
-renderTable();
 </script>
-</body>
-</html>
+{% endblock %}
