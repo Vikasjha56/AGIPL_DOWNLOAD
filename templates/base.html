@@ -5,13 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AGIPL Digital Portal</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<style>
+  /* ===== AGIPL logo — white glow plate + soft pulsing cyan glow + hover pop ===== */
+  .brand-logo-wrap{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:44px;height:44px;border-radius:12px;
+    background:rgba(255,255,255,.96);
+    padding:5px;
+    box-shadow:0 0 12px rgba(0,255,255,.45),0 0 24px rgba(0,255,255,.22);
+    animation:logoPulse 3s ease-in-out infinite;
+    transition:transform .3s ease, box-shadow .3s ease;
+  }
+  .brand-logo-wrap:hover{
+    transform:scale(1.08) rotate(-2deg);
+    box-shadow:0 0 18px rgba(0,255,255,.8),0 0 32px rgba(0,255,255,.45);
+  }
+  .brand-logo{width:100%;height:100%;object-fit:contain;display:block;}
+  @keyframes logoPulse{
+    0%,100%{box-shadow:0 0 12px rgba(0,255,255,.45),0 0 24px rgba(0,255,255,.2);}
+    50%{box-shadow:0 0 18px rgba(0,255,255,.75),0 0 30px rgba(0,255,255,.4);}
+  }
+</style>
 </head>
 <body>
 <div class="background-animation"></div>
-
 <div class="navbar">
   <div class="brand">
-    <div class="logo-circle">AG</div>
+    <span class="brand-logo-wrap">
+      <img src="{{ url_for('static', filename='agipl_logo.jpeg') }}" alt="AGIPL Logo" class="brand-logo">
+    </span>
     <div class="brand-text">AGIPL Digital Portal</div>
   </div>
   <div class="menu">
@@ -21,9 +43,9 @@
     <a href="#">⚙ Support</a>
   </div>
 </div>
-
 <div class="sidebar">
   <h3>Business Modules</h3>
+  <a href="/critical-pending" class="{{ 'active' if request.path=='/critical-pending' else '' }}">🚨 Critical Pending Task</a>
   <a href="/breakdown" class="{{ 'active' if request.path=='/breakdown' else '' }}">🛠 Breakdown Analysis</a>
   <a href="/fuel" class="{{ 'active' if request.path=='/fuel' else '' }}">⛽ Fuel Analysis</a>
   <a href="/hr" class="{{ 'active' if request.path=='/hr' else '' }}">👥 HR Module</a>
@@ -33,7 +55,6 @@
   <a href="/assets" class="{{ 'active' if request.path=='/assets' else '' }}">🏢 Assets Module</a>
   <a href="/it" class="{{ 'active' if request.path=='/it' else '' }}">💻 IT Module</a>
 </div>
-
 <div class="main">
   <header>
     <div class="header-text">
@@ -42,11 +63,9 @@
     </div>
     <div class="status">🟢 System Online</div>
   </header>
-
   <div class="content">
     {% block content %}{% endblock %}
   </div>
 </div>
-
 </body>
 </html>
