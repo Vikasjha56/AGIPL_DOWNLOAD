@@ -149,15 +149,11 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 <script>
-/* Each record: {sno, assigned_to, details, date, allotted_by, days} — "date" is DD/MM/YYYY */
 const allData = JSON.parse(document.getElementById("criticalData").textContent)
-  .filter(r => r.sno && r.assigned_to); // drop blank/incomplete sheet rows
+  .filter(r => r.sno && r.assigned_to);
 
 if(allData.length === 0){ document.getElementById('noDataBanner').classList.add('show'); }
 
-/* Alert thresholds for pending tasks — tighter than the machine-breakdown SLA
-   since these are day-to-day office/ops tasks, not equipment repairs.
-   Adjust the two numbers below if you want a different cutoff. */
 function alertFor(days){
   if(days >= 7) return "High";
   if(days >= 3) return "Medium";
