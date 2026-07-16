@@ -10,7 +10,12 @@ import pandas as pd
 from google_reader import get_master_table
 from excel_export import create_excel
 from pdf_export import create_pdf
-from reminder_scheduler import start_scheduler
+
+try:
+    from reminder_scheduler import start_scheduler
+except Exception as _sched_err:
+    print("WARNING: reminder_scheduler not available, WhatsApp reminders disabled:", _sched_err)
+    start_scheduler = None
 
 
 app = Flask(__name__)
@@ -417,7 +422,7 @@ def it():
 # to plug in your Twilio credentials and supervisor phone numbers.
 # ==========================
 
-if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+if start_scheduler and (not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true"):
     start_scheduler(get_cached_critical_records)
 
 
