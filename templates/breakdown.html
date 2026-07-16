@@ -5,19 +5,19 @@
 {% endblock %}
 
 {% block page_subtitle %}
-<p>Live Machine Breakdown Monitoring System</p>
 {% endblock %}
 
 {% block content %}
 <style>
-  .bd-wrap{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:10px;overflow:hidden;}
+  .bd-wrap{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:8px;overflow:hidden;
+    margin-top:-10px;}
 
   .no-data-banner{
     display:none;flex:0 0 auto;background:rgba(229,72,77,.15);border:1px solid #E5484D;
     color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;}
   .no-data-banner.show{display:block;}
 
-  .back-bar{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:2px 4px;}
+  .back-bar{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:2px 4px;margin-top:-6px;}
   .back-btn{
     display:inline-flex;align-items:center;gap:6px;
     background:rgba(255,255,255,.1);border:1px solid rgba(0,255,255,.4);color:#fff;
@@ -28,67 +28,64 @@
   .breadcrumb span{color:#2DD4BF;}
 
   .filters{flex:0 0 auto;display:flex;gap:10px;flex-wrap:wrap;align-items:center;
-    padding:10px 18px;border-radius:14px;background:rgba(255,255,255,.12);
+    padding:8px 18px;border-radius:14px;background:rgba(255,255,255,.12);
     backdrop-filter:blur(20px);box-shadow:0 10px 25px #0007;}
   .filters label{font-size:11px;font-weight:600;opacity:.85;margin-right:6px;}
   .filter-group{display:flex;align-items:center;gap:8px;}
   .filter-group select{
-    padding:7px 12px;border-radius:9px;border:1px solid rgba(0,255,255,.5);
+    padding:6px 12px;border-radius:9px;border:1px solid rgba(0,255,255,.5);
     background:rgba(255,255,255,.1);color:#fff;font-size:13px;outline:none;}
   .filter-group select option{color:#000;}
   .clear-btn{
     border:1px solid rgba(255,80,80,.6);background:rgba(255,60,60,.15);color:#fff;
-    padding:7px 13px;border-radius:9px;font-size:12px;cursor:pointer;margin-left:auto;
+    padding:6px 13px;border-radius:9px;font-size:12px;cursor:pointer;margin-left:auto;
     display:inline-flex;align-items:center;gap:6px;font-weight:700;transition:.2s;}
   .clear-btn:hover{background:rgba(255,60,60,.35);box-shadow:0 0 10px rgba(255,80,80,.5);}
   .clear-btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none;}
   .tabs{display:flex;gap:6px;background:rgba(255,255,255,.08);padding:4px;border-radius:11px;}
-  .tab-btn{border:none;padding:7px 16px;border-radius:8px;font-size:12.5px;font-weight:600;
+  .tab-btn{border:none;padding:6px 16px;border-radius:8px;font-size:12.5px;font-weight:600;
     cursor:pointer;background:transparent;color:#fff;opacity:.7;transition:.25s;}
   .tab-btn.active{background:linear-gradient(135deg,#0077ff,#00c6ff);opacity:1;box-shadow:0 0 14px cyan;}
   .tab-btn:hover{opacity:1;}
 
-  .view{display:none;flex:1 1 auto;min-height:0;flex-direction:column;gap:10px;}
+  .view{display:none;flex:1 1 auto;min-height:0;flex-direction:column;gap:8px;}
   .view.active{display:flex;}
 
-  .kpi-row{flex:0 0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
-  .kpi{background:rgba(255,255,255,.1);border:1px solid rgba(0,255,255,.35);border-radius:12px;
-    padding:10px 16px;text-align:center;transition:.3s;}
+  /* ===== KPI cards — reduced size so charts get more room and nothing overlaps ===== */
+  .kpi-row{flex:0 0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  .kpi{background:rgba(255,255,255,.1);border:1px solid rgba(0,255,255,.35);border-radius:10px;
+    padding:7px 14px;text-align:center;transition:.3s;}
   .kpi:hover{transform:translateY(-2px);box-shadow:0 0 14px cyan;}
   .kpi.clickable{cursor:pointer;}
   .kpi.selected{border-color:#fff;box-shadow:0 0 14px #fff8;}
-  .kpi-label{font-size:11px;color:#8CA3C4;text-transform:uppercase;letter-spacing:.3px;}
-  .kpi-value{font-size:24px;font-weight:700;text-shadow:0 0 8px cyan;margin-top:4px;}
-  .kpi-sub{font-size:10.5px;color:#8CA3C4;margin-top:2px;}
-  .bucket-row{display:flex;gap:8px;margin-top:8px;}
-  .bucket{flex:1;text-align:center;border-radius:8px;padding:8px 4px;font-weight:700;font-size:16px;
+  .kpi-label{font-size:10px;color:#8CA3C4;text-transform:uppercase;letter-spacing:.3px;}
+  .kpi-value{font-size:19px;font-weight:700;text-shadow:0 0 8px cyan;margin-top:2px;}
+  .kpi-sub{font-size:10px;color:#8CA3C4;margin-top:1px;}
+  .bucket-row{display:flex;gap:6px;margin-top:6px;}
+  .bucket{flex:1;text-align:center;border-radius:8px;padding:6px 4px;font-weight:700;font-size:14px;
     color:#08131f;cursor:pointer;transition:.2s;border:2px solid transparent;}
   .bucket:hover{transform:translateY(-2px);}
   .bucket.sel{border-color:#fff;box-shadow:0 0 12px #fff8;}
   .bucket.dim{opacity:.35;}
-  .bucket small{display:block;font-weight:500;font-size:9.5px;margin-top:2px;color:#08131f;}
+  .bucket small{display:block;font-weight:500;font-size:9px;margin-top:1px;color:#08131f;}
   .b-green{background:#27AE60;} .b-orange{background:#F2994A;} .b-red{background:#E5484D;}
 
-  /* Bar chart panel gets more vertical room so rotated machine-name labels
-     always have space to render (previously too cramped -> Chart.js
-     auto-hid the x-axis labels entirely). */
-  .mid-row{flex:1.5 1 0;min-height:0;display:flex;flex-direction:column;}
-  .donut-row{flex:1 1 0;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  /* Bar chart gets a modest height; donut row gets more, since KPI cards
+     are now smaller there's extra vertical room to give the donuts. */
+  .mid-row{flex:1.05 1 0;min-height:0;display:flex;flex-direction:column;}
+  .donut-row{flex:1.6 1 0;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:8px;}
   .panel{background:rgba(255,255,255,.12);border:1px solid rgba(0,255,255,.35);border-radius:12px;
-    padding:10px 12px;display:flex;flex-direction:column;min-height:0;backdrop-filter:blur(20px);}
-  .panel h3{margin:0 0 6px;font-size:12px;color:#2DD4BF;text-transform:uppercase;letter-spacing:.4px;text-align:center;}
+    padding:8px 12px;display:flex;flex-direction:column;min-height:0;backdrop-filter:blur(20px);}
+  .panel h3{margin:0 0 4px;font-size:12px;color:#2DD4BF;text-transform:uppercase;letter-spacing:.4px;text-align:center;}
   .chart-wrap{flex:1;min-height:0;position:relative;}
 
-  /* Horizontal-scrolling inner wrapper for the bar chart: canvas width grows
-     with the number of machine categories so bars/labels never overlap,
-     however many machines there are. */
   .chart-scroll-x{width:100%;height:100%;overflow-x:auto;overflow-y:hidden;}
   .chart-scroll-x::-webkit-scrollbar{height:6px;}
   .chart-scroll-x::-webkit-scrollbar-thumb{background:rgba(45,212,191,.5);border-radius:4px;}
   .chart-inner{height:100%;position:relative;}
 
-  .priority-row{flex:0 0 auto;display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
-  .priority-row .kpi-value{font-size:19px;}
+  .priority-row{flex:0 0 auto;display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}
+  .priority-row .kpi-value{font-size:16px;}
 
   .details-panel{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;
     background:rgba(255,255,255,.12);border:1px solid rgba(0,255,255,.35);border-radius:12px;
@@ -256,6 +253,28 @@ function rangeOf(d){ if(d<=5) return "0-5"; if(d<=30) return "6-30"; return "31+
 function alertShort(a){ return (a||"Low Alert").split(" ")[0]; }
 function priorityLabel(days){ if(days>30) return "High"; if(days>=8) return "Medium"; return "Low"; }
 
+// Wraps a long x-axis label into multiple short lines (word-wrap style)
+// instead of rotating it vertically, so machine names stay horizontal/front-facing.
+function wrapLabel(label, maxLen){
+  maxLen = maxLen || 10;
+  label = String(label);
+  if(label.length <= maxLen) return label;
+  const words = label.split(' ');
+  if(words.length > 1){
+    const lines = []; let cur = '';
+    words.forEach(w=>{
+      const test = (cur + ' ' + w).trim();
+      if(test.length > maxLen && cur){ lines.push(cur); cur = w; }
+      else { cur = test; }
+    });
+    if(cur) lines.push(cur);
+    return lines;
+  }
+  const chunks = [];
+  for(let i=0;i<label.length;i+=maxLen) chunks.push(label.slice(i,i+maxLen));
+  return chunks;
+}
+
 /* dropdown filters (Site / Owned) + chart-click cross-filters (all combine) */
 const filters = {site:"All", owned:"All", category:null, siteClick:null, reason:null, range:null, critical:false};
 
@@ -280,8 +299,7 @@ function toggle(type,value){
 
 /* base filtered set — excludeType lets a chart ignore its own filter so its own options stay visible.
    "Total Pending Cases" (kTotal) is computed from getBase(null), i.e. EVERY active filter
-   (site, owned, category, reason, range, critical) applies to it — it is already fully
-   connected to all filters/clicks. */
+   (site, owned, category, reason, range, critical) applies to it — fully connected. */
 function getBase(excludeType){
   return allData.filter(r=>{
     const site = filters.siteClick || filters.site;
@@ -377,12 +395,10 @@ function renderAnalysis(){
   const byCat = countBy(gt15,'category');
   const catLabels = Object.keys(byCat);
 
-  // Give the canvas enough width for every bar+label (min 70px per category)
-  // so labels never get squeezed, cut, or overlapped — the chart simply
-  // becomes horizontally scrollable if there are many machines.
+  // Enough width per bar for a wrapped, horizontal (non-rotated) label.
   const scrollWrap = document.getElementById('machineChartScroll');
   const innerWrap = document.getElementById('machineChartInner');
-  const perBar = 70;
+  const perBar = 90;
   const neededWidth = Math.max(catLabels.length * perBar, scrollWrap.clientWidth);
   innerWrap.style.width = neededWidth + 'px';
 
@@ -392,12 +408,12 @@ function renderAnalysis(){
     data:{labels:catLabels,datasets:[{data:catLabels.map(l=>byCat[l]),
       backgroundColor:catLabels.map((l,i)=> filters.category && filters.category!==l ? '#33456b' : palette[i%palette.length]),
       borderRadius:5,
-      barPercentage:0.65,
+      barPercentage:0.6,
       categoryPercentage:0.8}]},
     options:{
       responsive:true,
       maintainAspectRatio:false,
-      layout:{padding:{top:24,bottom:4}},
+      layout:{padding:{top:22,bottom:2}},
       plugins:{
         legend:{display:false},
         datalabels:{
@@ -417,9 +433,12 @@ function renderAnalysis(){
           ticks:{
             color:'#EAF1FB',
             font:{size:10},
-            autoSkip:false,     // always show every machine name
-            maxRotation:45,
-            minRotation:45
+            autoSkip:false,
+            maxRotation:0,     // keep labels horizontal / front-facing
+            minRotation:0,
+            callback:function(value){
+              return wrapLabel(this.getLabelForValue(value), 9);
+            }
           },
           grid:{display:false}
         }
@@ -472,8 +491,7 @@ function renderAll(){
 
 /* ===== BD Details table — sortable, respects all the same filters =====
    The displayed "No" column is ALWAYS the row's position in the current
-   filtered + sorted list (1,2,3,4...) — never the raw sheet number — so it
-   stays a clean serial number no matter what filter or sort is applied. */
+   filtered + sorted list (1,2,3,4...), never the raw sheet number. */
 let sortKey='no', sortDir=1;
 
 function sortedRows(){
@@ -511,9 +529,9 @@ document.querySelectorAll('#bdTable thead th').forEach(th=>{
 
 /* ===== Export — current filtered + sorted rows, client-side ===== */
 
-// Excel export via ExcelJS (free & open-source, unlike the SheetJS community
-// build) — this is what actually lets us write real colors, bold headers,
-// borders, alternating row shading, frozen header row, and autofilter.
+// Excel export via ExcelJS: real colored/bold title banner, subtitle with
+// generation date + applied filters, colored header row, alternating row
+// shading, color-coded Priority column, autofilter, frozen header.
 document.getElementById('exportExcel').onclick=async ()=>{
   const btn = document.getElementById('exportExcel');
   btn.disabled = true; const oldTxt = btn.textContent; btn.textContent = '⏳ Preparing...';
@@ -524,7 +542,7 @@ document.getElementById('exportExcel').onclick=async ()=>{
     workbook.created = new Date();
 
     const sheet = workbook.addWorksheet('BD Details', {
-      views:[{ state:'frozen', ySplit:1 }]
+      views:[{ state:'frozen', ySplit:4 }]
     });
 
     const headers = ["No","Site","Date of Breakdown","Category","Vehicle No",
@@ -535,11 +553,35 @@ document.getElementById('exportExcel').onclick=async ()=>{
       {width:38},{width:26},{width:12},{width:10},{width:16}
     ];
 
-    const headerRow = sheet.addRow(headers);
+    // Row 1 — title banner
+    sheet.mergeCells(1,1,1,10);
+    const titleCell = sheet.getCell(1,1);
+    titleCell.value = 'Machine Breakdown Details Report';
+    titleCell.font = { bold:true, size:16, color:{argb:'FFFFFFFF'} };
+    titleCell.alignment = { vertical:'middle', horizontal:'center' };
+    titleCell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF0C2A54'} };
+    sheet.getRow(1).height = 30;
+
+    // Row 2 — subtitle with generation date + active filters
+    sheet.mergeCells(2,1,2,10);
+    const siteInUse = filters.siteClick || filters.site;
+    const subCell = sheet.getCell(2,1);
+    subCell.value = `Generated: ${new Date().toLocaleString()}   |   Site: ${siteInUse}   |   Owned/Hired: ${filters.owned}   |   Records: ${rows.length}`;
+    subCell.font = { italic:true, size:10, color:{argb:'FF2DD4BF'} };
+    subCell.alignment = { vertical:'middle', horizontal:'center' };
+    subCell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF13315C'} };
+    sheet.getRow(2).height = 18;
+
+    // Row 3 — spacer
+    sheet.getRow(3).height = 6;
+
+    // Row 4 — column headers
+    const headerRow = sheet.getRow(4);
+    headers.forEach((h,idx)=>{ headerRow.getCell(idx+1).value = h; });
     headerRow.height = 22;
     headerRow.eachCell(cell=>{
       cell.font = { bold:true, color:{argb:'FFFFFFFF'}, size:11 };
-      cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF0C2A54'} };
+      cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF123A70'} };
       cell.alignment = { vertical:'middle', horizontal:'center' };
       cell.border = { bottom:{style:'medium', color:{argb:'FF2DD4BF'}} };
     });
@@ -548,9 +590,10 @@ document.getElementById('exportExcel').onclick=async ()=>{
 
     rows.forEach((d,i)=>{
       const priority = priorityLabel(d.days);
-      const row = sheet.addRow([
-        i+1, d.site, d.date, d.category, d.vehicle, d.details, d.reason, d.days, priority, d.alert
-      ]);
+      const rowNum = 5 + i;
+      const row = sheet.getRow(rowNum);
+      const values = [i+1, d.site, d.date, d.category, d.vehicle, d.details, d.reason, d.days, priority, d.alert];
+      values.forEach((v,idx)=>{ row.getCell(idx+1).value = v; });
       row.eachCell((cell,colNumber)=>{
         cell.alignment = { vertical:'middle', wrapText: (colNumber===6||colNumber===7), horizontal: colNumber===1?'center':'left' };
         cell.border = { bottom:{style:'thin', color:{argb:'FFDDE3EC'}} };
@@ -564,7 +607,8 @@ document.getElementById('exportExcel').onclick=async ()=>{
       priorityCell.alignment = { vertical:'middle', horizontal:'center' };
     });
 
-    sheet.autoFilter = { from:'A1', to: `J${rows.length+1}` };
+    const lastRow = 4 + rows.length;
+    sheet.autoFilter = { from:'A4', to: `J${lastRow}` };
 
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], { type:'application/octet-stream' });
@@ -600,7 +644,7 @@ document.getElementById('exportPdf').onclick=()=>{
     body:body,
     styles:{fontSize:7, valign:'middle'},
     headStyles:{fillColor:[10,31,61]},
-    columnStyles:{ 8:{ halign:'center' } }, // Alert column index
+    columnStyles:{ 8:{ halign:'center' } },
     didParseCell: function(data){
       if(data.section==='body' && data.column.index===8){
         const key = alertShort(data.cell.raw);
