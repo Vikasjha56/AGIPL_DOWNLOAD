@@ -38,8 +38,10 @@
   .filter-group select option{color:#000;}
   .clear-btn{
     border:1px solid rgba(255,80,80,.6);background:rgba(255,60,60,.15);color:#fff;
-    padding:7px 13px;border-radius:9px;font-size:12px;cursor:pointer;margin-left:auto;display:none;}
-  .clear-btn.show{display:inline-block;}
+    padding:7px 13px;border-radius:9px;font-size:12px;cursor:pointer;margin-left:auto;
+    display:inline-flex;align-items:center;gap:6px;font-weight:700;transition:.2s;}
+  .clear-btn:hover{background:rgba(255,60,60,.35);box-shadow:0 0 10px rgba(255,80,80,.5);}
+  .clear-btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none;}
   .tabs{display:flex;gap:6px;background:rgba(255,255,255,.08);padding:4px;border-radius:11px;}
   .tab-btn{border:none;padding:7px 16px;border-radius:8px;font-size:12.5px;font-weight:600;
     cursor:pointer;background:transparent;color:#fff;opacity:.7;transition:.25s;}
@@ -135,7 +137,7 @@
       <button class="tab-btn active" data-view="analysis">Breakdown Analysis</button>
       <button class="tab-btn" data-view="details">BD Details</button>
     </div>
-    <button class="clear-btn" id="clearFilters">✕ Clear chart filters</button>
+    <button class="clear-btn" id="clearFilters">✕ Clear All Filters</button>
   </div>
 
   <!-- BREAKDOWN ANALYSIS -->
@@ -311,6 +313,9 @@ const centerTextPlugin = {
 };
 Chart.register(centerTextPlugin, ChartDataLabels);
 Chart.defaults.set('plugins.datalabels', {display:false}); // off by default; enabled per-chart below
+// Snappy interactions: filtering should feel instant, not animate every time.
+Chart.defaults.animation = false;
+Chart.defaults.transitions.active.animation.duration = 0;
 const palette=['#2DD4BF','#4E7FDB','#F2994A','#E5484D','#9B59B6','#27AE60','#F2C94C','#EB5757'];
 
 function renderAnalysis(){
@@ -344,7 +349,7 @@ function renderAnalysis(){
   document.getElementById('kCriticalCard').classList.toggle('selected', filters.critical);
 
   const anyFilter = filters.category||filters.siteClick||filters.reason||filters.range||filters.critical||filters.site!=="All"||filters.owned!=="All";
-  document.getElementById('clearFilters').classList.toggle('show', !!anyFilter);
+  document.getElementById('clearFilters').disabled = !anyFilter;
 
   // Machine-wise pending (> 15 days)
   const gt15 = getBase('category').filter(d=>d.days>15);
@@ -356,7 +361,20 @@ function renderAnalysis(){
     data:{labels:catLabels,datasets:[{data:catLabels.map(l=>byCat[l]),
       backgroundColor:catLabels.map((l,i)=> filters.category && filters.category!==l ? '#33456b' : palette[i%palette.length]),
       borderRadius:5}]},
-    options:{maintainAspectRatio:false,plugins:{legend:{display:false}},
+    options:{maintainAspectRatio:false,
+      layout:{padding:{top:22}},
+      plugins:{
+        legend:{display:false},
+        datalabels:{
+          display:true,
+          anchor:'end',
+          align:'top',
+          offset:2,
+          color:'#EAF1FB',
+          font:{weight:'bold',size:11},
+          formatter:v=>v
+        }
+      },
       onClick:(evt,els)=>{ if(els.length) toggle('category', catLabels[els[0].index]); },
       scales:{y:{beginAtZero:true,ticks:{precision:0,color:'#8CA3C4'},grid:{color:'#1D3E68'}},
                x:{ticks:{color:'#EAF1FB',font:{size:10}},grid:{display:false}}}}
@@ -397,7 +415,18 @@ function renderAnalysis(){
       }},
     _centerText:{value:reasonSrc.length,label:'CASES'}
   });
+}
 
+/* ===== Master re-render: updates KPIs/charts AND the table (if visible).
+   THIS was missing before — every filter (dropdown, doughnut click, bucket,
+   critical KPI, clear button) called renderAll(), but renderAll() was never
+   defined anywhere, so every one of those clicks silently failed (JS threw
+   "renderAll is not defined" in the console) and nothing on screen updated.
+   Switching tabs looked like it "fixed" things only because the tab-click
+   handler calls renderTable() directly, which re-reads the (already updated)
+   filters object. ===== */
+function renderAll(){
+  renderAnalysis();
   if(document.getElementById('view-details').classList.contains('active')) renderTable();
 }
 
@@ -438,28 +467,83 @@ document.querySelectorAll('#bdTable thead th').forEach(th=>{
 });
 
 /* ===== Export — current filtered + sorted rows, client-side ===== */
+
+// Priority label used for the Excel "Priority" column (mirrors table pill logic)
+function priorityLabel(days){
+  if(days>30) return "High";
+  if(days>=8) return "Medium";
+  return "Low";
+}
+
 document.getElementById('exportExcel').onclick=()=>{
-  const rows = sortedRows().map(d=>({
-    "No":d.no,"Site":d.site,"Date of breakdown":d.date,"Category":d.category,
-    "Vehcile No":d.vehicle,"Breakdown Details":d.details,"Reason for pendency":d.reason,
-    "Pending for (no of days)":d.days,"Breakdown Alert Icon":d.alert
-  }));
-  const ws=XLSX.utils.json_to_sheet(rows);
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,"BD Details");
-  XLSX.writeFile(wb,"BD_Details_Export.xlsx");
+  const rows = sortedRows();
+
+  const headers = ["No","Site","Date of Breakdown","Category","Vehicle No",
+    "Breakdown Details","Reason for Pendency","Pending Days","Priority","Alert Status"];
+
+  const aoa = [headers, ...rows.map(d=>[
+    d.no, d.site, d.date, d.category, d.vehicle, d.details, d.reason, d.days,
+    priorityLabel(d.days), d.alert
+  ])];
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+  // Professional touches available in the free SheetJS build:
+  // sensible column widths, a frozen header row, and an autofilter dropdown
+  // on the header — so it opens like a real report, not a raw data dump.
+  ws['!cols'] = [
+    {wch:6},{wch:14},{wch:16},{wch:16},{wch:14},
+    {wch:38},{wch:26},{wch:12},{wch:10},{wch:16}
+  ];
+  ws['!autofilter'] = { ref: `A1:${XLSX.utils.encode_col(headers.length-1)}${aoa.length}` };
+  ws['!freeze'] = { xSplit:0, ySplit:1 };            // freeze header row
+  if(!ws['!sheetViews']) ws['!sheetViews']=[{ state:'frozen', ySplit:1 }];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "BD Details");
+  XLSX.writeFile(wb, `BD_Details_Export_${new Date().toISOString().slice(0,10)}.xlsx`);
+
+  // Note: bold/colored headers and cell fills require the paid "SheetJS Pro"
+  // build — the free xlsx.full.min.js used here cannot write cell styling.
+  // Column widths + autofilter + frozen header is the closest "professional"
+  // look achievable with the free library.
 };
+
 document.getElementById('exportPdf').onclick=()=>{
   const { jsPDF } = window.jspdf;
   const doc=new jsPDF({orientation:'landscape'});
   const rows=sortedRows().map(d=>[d.no,d.site,d.date,d.category,d.vehicle,d.details,d.reason,d.days,d.alert]);
+
+  const alertColors = {
+    High:   {fill:[229,72,77],  text:[255,255,255]},
+    Medium: {fill:[242,153,74], text:[255,255,255]},
+    Low:    {fill:[30,158,99],  text:[255,255,255]}
+  };
+
+  doc.setFontSize(14);
   doc.text("Machine Breakdown Details",14,12);
+
   doc.autoTable({
     startY:18,
     head:[["No","Site","Date","Category","Vehicle No","Breakdown Details","Reason for pendency","Pending Days","Alert"]],
-    body:rows, styles:{fontSize:7}, headStyles:{fillColor:[10,31,61]}
+    body:rows,
+    styles:{fontSize:7, valign:'middle'},
+    headStyles:{fillColor:[10,31,61]},
+    columnStyles:{ 8:{ halign:'center' } }, // Alert column index
+    didParseCell: function(data){
+      // Color the "Alert" column cells to match the on-screen pill colors
+      if(data.section==='body' && data.column.index===8){
+        const key = alertShort(data.cell.raw);
+        const c = alertColors[key];
+        if(c){
+          data.cell.styles.fillColor = c.fill;
+          data.cell.styles.textColor = c.text;
+          data.cell.styles.fontStyle = 'bold';
+        }
+      }
+    }
   });
-  doc.save("BD_Details_Export.pdf");
+  doc.save(`BD_Details_Export_${new Date().toISOString().slice(0,10)}.pdf`);
 };
 
 renderAnalysis();
