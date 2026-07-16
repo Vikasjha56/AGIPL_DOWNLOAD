@@ -7,3 +7,5 @@ python-dotenv==1.2.2
 numpy==1.26.4
 gunicorn==21.2.0
 pytz==2026.2
+apscheduler
+twilio
