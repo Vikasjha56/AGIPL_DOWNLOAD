@@ -71,13 +71,13 @@ def build_pending_df(master):
         )
 
     resolved_col = master["Resolved"].astype(str).str.strip().str.upper()
-    pending = master[resolved_col == "NO"].copy()
+    pending = master.loc[resolved_col == "NO"].copy()
 
-    pending["Pending Days"] = pd.to_numeric(
+    pending.loc[:, "Pending Days"] = pd.to_numeric(
         pending["Pending for (no of days)"], errors="coerce"
     )
-    pending = pending.dropna(subset=["Pending Days"])
-    pending["Pending Days"] = pending["Pending Days"].astype(int)
+    pending = pending.dropna(subset=["Pending Days"]).copy()
+    pending.loc[:, "Pending Days"] = pending["Pending Days"].astype(int)
 
     # Optional columns — filled defensively in case sheet doesn't have them yet
     if "Owned/Hired" not in pending.columns:
