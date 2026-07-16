@@ -1,11 +1,16 @@
+import csv
+import io
+import os
 import time
 
+import requests
 from flask import Flask, send_file, render_template, request
 import pandas as pd
 
 from google_reader import get_master_table
 from excel_export import create_excel
 from pdf_export import create_pdf
+from reminder_scheduler import start_scheduler
 
 
 app = Flask(__name__)
@@ -159,6 +164,87 @@ def build_export_df(df):
         "Breakdown Alert Icon": df["Alert"],
     })
     return export
+
+
+# ==========================
+# CRITICAL PENDING TASK
+# (separate published Google Sheet — Work Allotted To / Allotted By tracker)
+# ==========================
+
+CRITICAL_SHEET_CSV = (
+    "https://docs.google.com/spreadsheets/d/e/2PACX-1vQhICKU0riazqlJ1LaBoIr-3PC19f3QPG0"
+    "UCMPQL5VX0xkVsP80usEtcyF2xyroKILDxgBoYp9j4WdX/pub?output=csv"
+)
+
+CRITICAL_CACHE = None
+CRITICAL_CACHE_TIME = 0
+CRITICAL_CACHE_DURATION = 300  # 5 minutes, same as the Master Table cache
+
+
+def task_alert_level(days):
+    """Alert tiers for day-to-day pending tasks — tighter than the
+    machine-breakdown SLA above. Adjust the two cutoffs if needed."""
+    if days >= 7:
+        return "High Alert"
+    if days >= 3:
+        return "Medium Alert"
+    return "Low Alert"
+
+
+def fetch_critical_records():
+    """Fetches + parses the Critical Pending Task sheet.
+    Skips blank/incomplete rows (e.g. a row that only has 'Allotted By' filled in)."""
+    resp = requests.get(CRITICAL_SHEET_CSV, timeout=10)
+    resp.encoding = "utf-8"
+    reader = csv.DictReader(io.StringIO(resp.text))
+
+    records = []
+    for row in reader:
+        sno = (row.get("S.No.") or "").strip()
+        assigned_to = (row.get("Work Allotted To") or "").strip()
+        if not sno or not assigned_to:
+            continue
+
+        try:
+            days = int(float(row.get("Pending Since (No of Days)") or 0))
+        except ValueError:
+            days = 0
+
+        records.append({
+            "sno": sno,
+            "assigned_to": assigned_to,
+            "contact_no": (row.get("Contact No") or "").strip(),
+            "details": (row.get("Details of work") or "").strip(),
+            "date": (row.get("Allotted on Date") or "").strip(),
+            "allotted_by": (row.get("Allotted By") or "").strip(),
+            "days": days,
+            "alert": task_alert_level(days),
+        })
+    return records
+
+
+def get_cached_critical_records():
+    """Same 5-minute cache pattern as the Master Table, so the scheduler
+    and the /critical-pending page both read consistent data."""
+    global CRITICAL_CACHE, CRITICAL_CACHE_TIME
+    current_time = time.time()
+    if CRITICAL_CACHE is None or current_time - CRITICAL_CACHE_TIME > CRITICAL_CACHE_DURATION:
+        print("Loading Critical Pending Task sheet...")
+        CRITICAL_CACHE = fetch_critical_records()
+        CRITICAL_CACHE_TIME = current_time
+    else:
+        print("Using Cached Critical Pending Data...")
+    return CRITICAL_CACHE
+
+
+@app.route("/critical-pending")
+def critical_pending():
+    try:
+        records = get_cached_critical_records()
+        return render_template("critical_pending.html", critical_records=records)
+    except Exception as e:
+        print("CRITICAL PENDING ERROR:", e)
+        return "Critical Pending Task Error : " + str(e)
 
 
 # ==========================
@@ -321,6 +407,18 @@ def assets():
 @app.route("/it")
 def it():
     return render_template("it.html")
+
+
+# ==========================
+# WHATSAPP REMINDER SCHEDULER
+# Sends a WhatsApp reminder to the assignee (Contact No) and their
+# supervisor (manually maintained list in reminder_scheduler.py) every
+# 24 hours for as long as a task stays pending. See reminder_scheduler.py
+# to plug in your Twilio credentials and supervisor phone numbers.
+# ==========================
+
+if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+    start_scheduler(get_cached_critical_records)
 
 
 # ==========================
