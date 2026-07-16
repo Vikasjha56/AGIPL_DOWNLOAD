@@ -67,8 +67,8 @@
   .bucket small{display:block;font-weight:500;font-size:9.5px;margin-top:2px;color:#08131f;}
   .b-green{background:#27AE60;} .b-orange{background:#F2994A;} .b-red{background:#E5484D;}
 
-  .mid-row{flex:1 1 0;min-height:0;display:flex;flex-direction:column;}
-  .donut-row{flex:1 1 0;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .mid-row{flex:0.8 1 0;min-height:0;display:flex;flex-direction:column;}
+  .donut-row{flex:1.3 1 0;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   .panel{background:rgba(255,255,255,.12);border:1px solid rgba(0,255,255,.35);border-radius:12px;
     padding:10px 12px;display:flex;flex-direction:column;min-height:0;backdrop-filter:blur(20px);}
   .panel h3{margin:0 0 6px;font-size:12px;color:#2DD4BF;text-transform:uppercase;letter-spacing:.4px;text-align:center;}
@@ -86,19 +86,18 @@
   .export-btns button{background:rgba(0,255,255,.1);border:1px solid #2DD4BF;color:#2DD4BF;
     padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600;}
   .export-btns button:hover{background:#2DD4BF;color:#04211C;}
-  .table-scroll{flex:1;overflow:auto;border:1px solid rgba(0,255,255,.25);border-radius:8px;}
-  table{width:100%;border-collapse:collapse;font-size:12px;}
-  thead th{position:sticky;top:0;background:#0C2A54;color:#2DD4BF;padding:8px 10px;text-align:left;
-    cursor:pointer;user-select:none;white-space:nowrap;border-bottom:1px solid rgba(0,255,255,.25);}
+  .table-scroll{flex:1;overflow-y:auto;overflow-x:hidden;border:1px solid rgba(0,255,255,.25);border-radius:8px;}
+  table{width:100%;border-collapse:collapse;font-size:11.5px;table-layout:fixed;}
+  thead th{position:sticky;top:0;background:#0C2A54;color:#2DD4BF;padding:8px 8px;text-align:left;
+    cursor:pointer;user-select:none;border-bottom:1px solid rgba(0,255,255,.25);
+    overflow-wrap:break-word;word-break:break-word;}
   thead th:hover{background:#123a70;}
-  tbody td{padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.1);white-space:nowrap;}
+  tbody td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.1);
+    overflow-wrap:break-word;word-break:break-word;white-space:normal;}
   tbody tr:nth-child(even){background:rgba(255,255,255,.03);}
   tbody tr:hover{background:rgba(45,212,191,.1);}
   .pill{padding:3px 10px;border-radius:12px;font-size:10.5px;font-weight:700;color:#fff;display:inline-block;}
   .pill.High{background:#E5484D;} .pill.Medium{background:#F2994A;} .pill.Low{background:#1E9E63;}
-  .oh{padding:2px 9px;border-radius:5px;font-size:10.5px;font-weight:600;}
-  .oh.Owned{background:rgba(78,127,219,.25);color:#8FB0EE;}
-  .oh.Hired{background:rgba(242,153,74,.25);color:#F2994A;}
 
   @media(max-width:900px){
     .kpi-row{grid-template-columns:1fr;}
@@ -145,7 +144,7 @@
       <div class="kpi"><div class="kpi-label">Total Pending Cases</div>
         <div class="kpi-value" id="kTotal">0</div><div class="kpi-sub">Resolved : NO</div></div>
       <div class="kpi clickable" id="kCriticalCard"><div class="kpi-label">Critical Pending &gt; 15 Days</div>
-        <div class="kpi-value" id="kCritical">0</div><div class="kpi-sub">Click to filter</div></div>
+        <div class="kpi-value" id="kCritical">0</div><div class="kpi-sub">Pending Ageing</div></div>
       <div class="kpi">
         <div class="kpi-label">Machine Count by Pending Days Range</div>
         <div class="bucket-row">
@@ -158,18 +157,18 @@
 
     <div class="mid-row">
       <div class="panel">
-        <h3>Machine-wise Pending Cases (&gt; 15 days) — click a bar to filter</h3>
+        <h3>Machine-wise Pending Cases (&gt; 15 days)</h3>
         <div class="chart-wrap"><canvas id="machineChart"></canvas></div>
       </div>
     </div>
 
     <div class="donut-row">
       <div class="panel">
-        <h3>Breakdown Machine Count by Site — click a slice to filter</h3>
+        <h3>Breakdown Machine Count by Site</h3>
         <div class="chart-wrap"><canvas id="siteDonut"></canvas></div>
       </div>
       <div class="panel">
-        <h3>Pending Distribution (&gt; 15 Days) — click a slice to filter</h3>
+        <h3>Pending Distribution (&gt; 15 Days)</h3>
         <div class="chart-wrap"><canvas id="reasonDonut"></canvas></div>
       </div>
     </div>
@@ -205,7 +204,6 @@
               <th data-key="details">Breakdown Details</th>
               <th data-key="reason">Reason for pendency</th>
               <th data-key="days">Pending for (no of days)</th>
-              <th data-key="owned">Owned/Hired</th>
               <th data-key="alert">Breakdown Alert Icon</th>
             </tr>
           </thead>
@@ -222,6 +220,7 @@
 <script id="resolvedData" type="application/json">{{ resolved_records|tojson }}</script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -310,7 +309,8 @@ const centerTextPlugin = {
     ctx.restore();
   }
 };
-Chart.register(centerTextPlugin);
+Chart.register(centerTextPlugin, ChartDataLabels);
+Chart.defaults.set('plugins.datalabels', {display:false}); // off by default; enabled per-chart below
 const palette=['#2DD4BF','#4E7FDB','#F2994A','#E5484D','#9B59B6','#27AE60','#F2C94C','#EB5757'];
 
 function renderAnalysis(){
@@ -370,9 +370,13 @@ function renderAnalysis(){
   siteDonut = new Chart(document.getElementById('siteDonut'),{
     type:'doughnut',
     data:{labels:siteLabels,datasets:[{data:siteLabels.map(l=>bySite[l]),backgroundColor:palette,borderColor:'#0F2A52',borderWidth:2}]},
-    options:{maintainAspectRatio:false,cutout:'68%',
+    options:{maintainAspectRatio:false,cutout:'52%',
       onClick:(evt,els)=>{ if(els.length) toggle('siteClick', siteLabels[els[0].index]); },
-      plugins:{legend:{position:'bottom',labels:{color:'#EAF1FB',boxWidth:10,font:{size:10},padding:8}}}},
+      layout:{padding:{right:4}},
+      plugins:{
+        legend:{position:'right',align:'center',labels:{color:'#EAF1FB',boxWidth:10,font:{size:10.5},padding:8}},
+        datalabels:{display:true,color:'#fff',font:{weight:'bold',size:11},formatter:v=>v}
+      }},
     _centerText:{value:siteSrc.length,label:'TOTAL'}
   });
 
@@ -384,9 +388,13 @@ function renderAnalysis(){
   reasonDonut = new Chart(document.getElementById('reasonDonut'),{
     type:'doughnut',
     data:{labels:reasonLabels,datasets:[{data:reasonLabels.map(l=>byReason[l]),backgroundColor:palette.slice().reverse(),borderColor:'#0F2A52',borderWidth:2}]},
-    options:{maintainAspectRatio:false,cutout:'68%',
+    options:{maintainAspectRatio:false,cutout:'52%',
       onClick:(evt,els)=>{ if(els.length) toggle('reason', reasonLabels[els[0].index]); },
-      plugins:{legend:{position:'bottom',labels:{color:'#EAF1FB',boxWidth:10,font:{size:9.5},padding:6}}}},
+      layout:{padding:{right:4}},
+      plugins:{
+        legend:{position:'right',align:'center',labels:{color:'#EAF1FB',boxWidth:10,font:{size:9.5},padding:6}},
+        datalabels:{display:true,color:'#fff',font:{weight:'bold',size:11},formatter:v=>v}
+      }},
     _centerText:{value:reasonSrc.length,label:'CASES'}
   });
 
@@ -413,7 +421,6 @@ function renderTable(){
   document.getElementById('bdBody').innerHTML = rows.map(d=>`<tr>
     <td>${d.no}</td><td>${d.site}</td><td>${d.date}</td><td>${d.category}</td>
     <td>${d.vehicle}</td><td>${d.details}</td><td>${d.reason}</td><td>${d.days}</td>
-    <td><span class="oh ${d.owned}">${d.owned}</span></td>
     <td><span class="pill ${alertShort(d.alert)}">${d.alert}</span></td>
   </tr>`).join('');
 
@@ -435,7 +442,7 @@ document.getElementById('exportExcel').onclick=()=>{
   const rows = sortedRows().map(d=>({
     "No":d.no,"Site":d.site,"Date of breakdown":d.date,"Category":d.category,
     "Vehcile No":d.vehicle,"Breakdown Details":d.details,"Reason for pendency":d.reason,
-    "Pending for (no of days)":d.days,"Owned/Hired":d.owned,"Breakdown Alert Icon":d.alert
+    "Pending for (no of days)":d.days,"Breakdown Alert Icon":d.alert
   }));
   const ws=XLSX.utils.json_to_sheet(rows);
   const wb=XLSX.utils.book_new();
@@ -445,11 +452,11 @@ document.getElementById('exportExcel').onclick=()=>{
 document.getElementById('exportPdf').onclick=()=>{
   const { jsPDF } = window.jspdf;
   const doc=new jsPDF({orientation:'landscape'});
-  const rows=sortedRows().map(d=>[d.no,d.site,d.date,d.category,d.vehicle,d.details,d.reason,d.days,d.owned,d.alert]);
+  const rows=sortedRows().map(d=>[d.no,d.site,d.date,d.category,d.vehicle,d.details,d.reason,d.days,d.alert]);
   doc.text("Machine Breakdown Details",14,12);
   doc.autoTable({
     startY:18,
-    head:[["No","Site","Date","Category","Vehicle No","Breakdown Details","Reason for pendency","Pending Days","Owned/Hired","Alert"]],
+    head:[["No","Site","Date","Category","Vehicle No","Breakdown Details","Reason for pendency","Pending Days","Alert"]],
     body:rows, styles:{fontSize:7}, headStyles:{fillColor:[10,31,61]}
   });
   doc.save("BD_Details_Export.pdf");
