@@ -103,10 +103,6 @@ Chart.register(ChartDataLabels);
 const allData = JSON.parse(document.getElementById("pendingData").textContent);
 const RESOLVED_SAMPLE = JSON.parse(document.getElementById("resolvedData").textContent);
 
-
-
-yaha se new
-
 const filters = {site:"All", machine:null, reason:null, range:null};
 const RANGE_COLORS = {"0-5 Days":"#00e05a","6-30 Days":"#ffaa00","31+ Days":"#ff2d55"};
 function rangeOf(d){ if(d<=5) return "0-5 Days"; if(d<=30) return "6-30 Days"; return "31+ Days"; }
