@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+
+{% block page_title %}
+🚨 Critical Pending Task
+{% endblock %}
+
+{% block page_subtitle %}
+{% endblock %}
+
+{% block content %}
+<style>
+  .cp-wrap{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:8px;overflow:hidden;margin-top:-10px;}
+
+  .no-data-banner{display:none;flex:0 0 auto;background:rgba(229,72,77,.15);border:1px solid #E5484D;
+    color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;}
+  .no-data-banner.show{display:block;}
+
+  .filters{flex:0 0 auto;display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+    padding:8px 18px;border-radius:14px;background:rgba(255,255,255,.12);
+    backdrop-filter:blur(20px);box-shadow:0 10px 25px #0007;}
+  .filters label{font-size:11px;font-weight:600;opacity:.85;margin-right:6px;}
+  .filter-group{display:flex;align-items:center;gap:8px;}
+  .filter-group select,.filter-group input[type=date]{
+    padding:6px 12px;border-radius:9px;border:1px solid rgba(0,255,255,.5);
+    background:rgba(255,255,255,.1);color:#fff;font-size:13px;outline:none;max-width:100%;}
+  .filter-group select option{color:#000;}
+  .filter-group input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1);cursor:pointer;}
+  .clear-btn{border:1px solid rgba(255,80,80,.6);background:rgba(255,60,60,.15);color:#fff;
+    padding:6px 13px;border-radius:9px;font-size:12px;cursor:pointer;margin-left:auto;
+    display:inline-flex;align-items:center;gap:6px;font-weight:700;transition:.2s;}
+  .clear-btn:hover{background:rgba(255,60,60,.35);box-shadow:0 0 10px rgba(255,80,80,.5);}
+  .clear-btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none;}
+
+  .kpi-row{flex:0 0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  .kpi{background:rgba(255,255,255,.1);border:1px solid rgba(0,255,255,.35);border-radius:10px;
+    padding:9px 14px;text-align:center;transition:.3s;min-width:0;}
+  .kpi:hover{transform:translateY(-2px);box-shadow:0 0 14px cyan;}
+  .kpi-label{font-size:10px;color:#8CA3C4;text-transform:uppercase;letter-spacing:.3px;}
+  .kpi-value{font-size:20px;font-weight:700;text-shadow:0 0 8px cyan;margin-top:2px;}
+  .kpi-sub{font-size:10px;color:#8CA3C4;margin-top:1px;}
+
+  .mid-row{flex:1.2 1 0;min-height:0;display:grid;grid-template-columns:1fr 1.4fr;gap:8px;}
+  .panel{background:rgba(255,255,255,.12);border:1px solid rgba(0,255,255,.35);border-radius:12px;
+    padding:8px 12px;display:flex;flex-direction:column;min-height:0;backdrop-filter:blur(20px);}
+  .panel h3{margin:0 0 4px;font-size:12px;color:#2DD4BF;text-transform:uppercase;letter-spacing:.4px;text-align:center;}
+  .chart-wrap{flex:1;min-height:0;position:relative;}
+
+  .details-panel{flex:1.6 1 0;min-height:0;display:flex;flex-direction:column;
+    background:rgba(255,255,255,.12);border:1px solid rgba(0,255,255,.35);border-radius:12px;
+    padding:10px 14px;backdrop-filter:blur(20px);}
+  .details-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;}
+  .details-top h3{margin:0;font-size:14px;}
+  .table-scroll{flex:1;overflow-y:auto;overflow-x:auto;border:1px solid rgba(0,255,255,.25);border-radius:8px;
+    -webkit-overflow-scrolling:touch;}
+  table{width:100%;border-collapse:collapse;font-size:11.5px;table-layout:fixed;}
+  thead th{position:sticky;top:0;background:#0C2A54;color:#2DD4BF;padding:8px 8px;text-align:left;
+    cursor:pointer;user-select:none;border-bottom:1px solid rgba(0,255,255,.25);
+    overflow-wrap:break-word;word-break:break-word;}
+  thead th:hover{background:#123a70;}
+  tbody td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.1);
+    overflow-wrap:break-word;word-break:break-word;white-space:normal;}
+  tbody tr:nth-child(even){background:rgba(255,255,255,.03);}
+  tbody tr:hover{background:rgba(45,212,191,.1);}
+  .pill{padding:3px 10px;border-radius:12px;font-size:10.5px;font-weight:700;color:#fff;display:inline-block;}
+  .pill.High{background:#E5484D;} .pill.Medium{background:#F2994A;} .pill.Low{background:#1E9E63;}
+
+  @media(max-width:900px){
+    .kpi-row{grid-template-columns:repeat(2,1fr);}
+    .mid-row{grid-template-columns:1fr;}
+  }
+  @media(max-width:640px){
+    .cp-wrap{overflow:visible;height:auto;}
+    .filters{padding:8px 10px;}
+    .filter-group{width:100%;}
+    .filter-group select,.filter-group input[type=date]{flex:1;}
+    .clear-btn{margin-left:0;width:100%;justify-content:center;}
+    .kpi-row{grid-template-columns:1fr 1fr;}
+    .mid-row{flex:none;}
+    .panel{min-height:260px;}
+    .details-panel{min-height:60vh;flex:none;}
+    .table-scroll{max-height:60vh;}
+    table{font-size:10.5px;}
+  }
+</style>
+
+<div class="cp-wrap">
+
+  <div class="no-data-banner" id="noDataBanner">
+    ⚠ No pending tasks loaded. Check the source sheet has rows under
+    <b>Work Allotted To</b> with a valid <b>S.No.</b>
+  </div>
+
+  <div class="filters">
+    <div class="filter-group"><label>Assigned To</label>
+      <select id="fName"><option value="All">All</option></select>
+    </div>
+    <div class="filter-group"><label>From</label>
+      <input type="date" id="fFrom">
+    </div>
+    <div class="filter-group"><label>To</label>
+      <input type="date" id="fTo">
+    </div>
+    <button class="clear-btn" id="clearFilters">✕ Clear All Filters</button>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-label">Total Pending Tasks</div>
+      <div class="kpi-value" id="kTotal">0</div></div>
+    <div class="kpi"><div class="kpi-label">Critical (&ge; 7 Days)</div>
+      <div class="kpi-value" id="kCritical">0</div></div>
+    <div class="kpi"><div class="kpi-label">Avg. Days Pending</div>
+      <div class="kpi-value" id="kAvg">0</div></div>
+    <div class="kpi"><div class="kpi-label">People Involved</div>
+      <div class="kpi-value" id="kPeople">0</div></div>
+  </div>
+
+  <div class="mid-row">
+    <div class="panel">
+      <h3>Pending Task Count by Person</h3>
+      <div class="chart-wrap"><canvas id="personPie"></canvas></div>
+    </div>
+
+    <div class="details-panel">
+      <div class="details-top"><h3>Critical Pending Task Details (filtered)</h3></div>
+      <div class="table-scroll">
+        <table id="cpTable">
+          <thead>
+            <tr>
+              <th data-key="sno">No</th>
+              <th data-key="assigned_to">Work Allotted To</th>
+              <th data-key="details">Details of Work</th>
+              <th data-key="date">Allotted on Date</th>
+              <th data-key="allotted_by">Allotted By</th>
+              <th data-key="days">Pending Since (Days)</th>
+              <th data-key="alert">Alert</th>
+            </tr>
+          </thead>
+          <tbody id="cpBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- LIVE data from Flask (Google Sheets — Work Allotted To / Allotted By tracker) -->
+<script id="criticalData" type="application/json">{{ critical_records|tojson }}</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<script>
+/* Each record: {sno, assigned_to, details, date, allotted_by, days} — "date" is DD/MM/YYYY */
+const allData = JSON.parse(document.getElementById("criticalData").textContent)
+  .filter(r => r.sno && r.assigned_to); // drop blank/incomplete sheet rows
+
+if(allData.length === 0){ document.getElementById('noDataBanner').classList.add('show'); }
+
+/* Alert thresholds for pending tasks — tighter than the machine-breakdown SLA
+   since these are day-to-day office/ops tasks, not equipment repairs.
+   Adjust the two numbers below if you want a different cutoff. */
+function alertFor(days){
+  if(days >= 7) return "High";
+  if(days >= 3) return "Medium";
+  return "Low";
+}
+function alertLabel(days){ return alertFor(days) + " Alert"; }
+
+function parseDDMMYYYY(s){
+  if(!s) return null;
+  const [d,m,y] = s.split('/').map(Number);
+  if(!d || !m || !y) return null;
+  return new Date(y, m-1, d);
+}
+
+const filters = {name:"All", from:null, to:null};
+
+const nameSel = document.getElementById('fName');
+[...new Set(allData.map(d=>d.assigned_to))].sort().forEach(n=>{
+  nameSel.innerHTML += `<option value="${n}">${n}</option>`;
+});
+const fromInp = document.getElementById('fFrom');
+const toInp = document.getElementById('fTo');
+
+nameSel.addEventListener('change', ()=>{ filters.name = nameSel.value; renderAll(); });
+fromInp.addEventListener('change', ()=>{ filters.from = fromInp.value ? new Date(fromInp.value) : null; renderAll(); });
+toInp.addEventListener('change', ()=>{ filters.to = toInp.value ? new Date(toInp.value) : null; renderAll(); });
+
+document.getElementById('clearFilters').onclick = ()=>{
+  filters.name="All"; filters.from=null; filters.to=null;
+  nameSel.value="All"; fromInp.value=""; toInp.value="";
+  renderAll();
+};
+
+function getBase(){
+  return allData.filter(r=>{
+    if(filters.name!=="All" && r.assigned_to!==filters.name) return false;
+    const d = parseDDMMYYYY(r.date);
+    if(filters.from && d && d < filters.from) return false;
+    if(filters.to && d && d > filters.to) return false;
+    return true;
+  });
+}
+
+Chart.register(ChartDataLabels);
+Chart.defaults.animation = false;
+const palette=['#2DD4BF','#4E7FDB','#F2994A','#E5484D','#9B59B6','#27AE60','#F2C94C','#EB5757'];
+let personPie;
+
+let sortKey='sno', sortDir=1;
+function sortedRows(){
+  const rows = getBase().slice();
+  rows.sort((a,b)=>{
+    let va=a[sortKey], vb=b[sortKey];
+    if(typeof va==='string'){ va=va.toLowerCase(); vb=vb.toLowerCase(); }
+    if(va<vb) return -1*sortDir;
+    if(va>vb) return 1*sortDir;
+    return 0;
+  });
+  return rows;
+}
+
+function renderAll(){
+  const base = getBase();
+  document.getElementById('kTotal').textContent = base.length;
+  document.getElementById('kCritical').textContent = base.filter(d=>d.days>=7).length;
+  document.getElementById('kAvg').textContent = base.length ? (base.reduce((a,d)=>a+d.days,0)/base.length).toFixed(1) : 0;
+  document.getElementById('kPeople').textContent = new Set(base.map(d=>d.assigned_to)).size;
+
+  const byPerson = {};
+  base.forEach(d=>{ byPerson[d.assigned_to] = (byPerson[d.assigned_to]||0) + 1; });
+  const names = Object.keys(byPerson);
+
+  if(personPie) personPie.destroy();
+  personPie = new Chart(document.getElementById('personPie'),{
+    type:'pie',
+    data:{labels:names, datasets:[{data:names.map(n=>byPerson[n]), backgroundColor:palette, borderColor:'#0F2A52', borderWidth:2}]},
+    options:{
+      maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'right', labels:{color:'#EAF1FB', boxWidth:10, font:{size:10.5}, padding:8}},
+        datalabels:{display:true, color:'#fff', font:{weight:'bold', size:11}, formatter:v=>v}
+      }
+    }
+  });
+
+  renderTable();
+}
+
+function renderTable(){
+  const rows = sortedRows();
+  document.getElementById('cpBody').innerHTML = rows.map((d,i)=>`<tr>
+    <td>${i+1}</td><td>${d.assigned_to}</td><td>${d.details}</td>
+    <td>${d.date}</td><td>${d.allotted_by}</td><td>${d.days}</td>
+    <td><span class="pill ${alertFor(d.days)}">${alertLabel(d.days)}</span></td>
+  </tr>`).join('');
+
+  document.querySelectorAll('#cpTable thead th').forEach(th=>{
+    const base = th.textContent.replace(' ▲','').replace(' ▼','').trim();
+    th.textContent = base + (th.dataset.key===sortKey ? (sortDir===1?' ▲':' ▼') : '');
+  });
+}
+document.querySelectorAll('#cpTable thead th').forEach(th=>{
+  th.addEventListener('click',()=>{
+    const key = th.dataset.key;
+    if(sortKey===key) sortDir*=-1; else { sortKey=key; sortDir=1; }
+    renderTable();
+  });
+});
+
+renderAll();
+</script>
+{% endblock %}
