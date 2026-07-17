@@ -405,42 +405,70 @@ def fuel():
 # FUEL DATA API
 # =====================================================
 
+
+FUEL_CACHE = None
+FUEL_CACHE_TIME = 0
+FUEL_CACHE_DURATION = 300
+
+
+
 @app.route("/fuel_data")
 def fuel_data():
+
+    global FUEL_CACHE, FUEL_CACHE_TIME
 
 
     try:
 
 
-        # Read Google Sheet
-
-        df = get_fuel_sheet_data()
+        now = time.time()
 
 
+        # =========================
+        # CACHE
+        # =========================
 
-        # Process Calculation
+        if (
+            FUEL_CACHE is None
+            or now - FUEL_CACHE_TIME > FUEL_CACHE_DURATION
+        ):
 
-        df = prepare_fuel_analysis(df)
+            print("Loading Fuel Sheet...")
+
+            raw = get_fuel_sheet_data()
+
+
+            df, analysis = prepare_fuel_analysis(raw)
+
+
+            FUEL_CACHE = df
+
+            FUEL_CACHE_TIME = now
+
+
+        else:
+
+            print("Using Fuel Cache")
+
+            df = FUEL_CACHE.copy()
+
 
 
 
         if df.empty:
 
-
-            return jsonify({
-
-                "error":
-                "Fuel data not found"
-
-            })
-
+            return jsonify(
+                {
+                    "error":
+                    "Fuel data not found"
+                }
+            )
 
 
 
         # =========================
-        # TABLE SERIAL NUMBER
+        # SERIAL NUMBER
         # =========================
-
 
         df["Sr.No."] = range(
             1,
@@ -449,140 +477,62 @@ def fuel_data():
 
 
 
-        # Date convert for JSON
-
         df["Working Date"] = (
-            df["Working Date"]
-            .astype(str)
-        )
-
-
-
-
-        # =========================
-        # KPI
-        # =========================
-
-
-        total_fuel = round(
-            df["Fuel Used"].sum(),
-            2
-        )
-
-
-        total_hours = round(
-            df["Run Hours"].sum(),
-            2
-        )
-
-
-        total_machine = (
-            df["Machine"]
-            .nunique()
-        )
-
-
-
-        avg = 0
-
-        if total_hours > 0:
-
-            avg = round(
-                total_fuel / total_hours,
-                2
+            pd.to_datetime(
+                df["Working Date"],
+                errors="coerce"
             )
-
-
-
-
-        kpi = {
-
-
-            "total_fuel":
-            total_fuel,
-
-
-            "total_hours":
-            total_hours,
-
-
-            "total_machine":
-            total_machine,
-
-
-            "average":
-            avg,
-
-
-            "working_days":
-            df["Working Date"]
-            .nunique()
-
-        }
-
+            .dt.strftime("%Y-%m-%d")
+        )
 
 
 
 
         # =========================
-        # SLICERS
+        # KPI FROM ANALYSIS
         # =========================
+
+        kpi = df.attrs.get(
+            "kpi",
+            {}
+        )
+
+
 
 
         slicers = {
 
 
             "dates":
-
             sorted(
                 df["Working Date"]
+                .dropna()
                 .unique()
                 .tolist()
             ),
-
 
 
             "sites":
-
             sorted(
                 df["Log Book No."]
-                .dropna()
                 .astype(str)
                 .unique()
                 .tolist()
             ),
-
 
 
             "categories":
-
             sorted(
                 df["Machine Category"]
-                .dropna()
                 .astype(str)
                 .unique()
                 .tolist()
             ),
-
 
 
             "machines":
-
             sorted(
                 df["Machine"]
-                .dropna()
-                .astype(str)
-                .unique()
-                .tolist()
-            ),
-
-
-
-            "status":
-
-            sorted(
-                df["Machine Status"]
-                .dropna()
                 .astype(str)
                 .unique()
                 .tolist()
@@ -593,38 +543,33 @@ def fuel_data():
 
 
 
-
         # =========================
-        # TABLE
+        # SAFE TABLE
         # =========================
 
 
         table_columns = [
 
-
             "Sr.No.",
-
             "Month",
-
             "Working Date",
-
             "Log Book No.",
-
             "Machine Category",
-
             "Machine",
-
             "RTO Number",
-
             "Machine Status",
-
             "Fuel Used",
-
             "Run Hours",
-
             "Fuel Average"
 
         ]
+
+
+        for c in table_columns:
+
+            if c not in df.columns:
+
+                df[c] = ""
 
 
 
@@ -641,151 +586,95 @@ def fuel_data():
 
 
 
-
         # =========================
         # CHART DATA
         # =========================
 
 
-        daily = (
+        daily = df.attrs["daily"]
 
-            df.groupby(
-                "Working Date"
-            )["Fuel Used"]
-            .sum()
-        )
+        category = df.attrs["category"]
 
+        machine = df.attrs["machine"]
 
-
-        category = (
-
-            df.groupby(
-                "Machine Category"
-            )["Fuel Used"]
-            .sum()
-            .sort_values(
-                ascending=False
-            )
-            .head(10)
-
-        )
-
-
-
-        machine = (
-
-            df.groupby(
-                "Machine"
-            )["Fuel Used"]
-            .sum()
-            .sort_values(
-                ascending=False
-            )
-            .head(10)
-
-        )
-
-
-
-        site = (
-
-            df.groupby(
-                "Log Book No."
-            )["Fuel Used"]
-            .sum()
-            .sort_values(
-                ascending=False
-            )
-            .head(10)
-
-        )
-
+        site = df.attrs["site"]
 
 
 
 
         return jsonify({
 
-
-            "kpi":
-            kpi,
+            "kpi":kpi,
 
 
-            "slicers":
-            slicers,
+            "slicers":slicers,
 
 
-            "daily":
-
-            {
+            "daily":{
 
                 "labels":
-                daily.index.tolist(),
-
+                daily["Working Date"].tolist(),
 
                 "values":
-                daily.values.tolist()
+                daily["Fuel Used"].tolist()
 
             },
 
 
-
-            "category":
-
-            {
+            "category":{
 
                 "labels":
-                category.index.tolist(),
-
+                category["Machine Category"].tolist(),
 
                 "values":
-                category.values.tolist()
+                category["Fuel"].tolist()
 
             },
 
 
-
-            "machine":
-
-            {
+            "machine":{
 
                 "labels":
-                machine.index.tolist(),
-
+                machine["Machine"].tolist(),
 
                 "values":
-                machine.values.tolist()
+                machine["Fuel"].tolist()
 
             },
 
 
-
-            "site":
-
-            {
+            "site":{
 
                 "labels":
-                site.index.tolist(),
-
+                site["Log Book No."].tolist(),
 
                 "values":
-                site.values.tolist()
+                site["Fuel"].tolist()
 
             },
 
 
+            "table":table,
 
-            "table":
-            table
+
+            "alerts":
+            df.attrs.get(
+                "alerts",
+                []
+            )
 
 
         })
 
 
 
-
-
     except Exception as e:
+
+
+        print(
+            "FUEL API ERROR:",
+            e
+        )
 
 
         return jsonify({
@@ -794,7 +683,6 @@ def fuel_data():
             str(e)
 
         })
-
 
 
 
