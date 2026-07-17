@@ -407,43 +407,39 @@ def fuel_data():
 
     try:
 
-        print("FUEL API START")
+        print("========== FUEL API START ==========")
+
+
+        # Read Google Sheet
 
         df = get_fuel_sheet_data()
 
 
-        print(
-            "RAW DATA:",
-            len(df)
-        )
-
-
-        print(
-            "COLUMNS:",
-            df.columns.tolist()
-        )
+        print("Rows:",len(df))
+        print("Columns:",df.columns.tolist())
 
 
         if df.empty:
 
             return jsonify({
-
-                "error":
-                "Google Sheet Empty"
-
+                "error":"Google Sheet Empty"
             })
 
 
-        df, = prepare_fuel_analysis(df)
+
+        # Analysis
+
+        df = prepare_fuel_analysis(df)
 
 
 
-        # Serial No
+        # Serial Number
 
         df["Sr.No."] = range(
             1,
             len(df)+1
         )
+
 
 
         df["Working Date"] = (
@@ -452,13 +448,86 @@ def fuel_data():
         )
 
 
+
+        # ==========================
+        # KPI
+        # ==========================
+
         kpi = df.attrs.get(
             "kpi",
             {}
         )
 
 
-        table_columns = [
+
+        # ==========================
+        # SLICERS
+        # ==========================
+
+
+        slicers={
+
+
+            "dates":
+            sorted(
+                df["Working Date"]
+                .astype(str)
+                .unique()
+                .tolist()
+            ),
+
+
+
+            "sites":
+            sorted(
+                df["Log Book No."]
+                .astype(str)
+                .unique()
+                .tolist()
+            ),
+
+
+
+            "categories":
+            sorted(
+                df["Machine Category"]
+                .astype(str)
+                .unique()
+                .tolist()
+            ),
+
+
+
+            "machines":
+            sorted(
+                df["Machine"]
+                .astype(str)
+                .unique()
+                .tolist()
+            ),
+
+
+
+            "status":
+            sorted(
+                df["Machine Status"]
+                .astype(str)
+                .unique()
+                .tolist()
+            )
+
+
+        }
+
+
+
+        # ==========================
+        # TABLE
+        # ==========================
+
+
+        table_columns=[
+
 
             "Sr.No.",
             "Month",
@@ -472,18 +541,20 @@ def fuel_data():
             "Run Hours",
             "Fuel Average"
 
+
         ]
 
 
-        for col in table_columns:
 
-            if col not in df.columns:
+        for c in table_columns:
 
-                df[col] = ""
+            if c not in df.columns:
+
+                df[c]=""
 
 
 
-        table = (
+        table=(
 
             df[table_columns]
             .fillna("")
@@ -494,19 +565,138 @@ def fuel_data():
         )
 
 
+
+        # ==========================
+        # CHART DATA
+        # ==========================
+
+
+        daily=(
+
+            df.groupby(
+                "Working Date"
+            )["Fuel Used"]
+            .sum()
+            .reset_index()
+
+        )
+
+
+
+        category=(
+
+            df.groupby(
+                "Machine Category"
+            )["Fuel Used"]
+            .sum()
+            .reset_index()
+
+        )
+
+
+
+        machine=(
+
+            df.groupby(
+                "Machine"
+            )["Fuel Used"]
+            .sum()
+            .sort_values(
+                ascending=False
+            )
+            .head(10)
+            .reset_index()
+
+        )
+
+
+
+        site=(
+
+            df.groupby(
+                "Log Book No."
+            )["Fuel Used"]
+            .sum()
+            .reset_index()
+
+        )
+
+
+
+
         return jsonify({
 
-            "status":
-            "success",
 
-            "kpi":
-            kpi,
+            "status":"success",
 
-            "table":
-            table
+
+            "kpi":kpi,
+
+
+            "slicers":slicers,
+
+
+            "daily":{
+
+
+                "labels":
+                daily["Working Date"].tolist(),
+
+
+                "values":
+                daily["Fuel Used"].tolist()
+
+
+            },
+
+
+            "category":{
+
+
+                "labels":
+                category["Machine Category"].tolist(),
+
+
+                "values":
+                category["Fuel Used"].tolist()
+
+
+            },
+
+
+            "machine":{
+
+
+                "labels":
+                machine["Machine"].tolist(),
+
+
+                "values":
+                machine["Fuel Used"].tolist()
+
+
+            },
+
+
+            "site":{
+
+
+                "labels":
+                site["Log Book No."].tolist(),
+
+
+                "values":
+                site["Fuel Used"].tolist()
+
+
+            },
+
+
+            "table":table
 
 
         })
+
 
 
 
@@ -515,7 +705,7 @@ def fuel_data():
 
         print(
             "FUEL ERROR:",
-            str(e)
+            repr(e)
         )
 
 
@@ -525,7 +715,6 @@ def fuel_data():
             str(e)
 
         })
-
 @app.route("/hr")
 def hr():
     return render_template("hr.html")
