@@ -1,331 +1,375 @@
-import openpyxl
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-from openpyxl.utils import get_column_letter
-from openpyxl.chart import BarChart, PieChart, Reference
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGIPL Fuel Command Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root{
+    --bg:#060E17;
+    --panel:#0C1A28;
+    --panel-2:#0F2233;
+    --line:#1B3247;
+    --cyan:#3FD0F2;
+    --cyan-dim:#1E8FAE;
+    --amber:#F2A93F;
+    --green:#3FE08C;
+    --red:#F2574B;
+    --text:#E8F1F7;
+    --muted:#7C96AB;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    padding-bottom:50px;
+  }
+  .display{font-family:'Space Grotesk',sans-serif;}
+  a{color:inherit;}
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    padding:18px 24px;
+    border-bottom:1px solid var(--line);
+    flex-wrap:wrap;
+  }
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand .mark{
+    width:34px;height:34px;border-radius:8px;
+    background:linear-gradient(135deg,var(--cyan),var(--cyan-dim));
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk',sans-serif;font-weight:700;color:#04141C;font-size:13px;
+  }
+  .brand .name{font-size:11px;color:var(--muted);letter-spacing:.08em;}
+  h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:20px;
+    font-weight:600;
+    margin:0;
+    letter-spacing:.01em;
+  }
+  h1 span{color:var(--cyan);}
+  .sub{font-size:12px;color:var(--muted);margin-top:2px;}
+  .period-chip{
+    font-size:12px;
+    color:var(--text);
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    padding:8px 14px;
+    border-radius:9px;
+  }
 
-FT = "'Fuel Tracker'"
+  .wrap{max-width:1280px;margin:0 auto;padding:22px 24px 0;}
 
-wb = openpyxl.load_workbook('fuel_dashboard.xlsx')
+  .kpi-row{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:12px;
+    margin-bottom:18px;
+  }
+  .kpi{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px 16px;
+  }
+  .kpi.warn{border-color:rgba(242,87,75,.5); background:linear-gradient(180deg, rgba(242,87,75,.08), var(--panel));}
+  .kpi .label{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+  .kpi .value{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:600;margin-top:5px;}
+  .kpi .delta{font-size:11px;margin-top:4px;color:var(--green);}
+  .kpi.warn .value{color:var(--red);}
+  .kpi.warn .delta{color:var(--red);}
 
-for name in ['Dashboard', '_Helper']:
-    if name in wb.sheetnames:
-        del wb[name]
+  .grid-3{display:grid;grid-template-columns:1.4fr 1fr 1.2fr;gap:14px;margin-bottom:14px;}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px;}
 
-ws = wb.create_sheet('Dashboard', 0)
-helper = wb.create_sheet('_Helper')
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:16px 18px;
+  }
+  .panel h3{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:12.5px;
+    font-weight:600;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin:0 0 12px;
+  }
+  .chart-box{position:relative;height:210px;}
+  .chart-box.tall{height:260px;}
+  .chart-box.short{height:160px;}
 
-# ---------------- palette ----------------
-NAVY, BLUE, LBLUE, LGREY, WHITE = "1F3864", "2E5597", "D9E2F3", "F2F2F2", "FFFFFF"
-GREEN, RED, AMBER = "1E7145", "C00000", "BF8F00"
-FONT = "Calibri"
+  .donut-wrap{display:flex;align-items:center;gap:16px;}
+  .donut-box{position:relative;width:150px;height:150px;flex:none;}
+  .donut-center{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  }
+  .donut-center .n{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:600;}
+  .donut-center .l{font-size:10px;color:var(--muted);}
+  .legend-list{display:flex;flex-direction:column;gap:8px;font-size:12.5px;}
+  .legend-item{display:flex;align-items:center;gap:8px;}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none;}
 
-title_fill   = PatternFill("solid", fgColor=NAVY)
-section_fill = PatternFill("solid", fgColor=BLUE)
-card_fill    = PatternFill("solid", fgColor=LBLUE)
-head_fill    = PatternFill("solid", fgColor=BLUE)
-alt_fill     = PatternFill("solid", fgColor=LGREY)
+  .alert-list{display:flex;flex-direction:column;gap:10px;}
+  .alert{
+    display:flex;gap:10px;
+    padding:10px 12px;
+    border-radius:10px;
+    background:var(--panel-2);
+    border-left:3px solid var(--red);
+  }
+  .alert.amber{border-left-color:var(--amber);}
+  .alert .a-title{font-size:13px;font-weight:600;}
+  .alert .a-sub{font-size:11.5px;color:var(--muted);margin-top:2px;}
 
-title_font    = Font(name=FONT, size=18, bold=True, color=WHITE)
-subtitle_font = Font(name=FONT, size=10, italic=True, color=WHITE)
-section_font  = Font(name=FONT, size=12, bold=True, color=WHITE)
-kpi_label_f   = Font(name=FONT, size=9,  bold=True, color=NAVY)
-kpi_value_f   = Font(name=FONT, size=15, bold=True, color=NAVY)
-head_font     = Font(name=FONT, size=10, bold=True, color=WHITE)
-cell_font     = Font(name=FONT, size=10, color="000000")
-bold_cell     = Font(name=FONT, size=10, bold=True, color="000000")
-note_font     = Font(name=FONT, size=8, italic=True, color="808080")
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th{
+    text-align:left;
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    color:var(--muted);
+    padding:8px 8px;
+    border-bottom:1px solid var(--line);
+    white-space:nowrap;
+  }
+  td{
+    padding:9px 8px;
+    border-bottom:1px solid var(--line);
+    white-space:nowrap;
+  }
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;}
+  tr:last-child td{border-bottom:none;}
+  .badge{
+    font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:20px;
+  }
+  .badge.self{background:rgba(63,208,242,.14);color:var(--cyan);}
+  .badge.hired{background:rgba(242,169,63,.14);color:var(--amber);}
 
-thin = Side(style="thin", color="BFBFBF")
-border = Border(left=thin, right=thin, top=thin, bottom=thin)
-center = Alignment(horizontal="center", vertical="center")
-left_al = Alignment(horizontal="left", vertical="center", wrap_text=True)
+  .foot-note{
+    font-size:11.5px;
+    color:var(--muted);
+    text-align:center;
+    padding:20px 0 0;
+  }
 
-def cell(ref, value=None, font=cell_font, fill=None, align=center, fmt=None, brd=border):
-    c = ws[ref]
-    if value is not None:
-        c.value = value
-    c.font = font
-    if fill: c.fill = fill
-    c.alignment = align
-    if fmt: c.number_format = fmt
-    if brd: c.border = brd
-    return c
+  @media(max-width:1000px){
+    .kpi-row{grid-template-columns:repeat(2,1fr);}
+    .grid-3, .grid-2, .grid-4{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
 
-def merge(rng):
-    ws.merge_cells(rng)
+<header>
+  <div class="brand">
+    <div class="mark">A</div>
+    <div>
+      <h1>AGIPL <span>FUEL COMMAND CENTER</span></h1>
+      <div class="sub">Log Book (Category Wise) se real data · Site-wise fuel monitoring aur consumption analysis</div>
+    </div>
+  </div>
+  <div class="period-chip" id="periodChip">Loading period…</div>
+</header>
 
-# ---------------- column widths ----------------
-ws.column_dimensions['A'].width = 3
-widths = {'B':22,'C':16,'D':13,'E':13,'F':13,'G':12,'H':11,'I':10,'J':11,'K':15,'L':13,'M':13}
-for col, w in widths.items():
-    ws.column_dimensions[col].width = w
-ws.column_dimensions['N'].width = 3
+<div class="wrap">
 
-# ================= TITLE =================
-merge('A1:N1')
-cell('A1', 'FUEL TRACKER — MANAGEMENT DASHBOARD', font=title_font, fill=title_fill, align=center)
-ws.row_dimensions[1].height = 28
+  <div class="kpi-row" id="kpiRow"></div>
 
-merge('A2:N2')
-cell('A2', '="Data Period:  " & TEXT(MIN(' + FT + '!D2:D100000),"dd-mmm-yyyy") & "   to   " & '
-           'TEXT(MAX(' + FT + '!D2:D100000),"dd-mmm-yyyy") & "     |     Total Log Entries:  " & '
-           '(COUNTA(' + FT + '!A2:A100000)) & "     |     Auto-updates when new rows are added to Fuel Tracker"',
-     font=subtitle_font, fill=title_fill, align=center)
-ws.row_dimensions[2].height = 16
+  <div class="grid-3">
+    <div class="panel">
+      <h3>Daily fuel issued trend (litre)</h3>
+      <div class="chart-box tall"><canvas id="dailyChart" role="img" aria-label="Line chart of daily diesel litres issued across all sites"></canvas></div>
+    </div>
+    <div class="panel">
+      <h3>Self vs hired utilization</h3>
+      <div class="donut-wrap" style="margin-top:14px;">
+        <div class="donut-box"><canvas id="ownerDonut"></canvas>
+          <div class="donut-center"><div class="n" id="ownerTotalHrs">-</div><div class="l">Total hrs</div></div>
+        </div>
+        <div class="legend-list">
+          <div class="legend-item"><span class="dot" style="background:var(--cyan);"></span>Self <b id="selfPct" style="margin-left:auto;"></b></div>
+          <div class="legend-item"><span class="dot" style="background:var(--amber);"></span>Hired <b id="hiredPct" style="margin-left:auto;"></b></div>
+        </div>
+      </div>
+      <h3 style="margin-top:20px;">Efficiency status (avg L/hr)</h3>
+      <div class="legend-list" id="effLegend"></div>
+    </div>
+    <div class="panel">
+      <h3>Top 10 fuel consuming machines (litre)</h3>
+      <div class="chart-box tall"><canvas id="topMachinesChart" role="img" aria-label="Horizontal bar chart of the top ten machines by total diesel litres consumed"></canvas></div>
+    </div>
+  </div>
 
-# ================= KPI CARDS (row 4 label / row 5-6 value) =================
-kpi_ranges = ['B','D','F','H','J','L']  # each spans 2 cols e.g. B:C
-kpis = [
-    ("TOTAL FUEL ISSUED (Ltrs)",   f'=SUM({FT}!O2:O100000)',              '#,##0'),
-    ("TOTAL DIESEL COST (Rs)",      f'=SUM({FT}!S2:S100000)',              '#,##0'),
-    ("TOTAL DISTANCE (Km)",        f'=SUM({FT}!K2:K100000)',              '#,##0'),
-    ("FLEET SIZE (Machine List)",  "=COUNTA('Machine List'!F3:F1000)",    '#,##0'),
-    ("AVG DIESEL RATE (Rs/Ltr)",    f'=IFERROR(AVERAGE({FT}!R2:R100000),0)', '#,##0.00'),
-    ("TOTAL LOG ENTRIES",          f'=COUNTA({FT}!A2:A100000)',           '#,##0'),
-]
-for start_col, (label, formula, fmt) in zip(kpi_ranges, kpis):
-    end_col = chr(ord(start_col) + 1)
-    merge(f'{start_col}4:{end_col}4')
-    cell(f'{start_col}4', label, font=kpi_label_f, fill=card_fill, align=center)
-    merge(f'{start_col}5:{end_col}6')
-    cell(f'{start_col}5', formula, font=kpi_value_f, fill=card_fill, align=center, fmt=fmt)
-ws.row_dimensions[4].height = 15
-ws.row_dimensions[5].height = 20
-ws.row_dimensions[6].height = 20
+  <div class="grid-3">
+    <div class="panel">
+      <h3>Machine category wise fuel (litre)</h3>
+      <div class="chart-box"><canvas id="catChart" role="img" aria-label="Bar chart of diesel litres consumed by machine category"></canvas></div>
+    </div>
+    <div class="panel">
+      <h3>Site wise fuel consumption (litre)</h3>
+      <div class="chart-box"><canvas id="siteChart" role="img" aria-label="Bar chart of diesel litres consumed by construction site"></canvas></div>
+    </div>
+    <div class="panel">
+      <h3>Fuel cost trend (₹ thousand)</h3>
+      <div class="chart-box"><canvas id="costChart" role="img" aria-label="Line chart of daily diesel cost in thousands of rupees"></canvas></div>
+    </div>
+  </div>
 
-wb.save('fuel_dashboard.xlsx')
-print("Title + KPI section done")
+  <div class="grid-2">
+    <div class="panel">
+      <h3>Alerts & exceptions</h3>
+      <div class="alert-list" id="alertList"></div>
+    </div>
+    <div class="panel">
+      <h3>Highest consumption machines (L/hr)</h3>
+      <div class="chart-box short"><canvas id="highConsChart" role="img" aria-label="Horizontal bar chart of machines with the highest average litres consumed per hour"></canvas></div>
+    </div>
+  </div>
 
-# ================= SECTION: SELF vs HIRED =================
-r = 8
-merge(f'A{r}:N{r}')
-cell(f'A{r}', 'SELF vs HIRED — UTILIZATION & COST', font=section_font, fill=section_fill, align=Alignment(horizontal="left", vertical="center", indent=1))
-ws.row_dimensions[r].height = 20
+  <div class="panel">
+    <h3>Detailed fuel log (latest entries)</h3>
+    <div style="overflow-x:auto;">
+      <table id="logTable">
+        <thead>
+          <tr>
+            <th>Date</th><th>Machine no</th><th>Category</th><th>Site</th><th>Owner</th>
+            <th class="num">Fuel (L)</th><th class="num">Hours</th><th class="num">Dist (km)</th><th class="num">L/hr</th><th class="num">Cost (₹)</th>
+          </tr>
+        </thead>
+        <tbody id="logBody"></tbody>
+      </table>
+    </div>
+  </div>
 
-hdr_r = r + 1
-headers = ["Owner","Log Entries","Fuel Issued (L)","Diesel Cost (Rs)","Distance (Km)","Cost / Km (Rs)"]
-cols = ['B','C','D','E','F','G']
-for col, h in zip(cols, headers):
-    cell(f'{col}{hdr_r}', h, font=head_font, fill=head_fill, align=center)
+  <div class="foot-note">AGRAWAL GLOBAL INFRATECH PVT. LTD. — Fuel Tracker sheet se generate hua, 2,485 entries across 245 machines. Odometer misreads wale outlier rows distance total mein filter kiye gaye hain.</div>
+</div>
 
-owners = ["Self","Hired"]
-data_start = hdr_r + 1
-for i, owner in enumerate(owners):
-    rr = data_start + i
-    fill = alt_fill if i % 2 else None
-    cell(f'B{rr}', owner, font=bold_cell, fill=fill)
-    cell(f'C{rr}', f'=COUNTIFS({FT}!H2:H100000,B{rr})', fmt='#,##0', fill=fill)
-    cell(f'D{rr}', f'=SUMIFS({FT}!O2:O100000,{FT}!H2:H100000,B{rr})', fmt='#,##0', fill=fill)
-    cell(f'E{rr}', f'=SUMIFS({FT}!S2:S100000,{FT}!H2:H100000,B{rr})', fmt='#,##0', fill=fill)
-    cell(f'F{rr}', f'=SUMIFS({FT}!K2:K100000,{FT}!H2:H100000,B{rr})', fmt='#,##0', fill=fill)
-    cell(f'G{rr}', f'=IFERROR(E{rr}/F{rr},"-")', fmt='#,##0.00', fill=fill)
+<script>
+const DATA = {"period": "01 Jun 2026 - 09 Jul 2026", "kpi": {"total_fuel": 140961, "active_vehicles": 245, "total_cost": 14164859, "total_hours": 7878.4, "total_distance": 236090, "avg_consumption": 8.71, "avg_utilization": 25.2, "high_consumption_count": 5, "low_util_count": 117}, "daily_trend": {"labels": ["26 Jun", "27 Jun", "28 Jun", "29 Jun", "30 Jun", "01 Jul", "02 Jul", "03 Jul", "04 Jul", "05 Jul", "06 Jul", "07 Jul", "08 Jul", "09 Jul"], "values": [3890.0, 3621.0, 3976.0, 5589.0, 2511.0, 1244.0, 1763.0, 984.0, 1551.0, 886.0, 506.0, 212.0, 378.0, 410.0]}, "cost_trend": {"labels": ["26 Jun", "27 Jun", "28 Jun", "29 Jun", "30 Jun", "01 Jul", "02 Jul", "03 Jul", "04 Jul", "05 Jul", "06 Jul", "07 Jul", "08 Jul", "09 Jul"], "values": [404.4, 370.4, 419.6, 412.8, 264.0, 130.6, 185.6, 102.4, 162.9, 91.5, 52.4, 22.0, 39.5, 40.7]}, "site_wise": {"labels": ["IRCON PKG 1A", "NAGPUR TO KATOL NH ROAD PKG-5", "AURANGABAD PKG-4", "ARJUNI - MORGAON", "IRCON PKG 1B"], "values": [64306.0, 32068.0, 21410.0, 17596.0, 5582.0]}, "category_wise": {"labels": ["Hmv Tipper", "Excavator", "Motor Grader", "Transit Mixer", "Hot Mix Plant", "Diesel Generator", "Water Tanker", "Soil Compactor"], "values": [38717.0, 35199.0, 9547.0, 8680.0, 8056.0, 6120.0, 4548.0, 4424.0]}, "top_machines": {"labels": ["HOT MIX PLANT-5", "SYI11023HT3C00066", "HIRE/EXCAVATOR/URMILLA", "HIRE/EXCAVATOR/URMILLA", "HIRE/EXCAVATOR/URMILLA", "HIRE/EXCAVATOR/XCMG210", "HIRE/EXCAVATOR/HIT 210", "EXCAVATOR -TATA HITACH", "HIRE GRADER GMMCO-02", "EXCAVATOR /SANY/225C-0"], "values": [8056.0, 4225.0, 3564.0, 3133.0, 2991.0, 2898.0, 2330.0, 2309.0, 2240.0, 2095.0]}, "owner_hours": {"self": 6086.9, "hired": 1791.5}, "efficiency_status": {"Excellent": 27, "Poor": 27, "Good": 26, "Average": 26}, "top_high_consumers": [{"name": "EXCAVATOR -TATA HITACHI ZX22", "val": 17.53}, {"name": "SENSOR PAVER/VOGGLE/1800-3", "val": 16.89}, {"name": "EXCAVATOR - CAT 320D2 (RSB06", "val": 16.43}, {"name": "EXCAVATOR - TATA HITACHI ZX2", "val": 16.09}, {"name": "MH35AR-6739 WHEEL LOADER - C", "val": 14.57}], "sample_log": [{"date": "09 Jul", "machine_no": "HIRE/JCB/MH16CQ-8347/SEKH ", "category": "BACKHOE LOADER - 9213", "site": "AURANGABAD PKG-4", "owner": "Hired", "fuel": 30.0, "hours": 3.1, "dist": 0, "ltrhr": 9.68, "cost": 2971.0}, {"date": "09 Jul", "machine_no": "DG/30KVA/MAHINDRA", "category": "DIESEL GENERATOR - 9219", "site": "AURANGABAD PKG-4", "owner": "Self", "fuel": 20.0, "hours": 8.0, "dist": 0, "ltrhr": 2.5, "cost": 1981.0}, {"date": "09 Jul", "machine_no": "HIRE/ROLLER/ACE115", "category": "SOIL COMPACTOR - 9235", "site": "AURANGABAD PKG-4", "owner": "Hired", "fuel": 30.0, "hours": 3.7, "dist": 0, "ltrhr": 8.11, "cost": 2971.0}, {"date": "09 Jul", "machine_no": "DG/30KVA/MAHINDRA/04", "category": "DIESEL GENERATOR - 9219", "site": "AURANGABAD PKG-4", "owner": "Self", "fuel": 20.0, "hours": 5.0, "dist": 0, "ltrhr": 4.0, "cost": 1981.0}, {"date": "09 Jul", "machine_no": "HIRE/TRACTOR WATER TANKER", "category": "TRACTOR - 9251", "site": "AURANGABAD PKG-4", "owner": "Hired", "fuel": 10.0, "hours": 2.9, "dist": 0, "ltrhr": 3.45, "cost": 990.0}, {"date": "09 Jul", "machine_no": "MH35AJ-2867 - TRANSIT MIXE", "category": "TRANSIT MIXER - 9253", "site": "AURANGABAD PKG-4", "owner": "Self", "fuel": 30.0, "hours": 2.2, "dist": 78, "ltrhr": 13.64, "cost": 2971.0}, {"date": "09 Jul", "machine_no": "ACE014XWHN0460363 - HYDRA ", "category": "HYDRA CRANE - 9227", "site": "AURANGABAD PKG-4", "owner": "Self", "fuel": 15.0, "hours": 5.0, "dist": 0, "ltrhr": 3.0, "cost": 1485.0}, {"date": "09 Jul", "machine_no": "EXCAVATOR /SANY/225C-02", "category": "EXCAVATOR - 9222", "site": "AURANGABAD PKG-4", "owner": "Self", "fuel": 60.0, "hours": 5.5, "dist": 0, "ltrhr": 10.91, "cost": 5942.0}, {"date": "09 Jul", "machine_no": "CG04QH7538", "category": "BIKE - 9243", "site": "AURANGABAD PKG-4", "owner": "Self", "fuel": 5.0, "hours": 0.0, "dist": 278, "ltrhr": 0.0, "cost": 562.0}, {"date": "09 Jul", "machine_no": "MH35AJ-2879 - TIPPER-TATA ", "category": "HMV TIPPER - 9248", "site": "AURANGABAD PKG-4", "owner": "Self", "fuel": 50.0, "hours": 0.0, "dist": 149, "ltrhr": 0.0, "cost": 4952.0}]};
 
-total_r = data_start + 2
-cell(f'B{total_r}', 'Total', font=bold_cell, fill=card_fill)
-cell(f'C{total_r}', f'=SUM(C{data_start}:C{data_start+1})', fmt='#,##0', fill=card_fill, font=bold_cell)
-cell(f'D{total_r}', f'=SUM(D{data_start}:D{data_start+1})', fmt='#,##0', fill=card_fill, font=bold_cell)
-cell(f'E{total_r}', f'=SUM(E{data_start}:E{data_start+1})', fmt='#,##0', fill=card_fill, font=bold_cell)
-cell(f'F{total_r}', f'=SUM(F{data_start}:F{data_start+1})', fmt='#,##0', fill=card_fill, font=bold_cell)
-cell(f'G{total_r}', f'=IFERROR(E{total_r}/F{total_r},"-")', fmt='#,##0.00', fill=card_fill, font=bold_cell)
+const CYAN='#3FD0F2', AMBER='#F2A93F', GREEN='#3FE08C', RED='#F2574B', MUTED='#7C96AB', GRID='#1B3247';
+function inr(n){return '₹'+Number(n).toLocaleString('en-IN',{maximumFractionDigits:0});}
 
-selfhired_end = total_r
-wb.save('fuel_dashboard.xlsx')
-print("Self vs hired done, ends at row", selfhired_end)
+document.getElementById('periodChip').textContent = DATA.period;
 
-# ---- Pie chart: Self vs Hired fuel share ----
-pie = PieChart()
-pie.title = "Fuel Share: Self vs Hired"
-data_ref = Reference(ws, min_col=4, min_row=data_start, max_row=data_start+1)  # D col fuel issued
-cats_ref = Reference(ws, min_col=2, min_row=data_start, max_row=data_start+1)  # B col owner
-pie.add_data(data_ref, titles_from_data=False)
-pie.set_categories(cats_ref)
-pie.height = 7
-pie.width = 10
-ws.add_chart(pie, f'I{r+1}')
+const k = DATA.kpi;
+document.getElementById('kpiRow').innerHTML = `
+  <div class="kpi"><div class="label">Total fuel issued</div><div class="value">${k.total_fuel.toLocaleString('en-IN')} L</div><div class="delta">${DATA.period}</div></div>
+  <div class="kpi"><div class="label">Active machines</div><div class="value">${k.active_vehicles}</div><div class="delta">across 5 sites</div></div>
+  <div class="kpi"><div class="label">Total fuel cost</div><div class="value">${inr(k.total_cost)}</div><div class="delta">diesel amount</div></div>
+  <div class="kpi"><div class="label">Total working hours</div><div class="value">${k.total_hours.toLocaleString('en-IN')} hrs</div><div class="delta">logged hours</div></div>
+  <div class="kpi"><div class="label">Total distance</div><div class="value">${k.total_distance.toLocaleString('en-IN')} km</div><div class="delta">odometer-based machines</div></div>
+  <div class="kpi"><div class="label">Avg consumption</div><div class="value">${k.avg_consumption} L/hr</div><div class="delta">hourly machines</div></div>
+  <div class="kpi"><div class="label">Avg utilization</div><div class="value">${k.avg_utilization}%</div><div class="delta">days logged / period</div></div>
+  <div class="kpi warn"><div class="label">High consumption</div><div class="value">${k.high_consumption_count} machines</div><div class="delta">needs attention</div></div>
+`;
 
-wb.save('fuel_dashboard.xlsx')
-print("pie chart added")
+Chart.defaults.font.family = "'Inter',sans-serif";
+Chart.defaults.color = MUTED;
 
-# ================= SECTION: CATEGORY-WISE ACTUAL vs BENCHMARK =================
-cr = selfhired_end + 3  # leave gap for pie chart height
-merge(f'A{cr}:N{cr}')
-cell(f'A{cr}', 'MACHINE CATEGORY — ACTUAL CONSUMPTION vs BENCHMARK AVERAGE', font=section_font, fill=section_fill, align=Alignment(horizontal="left", vertical="center", indent=1))
-ws.row_dimensions[cr].height = 20
+new Chart(document.getElementById('dailyChart'), {
+  type:'line',
+  data:{labels:DATA.daily_trend.labels, datasets:[{data:DATA.daily_trend.values, borderColor:CYAN, backgroundColor:'rgba(63,208,242,0.12)', fill:true, tension:.35, pointRadius:3, pointBackgroundColor:CYAN}]},
+  options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+    scales:{y:{grid:{color:GRID}, ticks:{color:MUTED}}, x:{grid:{display:false}, ticks:{color:MUTED, maxRotation:0}}}}
+});
 
-chdr = cr + 1
-headers = ["Machine Category","Type","Total Fuel (L)","Total Dist (Km)","Total Hrs","Actual Avg","Benchmark","Unit","Variance %","Status"]
-cols = ['B','C','D','E','F','G','H','I','J','K']
-for col, h in zip(cols, headers):
-    cell(f'{col}{chdr}', h, font=head_font, fill=head_fill, align=center)
+new Chart(document.getElementById('costChart'), {
+  type:'line',
+  data:{labels:DATA.cost_trend.labels, datasets:[{data:DATA.cost_trend.values, borderColor:AMBER, backgroundColor:'rgba(242,169,63,0.12)', fill:true, tension:.35, pointRadius:3, pointBackgroundColor:AMBER}]},
+  options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+    scales:{y:{grid:{color:GRID}, ticks:{color:MUTED, callback:(v)=>'₹'+v+'K'}}, x:{grid:{display:false}, ticks:{color:MUTED, maxRotation:0}}}}
+});
 
-cat_start = chdr + 1
-N_CATS = 30
-for i in range(N_CATS):
-    rr = cat_start + i
-    va_row = i + 2  # Vehicle Average!B2:B31
-    fill = alt_fill if i % 2 else None
-    cell(f'B{rr}', f"='Vehicle Average'!B{va_row}", font=cell_font, fill=fill, align=Alignment(horizontal="left", vertical="center"))
-    cell(f'C{rr}', f'=IFERROR(INDEX({FT}!C:C,MATCH(B{rr},{FT}!A:A,0)),"-")', fill=fill)
-    cell(f'D{rr}', f'=SUMIFS({FT}!O2:O100000,{FT}!A2:A100000,B{rr})', fmt='#,##0', fill=fill)
-    cell(f'E{rr}', f'=SUMIFS({FT}!K2:K100000,{FT}!A2:A100000,B{rr})', fmt='#,##0', fill=fill)
-    cell(f'F{rr}', f'=SUMIFS({FT}!AI2:AI100000,{FT}!A2:A100000,B{rr})', fmt='#,##0.0', fill=fill)
-    cell(f'G{rr}', f'=IF(C{rr}="VEHICLE",IFERROR(E{rr}/D{rr},0),IFERROR(D{rr}/F{rr},0))', fmt='#,##0.00', fill=fill)
-    cell(f'H{rr}', f"=IFERROR(VLOOKUP(B{rr},'Vehicle Average'!$B$2:$C$31,2,0),0)", fmt='#,##0.00', fill=fill)
-    cell(f'I{rr}', f'=IF(C{rr}="VEHICLE","Km/Ltr","Ltr/Hr")', fill=fill)
-    cell(f'J{rr}', f'=IF(H{rr}=0,"-",IF(C{rr}="VEHICLE",(G{rr}-H{rr})/H{rr},(H{rr}-G{rr})/H{rr}))', fmt='0.0%', fill=fill)
-    cell(f'K{rr}', f'=IF(H{rr}=0,"No Benchmark",IF(J{rr}>=0,"OK Efficient","Over Consuming"))', fill=fill)
+new Chart(document.getElementById('catChart'), {
+  type:'bar',
+  data:{labels:DATA.category_wise.labels, datasets:[{data:DATA.category_wise.values, backgroundColor:CYAN, borderRadius:4, maxBarThickness:26}]},
+  options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+    scales:{y:{grid:{color:GRID}, ticks:{color:MUTED}}, x:{grid:{display:false}, ticks:{color:MUTED, maxRotation:45, autoSkip:false, font:{size:10}}}}}
+});
 
-cat_end = cat_start + N_CATS - 1
-wb.save('fuel_dashboard.xlsx')
-print("category table done, rows", cat_start, "-", cat_end)
+new Chart(document.getElementById('siteChart'), {
+  type:'bar',
+  data:{labels:DATA.site_wise.labels.map(s=>s.length>14?s.slice(0,14)+'…':s), datasets:[{data:DATA.site_wise.values, backgroundColor:AMBER, borderRadius:4, maxBarThickness:30}]},
+  options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+    scales:{y:{grid:{color:GRID}, ticks:{color:MUTED}}, x:{grid:{display:false}, ticks:{color:MUTED, maxRotation:30, font:{size:10}}}}}
+});
 
-# ---- Bar chart: Actual vs Benchmark per category ----
-bar = BarChart()
-bar.type = "col"
-bar.title = "Actual Avg vs Benchmark — by Machine Category"
-bar.y_axis.title = "Km/Ltr or Ltr/Hr"
-bar.height = 9
-bar.width = 26
-data_ref = Reference(ws, min_col=7, max_col=8, min_row=chdr, max_row=cat_end)  # G:H incl header
-cats_ref = Reference(ws, min_col=2, min_row=cat_start, max_row=cat_end)
-bar.add_data(data_ref, titles_from_data=True)
-bar.set_categories(cats_ref)
-bar.gapWidth = 60
-ws.add_chart(bar, f'B{cat_end+2}')
+new Chart(document.getElementById('topMachinesChart'), {
+  type:'bar',
+  data:{labels:DATA.top_machines.labels, datasets:[{data:DATA.top_machines.values, backgroundColor:CYAN, borderRadius:4, maxBarThickness:16}]},
+  options:{indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+    scales:{x:{grid:{color:GRID}, ticks:{color:MUTED}}, y:{grid:{display:false}, ticks:{color:MUTED, font:{size:10.5}}}}}
+});
 
-wb.save('fuel_dashboard.xlsx')
-print("bar chart added, next free row approx", cat_end+2+20)
+new Chart(document.getElementById('highConsChart'), {
+  type:'bar',
+  data:{labels:DATA.top_high_consumers.map(d=>d.name), datasets:[{data:DATA.top_high_consumers.map(d=>d.val), backgroundColor:RED, borderRadius:4, maxBarThickness:18}]},
+  options:{indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+    scales:{x:{grid:{color:GRID}, ticks:{color:MUTED, callback:(v)=>v+' L/hr'}}, y:{grid:{display:false}, ticks:{color:MUTED, font:{size:10}}}}}
+});
 
-# ================= SECTION: SITE-WISE FUEL USAGE =================
-sr = cat_end + 22   # below the bar chart
-merge(f'A{sr}:N{sr}')
-cell(f'A{sr}', 'SITE-WISE FUEL USAGE', font=section_font, fill=section_fill, align=Alignment(horizontal="left", vertical="center", indent=1))
-ws.row_dimensions[sr].height = 20
-cell(f'A{sr+1}', '', brd=None)
-note_r = sr + 1
-merge(f'B{note_r}:N{note_r}')
-cell(f'B{note_r}', 'Note: Site list below is fixed to the 5 sites currently in Fuel Tracker. Add a new row here if a new site starts.',
-     font=note_font, align=Alignment(horizontal="left", vertical="center"), brd=None)
+const oh = DATA.owner_hours;
+const ohTotal = oh.self + oh.hired;
+document.getElementById('ownerTotalHrs').textContent = Math.round(ohTotal).toLocaleString('en-IN');
+document.getElementById('selfPct').textContent = Math.round(oh.self/ohTotal*100) + '% · ' + oh.self.toLocaleString('en-IN') + ' hrs';
+document.getElementById('hiredPct').textContent = Math.round(oh.hired/ohTotal*100) + '% · ' + oh.hired.toLocaleString('en-IN') + ' hrs';
 
-shdr = sr + 2
-headers = ["Site Name","Log Entries","Fuel Issued (L)","Diesel Cost (Rs)","Avg Cost/Entry (Rs)"]
-cols = ['B','C','D','E','F']
-for col, h in zip(cols, headers):
-    cell(f'{col}{shdr}', h, font=head_font, fill=head_fill, align=center)
+new Chart(document.getElementById('ownerDonut'), {
+  type:'doughnut',
+  data:{labels:['Self','Hired'], datasets:[{data:[oh.self, oh.hired], backgroundColor:[CYAN, AMBER], borderColor:'#0C1A28', borderWidth:3}]},
+  options:{responsive:true, maintainAspectRatio:false, cutout:'72%', plugins:{legend:{display:false}, tooltip:{enabled:true}}}
+});
 
-sites = ["IRCON PKG 1A","NAGPUR TO KATOL NH ROAD PKG-5","AURANGABAD PKG-4","ARJUNI - MORGAON","IRCON PKG 1B"]
-site_start = shdr + 1
-for i, site in enumerate(sites):
-    rr = site_start + i
-    fill = alt_fill if i % 2 else None
-    cell(f'B{rr}', site, font=cell_font, fill=fill, align=Alignment(horizontal="left", vertical="center"))
-    cell(f'C{rr}', f'=COUNTIFS({FT}!AF2:AF100000,B{rr})', fmt='#,##0', fill=fill)
-    cell(f'D{rr}', f'=SUMIFS({FT}!O2:O100000,{FT}!AF2:AF100000,B{rr})', fmt='#,##0', fill=fill)
-    cell(f'E{rr}', f'=SUMIFS({FT}!S2:S100000,{FT}!AF2:AF100000,B{rr})', fmt='#,##0', fill=fill)
-    cell(f'F{rr}', f'=IFERROR(E{rr}/C{rr},0)', fmt='#,##0', fill=fill)
+const effColors = {Excellent:GREEN, Good:CYAN, Average:AMBER, Poor:RED};
+const effOrder = ['Excellent','Good','Average','Poor'];
+const effTotal = Object.values(DATA.efficiency_status).reduce((a,b)=>a+b,0);
+document.getElementById('effLegend').innerHTML = effOrder.map(key => {
+  const v = DATA.efficiency_status[key] || 0;
+  const pct = Math.round(v/effTotal*100);
+  return `<div class="legend-item"><span class="dot" style="background:${effColors[key]};"></span>${key}<b style="margin-left:auto;">${v} machines (${pct}%)</b></div>`;
+}).join('');
 
-site_end = site_start + len(sites) - 1
+const alerts = [
+  {cls:'', title:`${k.high_consumption_count} machines high consumption`, sub:'Standard L/hr se zyada consume kar rahe — breakdown ya operator habit check karo.'},
+  {cls:'amber', title:`${k.low_util_count} machines low utilization`, sub:'Period ke 20% se kam din log entry hui hai — idle assets ho sakte hain.'},
+  {cls:'amber', title:'Distance data quality', sub:'Kuch machines mein odometer misread (bahut zyada km jump) mile — total distance filter karke nikala gaya hai.'}
+];
+document.getElementById('alertList').innerHTML = alerts.map(a => `
+  <div class="alert ${a.cls}">
+    <div>
+      <div class="a-title">${a.title}</div>
+      <div class="a-sub">${a.sub}</div>
+    </div>
+  </div>
+`).join('');
 
-# ---- Bar chart: site-wise diesel cost ----
-bar2 = BarChart()
-bar2.type = "bar"
-bar2.title = "Diesel Cost by Site (Rs)"
-bar2.height = 7
-bar2.width = 14
-data_ref = Reference(ws, min_col=5, min_row=shdr, max_row=site_end)
-cats_ref = Reference(ws, min_col=2, min_row=site_start, max_row=site_end)
-bar2.add_data(data_ref, titles_from_data=True)
-bar2.set_categories(cats_ref)
-ws.add_chart(bar2, f'H{shdr}')
-
-wb.save('fuel_dashboard.xlsx')
-print("site section done", site_start, site_end)
-
-# ================= HELPER SHEET: unique machine totals (for ranking) =================
-helper['A1'] = 'Machine No'
-helper['B1'] = 'Total Fuel Issued (L) + tie-break'
-for i in range(551):  # Machine List has 551 records, header at row2, data row3+
-    hr = i + 2
-    ml_row = i + 3
-    helper[f'A{hr}'] = f"='Machine List'!F{ml_row}"
-    helper[f'B{hr}'] = f'=IF(A{hr}="","",SUMIFS({FT}!O2:O100000,{FT}!B2:B100000,A{hr})+ROW()*0.0000001)'
-helper.sheet_state = 'hidden'
-
-# ================= SECTION: TOP 10 FUEL-CONSUMING MACHINES =================
-tr = site_end + 12  # leave room for site bar chart
-merge(f'A{tr}:N{tr}')
-cell(f'A{tr}', 'TOP 10 FUEL-CONSUMING MACHINES', font=section_font, fill=section_fill, align=Alignment(horizontal="left", vertical="center", indent=1))
-ws.row_dimensions[tr].height = 20
-
-thdr = tr + 1
-headers = ["Rank","Machine No","Category","Owner","Fuel Issued (L)","Diesel Cost (Rs)"]
-cols = ['B','C','D','E','F','G']
-for col, h in zip(cols, headers):
-    cell(f'{col}{thdr}', h, font=head_font, fill=head_fill, align=center)
-
-top_start = thdr + 1
-for i in range(10):
-    rr = top_start + i
-    fill = alt_fill if i % 2 else None
-    cell(f'B{rr}', i+1, font=bold_cell, fill=fill)
-    cell(f'C{rr}', f'=INDEX(_Helper!$A$2:$A$552,MATCH(LARGE(_Helper!$B$2:$B$552,{i+1}),_Helper!$B$2:$B$552,0))',
-         font=cell_font, fill=fill, align=Alignment(horizontal="left", vertical="center"))
-    cell(f'D{rr}', f'=IFERROR(INDEX({FT}!A:A,MATCH(C{rr},{FT}!B:B,0)),"-")', fill=fill, align=Alignment(horizontal="left", vertical="center"))
-    cell(f'E{rr}', f'=IFERROR(INDEX({FT}!H:H,MATCH(C{rr},{FT}!B:B,0)),"-")', fill=fill)
-    cell(f'F{rr}', f'=ROUND(LARGE(_Helper!$B$2:$B$552,{i+1}),1)', fmt='#,##0.0', fill=fill)
-    cell(f'G{rr}', f'=SUMIFS({FT}!S2:S100000,{FT}!B2:B100000,C{rr})', fmt='#,##0', fill=fill)
-
-top_end = top_start + 9
-wb.save('fuel_dashboard.xlsx')
-print("top10 section done", top_start, top_end)
-
-# ================= SECTION: DATA QUALITY CHECK =================
-dr = top_end + 2
-merge(f'A{dr}:N{dr}')
-cell(f'A{dr}', 'DATA QUALITY CHECK — FOR REVIEW', font=section_font, fill=PatternFill("solid", fgColor=AMBER), align=Alignment(horizontal="left", vertical="center", indent=1))
-ws.row_dimensions[dr].height = 20
-
-note_r2 = dr + 1
-merge(f'B{note_r2}:N{note_r2}')
-cell(f'B{note_r2}', "The 'Consumption' column in Fuel Tracker is a calculated field (not yellow-marked) and sometimes shows abnormal values "
-                     "(e.g. odometer/meter typos). This dashboard uses the manually-entered 'Fuel Issue' column instead, which is reliable. "
-                     "The counts below flag rows where Consumption looks abnormal, for manual review in Fuel Tracker.",
-     font=note_font, align=left_al, brd=None)
-ws.row_dimensions[note_r2].height = 28
-
-dhdr = note_r2 + 1
-headers = ["Check","Count of Rows Flagged"]
-cols = ['B','C']
-for col, h in zip(cols, headers):
-    cell(f'{col}{dhdr}', h, font=head_font, fill=head_fill, align=center)
-
-dq_start = dhdr + 1
-cell(f'B{dq_start}', 'Consumption differs from Fuel Issue by > 5 Ltr', font=cell_font, align=Alignment(horizontal="left", vertical="center"))
-cell(f'C{dq_start}', f'=SUMPRODUCT((ABS({FT}!P2:P2486-{FT}!O2:O2486)>5)*1)', fmt='#,##0')
-cell(f'B{dq_start+1}', 'Total Distance is 0 for a VEHICLE-type entry', font=cell_font, align=Alignment(horizontal="left", vertical="center"))
-cell(f'C{dq_start+1}', f'=SUMPRODUCT(({FT}!C2:C2486="VEHICLE")*({FT}!K2:K2486=0)*1)', fmt='#,##0')
-cell(f'B{dq_start+2}', 'Total Distance > 5,000 Km in a single day (likely odometer entry error)', font=cell_font, align=Alignment(horizontal="left", vertical="center"))
-cell(f'C{dq_start+2}', f'=SUMPRODUCT(({FT}!K2:K2486>5000)*1)', fmt='#,##0')
-
-# ---------------- sheet-level touches ----------------
-ws.sheet_view.showGridLines = False
-ws.sheet_properties.tabColor = NAVY
-ws.freeze_panes = 'A3'
-
-wb.save('fuel_dashboard.xlsx')
-print("data quality section done. Full dashboard build complete.")
-
-# ---------------- print / page setup for clean single-sheet preview ----------------
-ws.print_area = 'A1:N106'
-ws.page_setup.orientation = 'landscape'
-ws.page_setup.fitToWidth = 1
-ws.page_setup.fitToHeight = 0
-ws.sheet_properties.pageSetUpPr.fitToPage = True
-ws.page_margins.left = 0.2
-ws.page_margins.right = 0.2
-ws.page_margins.top = 0.3
-ws.page_margins.bottom = 0.3
-wb.active = 0
-
-wb.save('fuel_dashboard.xlsx')
-print("print setup applied")
+document.getElementById('logBody').innerHTML = DATA.sample_log.map(r => `
+  <tr>
+    <td>${r.date}</td>
+    <td>${r.machine_no}</td>
+    <td>${r.category.replace(/ - \d+$/,'')}</td>
+    <td>${r.site}</td>
+    <td><span class="badge ${r.owner.toLowerCase()==='self'?'self':'hired'}">${r.owner}</span></td>
+    <td class="num">${r.fuel}</td>
+    <td class="num">${r.hours}</td>
+    <td class="num">${r.dist}</td>
+    <td class="num">${r.ltrhr}</td>
+    <td class="num">${inr(r.cost)}</td>
+  </tr>
+`).join('');
+</script>
+</body>
+</html>
