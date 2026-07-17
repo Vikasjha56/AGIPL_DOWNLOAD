@@ -7,6 +7,7 @@ let RAW_DATA = null;
 
 let FILTER_DATA = [];
 
+
 let charts = {};
 
 
