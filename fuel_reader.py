@@ -24,7 +24,8 @@ def get_fuel_sheet_data():
         )
 
 
-        # Clean column names
+        # remove extra spaces from headers
+
         df.columns = (
             df.columns
             .astype(str)
