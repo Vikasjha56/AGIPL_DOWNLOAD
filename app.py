@@ -405,8 +405,8 @@ def fuel():
 # FUEL DATA API
 # =====================================================
 
-@app.route("/fuel_data")
-def fuel_data():
+@app.route("/fuel")
+def fuel():
 
 
     try:
@@ -463,6 +463,7 @@ def fuel_data():
         # KPI
         # =========================
 
+        
 
         total_fuel = round(
             df["Fuel Used"].sum(),
