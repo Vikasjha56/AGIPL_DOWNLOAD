@@ -3,373 +3,1093 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AGIPL Fuel Command Center</title>
+<title>AGIPL Digital Fuel Command Center</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.3/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
-  :root{
-    --bg:#060E17;
-    --panel:#0C1A28;
-    --panel-2:#0F2233;
-    --line:#1B3247;
-    --cyan:#3FD0F2;
-    --cyan-dim:#1E8FAE;
-    --amber:#F2A93F;
-    --green:#3FE08C;
-    --red:#F2574B;
-    --text:#E8F1F7;
-    --muted:#7C96AB;
-  }
-  *{box-sizing:border-box;}
-  body{
-    margin:0;
-    background:var(--bg);
-    color:var(--text);
-    font-family:'Inter',sans-serif;
-    padding-bottom:50px;
-  }
-  .display{font-family:'Space Grotesk',sans-serif;}
-  a{color:inherit;}
-  header{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:16px;
-    padding:18px 24px;
-    border-bottom:1px solid var(--line);
-    flex-wrap:wrap;
-  }
-  .brand{display:flex;align-items:center;gap:10px;}
-  .brand .mark{
-    width:34px;height:34px;border-radius:8px;
-    background:linear-gradient(135deg,var(--cyan),var(--cyan-dim));
-    display:flex;align-items:center;justify-content:center;
-    font-family:'Space Grotesk',sans-serif;font-weight:700;color:#04141C;font-size:13px;
-  }
-  .brand .name{font-size:11px;color:var(--muted);letter-spacing:.08em;}
-  h1{
-    font-family:'Space Grotesk',sans-serif;
-    font-size:20px;
-    font-weight:600;
-    margin:0;
-    letter-spacing:.01em;
-  }
-  h1 span{color:var(--cyan);}
-  .sub{font-size:12px;color:var(--muted);margin-top:2px;}
-  .period-chip{
-    font-size:12px;
-    color:var(--text);
-    background:var(--panel-2);
-    border:1px solid var(--line);
-    padding:8px 14px;
-    border-radius:9px;
-  }
+:root{
+  --bg:#070C16;
+  --bg-grad:#0A1220;
+  --panel:#0F1B2E;
+  --panel-2:#111F35;
+  --border:#1E2D45;
+  --border-soft:#17253B;
+  --text:#E7EFFB;
+  --text-dim:#8B9AB3;
+  --text-faint:#5A6A85;
+  --cyan:#22D3EE;
+  --blue:#3B82F6;
+  --amber:#F5A524;
+  --red:#F04747;
+  --green:#22C55E;
+  --purple:#A78BFA;
+  --pink:#F472B6;
+  --radius:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{
+  background:radial-gradient(1200px 700px at 15% -10%, #10233d 0%, var(--bg) 55%), var(--bg);
+  color:var(--text);
+  font-family:'Inter',system-ui,sans-serif;
+  overflow:hidden;
+}
+body.mobile-scroll{overflow-y:auto;}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-thumb{background:#233754;border-radius:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+.num{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;}
 
-  .wrap{max-width:1280px;margin:0 auto;padding:22px 24px 0;}
+.app{display:flex;flex-direction:column;height:100vh;padding:10px 16px 12px;gap:8px;}
 
-  .kpi-row{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:12px;
-    margin-bottom:18px;
-  }
-  .kpi{
-    background:var(--panel);
-    border:1px solid var(--line);
-    border-radius:12px;
-    padding:14px 16px;
-  }
-  .kpi.warn{border-color:rgba(242,87,75,.5); background:linear-gradient(180deg, rgba(242,87,75,.08), var(--panel));}
-  .kpi .label{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
-  .kpi .value{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:600;margin-top:5px;}
-  .kpi .delta{font-size:11px;margin-top:4px;color:var(--green);}
-  .kpi.warn .value{color:var(--red);}
-  .kpi.warn .delta{color:var(--red);}
+/* ---------- HEADER ---------- */
+.header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex:0 0 auto;}
+.brand{display:flex;align-items:center;gap:12px;}
+.logo{
+  width:38px;height:38px;border-radius:9px;
+  background:linear-gradient(135deg,var(--cyan),var(--blue));
+  display:flex;align-items:center;justify-content:center;font-weight:800;color:#04121f;font-size:14px;flex:0 0 auto;
+}
+.brand-text .name{font-size:11px;letter-spacing:1.5px;color:var(--text-dim);font-weight:700;}
+.title-block{text-align:center;flex:1;}
+.title-block h1{font-size:21px;font-weight:800;letter-spacing:.3px;}
+.title-block h1 span{color:var(--cyan);}
+.title-block .sub{font-size:11px;color:var(--text-dim);margin-top:1px;}
+.header-actions{display:flex;align-items:center;gap:8px;}
+.pill{
+  background:var(--panel);border:1px solid var(--border);border-radius:9px;
+  padding:8px 12px;font-size:12px;color:var(--text-dim);display:flex;align-items:center;gap:8px;cursor:pointer;
+  white-space:nowrap;
+}
+.pill:hover{border-color:#2c4468;}
+.pill.refresh{color:var(--text);}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);}
+.dot.loading{background:var(--amber);box-shadow:0 0 6px var(--amber);animation:pulse 1s infinite;}
+@keyframes pulse{50%{opacity:.35;}}
 
-  .grid-3{display:grid;grid-template-columns:1.4fr 1fr 1.2fr;gap:14px;margin-bottom:14px;}
-  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
-  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px;}
+/* ---------- FILTER BAR ---------- */
+.filterbar{
+  display:flex;align-items:center;gap:8px;flex:0 0 auto;flex-wrap:nowrap;
+  background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:7px 10px;
+}
+.filterbar .flabel{font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:1px;margin-right:2px;flex:0 0 auto;}
+.chips{display:flex;gap:6px;flex-wrap:wrap;flex:1;min-width:0;align-items:center;}
+.chip{
+  background:#0D3A47;border:1px solid #1A5A6B;color:var(--cyan);font-size:11px;padding:4px 8px;border-radius:20px;
+  display:flex;align-items:center;gap:6px;
+}
+.chip button{background:none;border:none;color:var(--cyan);cursor:pointer;font-size:12px;line-height:1;opacity:.75;}
+.chip button:hover{opacity:1;}
+.clearall{font-size:11px;color:var(--text-faint);background:none;border:1px solid var(--border);padding:5px 10px;border-radius:8px;cursor:pointer;flex:0 0 auto;}
+.clearall:hover{color:var(--text);border-color:#2c4468;}
 
-  .panel{
-    background:var(--panel);
-    border:1px solid var(--line);
-    border-radius:14px;
-    padding:16px 18px;
-  }
-  .panel h3{
-    font-family:'Space Grotesk',sans-serif;
-    font-size:12.5px;
-    font-weight:600;
-    letter-spacing:.05em;
-    text-transform:uppercase;
-    color:var(--muted);
-    margin:0 0 12px;
-  }
-  .chart-box{position:relative;height:210px;}
-  .chart-box.tall{height:260px;}
-  .chart-box.short{height:160px;}
+.msel{position:relative;flex:0 0 auto;}
+.msel-btn{
+  background:var(--panel-2);border:1px solid var(--border);color:var(--text);font-size:12px;
+  padding:7px 10px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;
+}
+.msel-btn:hover{border-color:var(--cyan);}
+.msel-btn .arrow{font-size:9px;color:var(--text-faint);}
+.msel-panel{
+  display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:60;
+  background:#0D1728;border:1px solid var(--border);border-radius:10px;padding:8px;width:230px;
+  box-shadow:0 12px 32px rgba(0,0,0,.5);max-height:320px;display:none;flex-direction:column;gap:6px;
+}
+.msel.open .msel-panel{display:flex;}
+.msel-search{background:var(--panel);border:1px solid var(--border);color:var(--text);font-size:12px;padding:6px 8px;border-radius:6px;outline:none;}
+.msel-search:focus{border-color:var(--cyan);}
+.msel-list{overflow-y:auto;display:flex;flex-direction:column;gap:2px;max-height:210px;}
+.msel-item{display:flex;align-items:center;gap:8px;font-size:12px;padding:5px 6px;border-radius:6px;cursor:pointer;color:var(--text-dim);}
+.msel-item:hover{background:#132540;color:var(--text);}
+.msel-item input{accent-color:var(--cyan);}
+.msel-actions{display:flex;justify-content:space-between;border-top:1px solid var(--border-soft);padding-top:6px;}
+.msel-actions span{font-size:11px;color:var(--cyan);cursor:pointer;}
+.date-input{
+  background:var(--panel-2);border:1px solid var(--border);color:var(--text);font-size:12px;padding:6px 8px;border-radius:8px;
+  font-family:'JetBrains Mono',monospace;
+}
 
-  .donut-wrap{display:flex;align-items:center;gap:16px;}
-  .donut-box{position:relative;width:150px;height:150px;flex:none;}
-  .donut-center{
-    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  }
-  .donut-center .n{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:600;}
-  .donut-center .l{font-size:10px;color:var(--muted);}
-  .legend-list{display:flex;flex-direction:column;gap:8px;font-size:12.5px;}
-  .legend-item{display:flex;align-items:center;gap:8px;}
-  .dot{width:9px;height:9px;border-radius:50%;flex:none;}
+/* ---------- TABS ---------- */
+.tabnav{display:flex;gap:6px;flex:0 0 auto;}
+.tabbtn{
+  background:var(--panel);border:1px solid var(--border);color:var(--text-dim);font-size:12.5px;font-weight:600;
+  padding:8px 16px;border-radius:9px 9px 0 0;cursor:pointer;letter-spacing:.2px;
+}
+.tabbtn.active{color:var(--cyan);background:var(--panel-2);border-bottom-color:var(--panel-2);box-shadow:0 -2px 0 var(--cyan) inset;}
 
-  .alert-list{display:flex;flex-direction:column;gap:10px;}
-  .alert{
-    display:flex;gap:10px;
-    padding:10px 12px;
-    border-radius:10px;
-    background:var(--panel-2);
-    border-left:3px solid var(--red);
-  }
-  .alert.amber{border-left-color:var(--amber);}
-  .alert .a-title{font-size:13px;font-weight:600;}
-  .alert .a-sub{font-size:11.5px;color:var(--muted);margin-top:2px;}
+/* ---------- CONTENT ---------- */
+.content{flex:1;min-height:0;display:none;}
+.content.active{display:flex;flex-direction:column;gap:8px;min-height:0;}
 
-  table{width:100%;border-collapse:collapse;font-size:12.5px;}
-  th{
-    text-align:left;
-    font-size:10.5px;
-    text-transform:uppercase;
-    letter-spacing:.04em;
-    color:var(--muted);
-    padding:8px 8px;
-    border-bottom:1px solid var(--line);
-    white-space:nowrap;
-  }
-  td{
-    padding:9px 8px;
-    border-bottom:1px solid var(--line);
-    white-space:nowrap;
-  }
-  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;}
-  tr:last-child td{border-bottom:none;}
-  .badge{
-    font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:20px;
-  }
-  .badge.self{background:rgba(63,208,242,.14);color:var(--cyan);}
-  .badge.hired{background:rgba(242,169,63,.14);color:var(--amber);}
+.panel{
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+  display:flex;flex-direction:column;min-height:0;min-width:0;overflow:hidden;
+}
+.panel-h{
+  display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-bottom:1px solid var(--border-soft);flex:0 0 auto;
+}
+.panel-h h3{font-size:10.5px;letter-spacing:1px;color:var(--text-dim);font-weight:700;text-transform:uppercase;}
+.panel-h .hint{font-size:9.5px;color:var(--text-faint);}
+.panel-body{flex:1;min-height:0;padding:8px 10px;position:relative;}
+.panel-body.scroll{overflow-y:auto;}
+.panel.clickable .panel-body{cursor:pointer;}
 
-  .foot-note{
-    font-size:11.5px;
-    color:var(--muted);
-    text-align:center;
-    padding:20px 0 0;
-  }
+/* KPI row */
+.kpirow{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;flex:0 0 auto;}
+.kpi{
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+  padding:10px 12px;display:flex;flex-direction:column;gap:6px;min-width:0;
+}
+.kpi.warn{border-color:#5a2626;background:linear-gradient(180deg,#1a0f10,var(--panel));}
+.kpi-top{display:flex;align-items:center;gap:8px;}
+.kpi-ico{
+  width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex:0 0 auto;
+  background:#0D2A3A;color:var(--cyan);
+}
+.kpi.warn .kpi-ico{background:#3A1414;color:var(--red);}
+.kpi-label{font-size:9.5px;color:var(--text-dim);letter-spacing:.4px;font-weight:600;line-height:1.2;}
+.kpi-val{font-size:19px;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.kpi.warn .kpi-val{color:var(--red);}
+.kpi-delta{font-size:10px;color:var(--green);}
+.kpi-delta.down{color:var(--red);}
+.kpi-delta.neutral{color:var(--text-faint);}
+.kpi-sub{font-size:9.5px;color:var(--red);font-weight:600;}
 
-  @media(max-width:1000px){
-    .kpi-row{grid-template-columns:repeat(2,1fr);}
-    .grid-3, .grid-2, .grid-4{grid-template-columns:1fr;}
-  }
+.gridrow{display:grid;gap:8px;flex:1;min-height:0;}
+.row2{grid-template-columns:1.7fr 1fr 1.15fr;}
+.row3{grid-template-columns:1fr 1fr 0.85fr 1.1fr;}
+.row4{grid-template-columns:0.85fr 1.6fr 0.85fr;}
+
+.legend-row{display:flex;gap:12px;flex-wrap:wrap;font-size:10.5px;color:var(--text-dim);padding:2px 2px 0;}
+.legend-dot{width:8px;height:8px;border-radius:2px;display:inline-block;margin-right:4px;}
+
+/* donut center label */
+.donut-wrap{position:relative;height:100%;}
+.donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;}
+.donut-center .v{font-size:17px;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.donut-center .l{font-size:9px;color:var(--text-faint);}
+
+/* gauge */
+.gauge-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:2px;}
+.gauge-val{font-size:20px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--cyan);margin-top:-8px;}
+.gauge-label{font-size:9.5px;color:var(--text-faint);}
+
+/* alerts */
+.alert-item{display:flex;gap:8px;padding:8px;border-radius:8px;background:var(--panel-2);margin-bottom:6px;cursor:pointer;}
+.alert-item:hover{background:#152744;}
+.alert-ico{width:22px;height:22px;border-radius:6px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:11px;}
+.alert-item.red .alert-ico{background:#3A1414;color:var(--red);}
+.alert-item.amber .alert-ico{background:#3A2A0D;color:var(--amber);}
+.alert-item.blue .alert-ico{background:#0D2A3A;color:var(--cyan);}
+.alert-txt .t{font-size:11.5px;font-weight:600;}
+.alert-txt .d{font-size:10px;color:var(--text-dim);}
+
+/* table */
+table{width:100%;border-collapse:collapse;font-size:11px;}
+thead th{
+  position:sticky;top:0;background:var(--panel);text-align:left;color:var(--text-faint);
+  font-size:9.5px;text-transform:uppercase;letter-spacing:.5px;padding:6px 8px;border-bottom:1px solid var(--border-soft);font-weight:700;
+}
+tbody td{padding:6px 8px;border-bottom:1px solid var(--border-soft);color:var(--text-dim);white-space:nowrap;}
+tbody tr:hover{background:var(--panel-2);cursor:pointer;}
+tbody tr:hover td{color:var(--text);}
+.badge{padding:2px 7px;border-radius:20px;font-size:9.5px;font-weight:700;}
+.badge.good{background:#0D3A2A;color:var(--green);}
+.badge.avg{background:#3A2A0D;color:var(--amber);}
+.badge.poor{background:#3A1414;color:var(--red);}
+.owner-tag{font-size:9.5px;padding:1px 6px;border-radius:5px;font-weight:700;}
+.owner-tag.self{background:#0D2A3A;color:var(--blue);}
+.owner-tag.hire{background:#3A2A0D;color:var(--amber);}
+
+.empty{display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-faint);font-size:11.5px;text-align:center;padding:10px;}
+
+/* footer status */
+.footer{display:flex;justify-content:space-between;align-items:center;flex:0 0 auto;font-size:10px;color:var(--text-faint);padding:0 2px;}
+.footer a{color:var(--text-faint);}
+
+/* Tab 2 specific */
+.t2-top{display:flex;gap:8px;flex:0 0 auto;}
+.t2-machine-picker{flex:0 0 260px;}
+.t2-kpis{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.t2-body{display:grid;grid-template-columns:1.3fr 1fr;grid-template-rows:1fr 1fr;gap:8px;flex:1;min-height:0;}
+.t2-summary{grid-row:1/3;}
+
+.loading-screen{
+  position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:200;
+}
+.spinner{width:34px;height:34px;border-radius:50%;border:3px solid #1E2D45;border-top-color:var(--cyan);animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-screen p{color:var(--text-dim);font-size:12.5px;}
+.err-box{max-width:520px;text-align:center;color:var(--text-dim);font-size:12.5px;line-height:1.6;}
+.err-box b{color:var(--red);}
+.err-box code{background:var(--panel);padding:2px 6px;border-radius:5px;color:var(--cyan);}
+
+@media (max-width: 1024px){
+  body{overflow-y:auto;}
+  .app{height:auto;min-height:100vh;}
+  .kpirow{grid-template-columns:repeat(4,1fr);}
+  .row2,.row3,.row4{grid-template-columns:1fr 1fr;}
+  .row2 .panel:first-child{grid-column:1/3;height:260px;}
+  .row4 .panel:nth-child(2){grid-column:1/3;height:280px;}
+  .panel{min-height:220px;}
+  .t2-body{grid-template-columns:1fr;grid-template-rows:auto;}
+  .t2-kpis{grid-template-columns:repeat(2,1fr);}
+  .title-block h1{font-size:16px;}
+}
+@media (max-width: 640px){
+  .kpirow{grid-template-columns:repeat(2,1fr);}
+  .row2,.row3,.row4{grid-template-columns:1fr;}
+  .row2 .panel:first-child,.row4 .panel:nth-child(2){grid-column:1;}
+  .header{flex-wrap:wrap;}
+  .title-block{order:3;width:100%;text-align:left;}
+  .header-actions{gap:6px;}
+  .pill span.long{display:none;}
+}
 </style>
 </head>
 <body>
 
-<header>
-  <div class="brand">
-    <div class="mark">A</div>
-    <div>
-      <h1>AGIPL <span>FUEL COMMAND CENTER</span></h1>
-      <div class="sub">Log Book (Category Wise) se real data · Site-wise fuel monitoring aur consumption analysis</div>
+<div class="loading-screen" id="loadingScreen">
+  <div class="spinner"></div>
+  <p id="loadingText">Connecting to Google Sheet…</p>
+</div>
+
+<div class="app" id="app" style="display:none;">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="brand">
+      <div class="logo">AG</div>
+      <div class="brand-text">
+        <div class="name">AGIPL &nbsp;·&nbsp; BUILT TO BUILD INDIA</div>
+      </div>
+    </div>
+    <div class="title-block">
+      <h1>AGIPL DIGITAL <span>FUEL COMMAND CENTER</span></h1>
+      <div class="sub">Real-time Fuel Monitoring &amp; Performance Analysis</div>
+    </div>
+    <div class="header-actions">
+      <div class="pill"><span class="dot" id="statusDot"></span><span id="statusText">Live Connected</span></div>
+      <div class="pill refresh" id="refreshBtn">⟳ <span class="long">Refresh Data</span></div>
     </div>
   </div>
-  <div class="period-chip" id="periodChip">Loading period…</div>
-</header>
 
-<div class="wrap">
+  <!-- FILTER BAR / SLICERS -->
+  <div class="filterbar">
+    <span class="flabel">Slicers</span>
 
-  <div class="kpi-row" id="kpiRow"></div>
-
-  <div class="grid-3">
-    <div class="panel">
-      <h3>Daily fuel issued trend (litre)</h3>
-      <div class="chart-box tall"><canvas id="dailyChart" role="img" aria-label="Line chart of daily diesel litres issued across all sites"></canvas></div>
+    <div class="msel" id="msel-date">
+      <div class="msel-btn" data-target="msel-date">📅 <span id="dateBtnLabel">All Dates</span> <span class="arrow">▾</span></div>
+      <div class="msel-panel" style="width:200px;">
+        <label style="font-size:10px;color:var(--text-faint);">From</label>
+        <input type="date" class="date-input" id="dateFrom">
+        <label style="font-size:10px;color:var(--text-faint);">To</label>
+        <input type="date" class="date-input" id="dateTo">
+        <div class="msel-actions"><span id="dateApply">Apply</span><span id="dateClear">Clear</span></div>
+      </div>
     </div>
-    <div class="panel">
-      <h3>Self vs hired utilization</h3>
-      <div class="donut-wrap" style="margin-top:14px;">
-        <div class="donut-box"><canvas id="ownerDonut"></canvas>
-          <div class="donut-center"><div class="n" id="ownerTotalHrs">-</div><div class="l">Total hrs</div></div>
-        </div>
-        <div class="legend-list">
-          <div class="legend-item"><span class="dot" style="background:var(--cyan);"></span>Self <b id="selfPct" style="margin-left:auto;"></b></div>
-          <div class="legend-item"><span class="dot" style="background:var(--amber);"></span>Hired <b id="hiredPct" style="margin-left:auto;"></b></div>
+
+    <div class="msel" id="msel-category">
+      <div class="msel-btn" data-target="msel-category">🏗 <span id="catBtnLabel">All Categories</span> <span class="arrow">▾</span></div>
+      <div class="msel-panel">
+        <input class="msel-search" placeholder="Search category…" data-list="catList">
+        <div class="msel-list" id="catList"></div>
+        <div class="msel-actions"><span data-clear="category">Clear</span><span data-close="msel-category">Done</span></div>
+      </div>
+    </div>
+
+    <div class="msel" id="msel-machine">
+      <div class="msel-btn" data-target="msel-machine">🚜 <span id="machBtnLabel">All Machine No.</span> <span class="arrow">▾</span></div>
+      <div class="msel-panel">
+        <input class="msel-search" placeholder="Search machine no…" data-list="machList">
+        <div class="msel-list" id="machList"></div>
+        <div class="msel-actions"><span data-clear="machineNo">Clear</span><span data-close="msel-machine">Done</span></div>
+      </div>
+    </div>
+
+    <div class="msel" id="msel-owner">
+      <div class="msel-btn" data-target="msel-owner">👤 <span id="ownerBtnLabel">All Owners</span> <span class="arrow">▾</span></div>
+      <div class="msel-panel">
+        <div class="msel-list" id="ownerList"></div>
+        <div class="msel-actions"><span data-clear="owner">Clear</span><span data-close="msel-owner">Done</span></div>
+      </div>
+    </div>
+
+    <div class="msel" id="msel-site">
+      <div class="msel-btn" data-target="msel-site">📍 <span id="siteBtnLabel">All Sites</span> <span class="arrow">▾</span></div>
+      <div class="msel-panel">
+        <input class="msel-search" placeholder="Search site…" data-list="siteList">
+        <div class="msel-list" id="siteList"></div>
+        <div class="msel-actions"><span data-clear="site">Clear</span><span data-close="msel-site">Done</span></div>
+      </div>
+    </div>
+
+    <div class="chips" id="activeChips"></div>
+    <button class="clearall" id="clearAllBtn">Clear all</button>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabnav">
+    <div class="tabbtn active" data-tab="tab1">Fuel Analysis Dashboard</div>
+    <div class="tabbtn" data-tab="tab2">Trend Chart</div>
+  </div>
+
+  <!-- TAB 1 -->
+  <div class="content active" id="tab1">
+    <div class="kpirow" id="kpiRow"></div>
+
+    <div class="gridrow row2">
+      <div class="panel">
+        <div class="panel-h"><h3>Daily Fuel Issued Trend (Ltr)</h3><span class="hint">click a point to filter date</span></div>
+        <div class="panel-body"><canvas id="chartDaily"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-h"><h3>Self vs Hire Utilization</h3><span class="hint">click to filter</span></div>
+        <div class="panel-body"><div class="donut-wrap"><canvas id="chartOwner"></canvas><div class="donut-center" id="ownerCenter"></div></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-h"><h3>Top 10 Fuel Consuming Machines</h3><span class="hint">click a bar to filter</span></div>
+        <div class="panel-body"><canvas id="chartTop10"></canvas></div>
+      </div>
+    </div>
+
+    <div class="gridrow row3">
+      <div class="panel">
+        <div class="panel-h"><h3>Category-wise Fuel (Ltr)</h3><span class="hint">click to filter</span></div>
+        <div class="panel-body"><canvas id="chartCategory"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-h"><h3>Site-wise Fuel Consumption (Ltr)</h3><span class="hint">click to filter</span></div>
+        <div class="panel-body"><canvas id="chartSite"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-h"><h3>Fleet Efficiency</h3><span class="hint">Ltr/Hr avg</span></div>
+        <div class="panel-body"><div class="gauge-wrap"><canvas id="chartGauge" width="220" height="140"></canvas><div class="gauge-val" id="gaugeVal">0.0</div><div class="gauge-label">Ltr/Hr</div></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-h"><h3>Fuel Cost Trend (₹)</h3></div>
+        <div class="panel-body"><canvas id="chartCost"></canvas></div>
+      </div>
+    </div>
+
+    <div class="gridrow row4">
+      <div class="panel">
+        <div class="panel-h"><h3>Alerts &amp; Notifications</h3></div>
+        <div class="panel-body scroll" id="alertsPanel"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-h"><h3>Detailed Fuel Log (Latest)</h3><span class="hint" id="logCount"></span></div>
+        <div class="panel-body scroll" id="logTableWrap"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-h"><h3>Efficiency Status Summary</h3></div>
+        <div class="panel-body"><div class="donut-wrap"><canvas id="chartEff"></canvas><div class="donut-center" id="effCenter"></div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2 : TREND CHART -->
+  <div class="content" id="tab2">
+    <div class="t2-top">
+      <div class="panel t2-machine-picker">
+        <div class="panel-h"><h3>Select Machine</h3></div>
+        <div class="panel-body">
+          <div class="msel" id="msel-t2machine" style="width:100%;">
+            <div class="msel-btn" data-target="msel-t2machine" style="width:100%;justify-content:space-between;">
+              <span id="t2machLabel">All Machines (Aggregate)</span><span class="arrow">▾</span>
+            </div>
+            <div class="msel-panel" style="width:100%;">
+              <input class="msel-search" placeholder="Search machine no…" data-list="t2machList">
+              <div class="msel-list" id="t2machList" style="max-height:180px;"></div>
+            </div>
+          </div>
         </div>
       </div>
-      <h3 style="margin-top:20px;">Efficiency status (avg L/hr)</h3>
-      <div class="legend-list" id="effLegend"></div>
+      <div class="t2-kpis" id="t2Kpis"></div>
     </div>
-    <div class="panel">
-      <h3>Top 10 fuel consuming machines (litre)</h3>
-      <div class="chart-box tall"><canvas id="topMachinesChart" role="img" aria-label="Horizontal bar chart of the top ten machines by total diesel litres consumed"></canvas></div>
+
+    <div class="t2-body">
+      <div class="panel">
+        <div class="panel-h"><h3>Month-wise Total Hours Used</h3><span class="hint">Time To − Time From, click bar to filter month</span></div>
+        <div class="panel-body"><canvas id="chartMonthHours"></canvas></div>
+      </div>
+      <div class="panel t2-summary">
+        <div class="panel-h"><h3>Machine-wise Summary</h3><span class="hint">click row to select</span></div>
+        <div class="panel-body scroll" id="machineSummaryWrap"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-h"><h3>Month-wise Fuel Issued vs Avg Consumption</h3><span class="hint">Ltr (bar) · Ltr/Hr (line)</span></div>
+        <div class="panel-body"><canvas id="chartMonthFuel"></canvas></div>
+      </div>
     </div>
   </div>
 
-  <div class="grid-3">
-    <div class="panel">
-      <h3>Machine category wise fuel (litre)</h3>
-      <div class="chart-box"><canvas id="catChart" role="img" aria-label="Bar chart of diesel litres consumed by machine category"></canvas></div>
-    </div>
-    <div class="panel">
-      <h3>Site wise fuel consumption (litre)</h3>
-      <div class="chart-box"><canvas id="siteChart" role="img" aria-label="Bar chart of diesel litres consumed by construction site"></canvas></div>
-    </div>
-    <div class="panel">
-      <h3>Fuel cost trend (₹ thousand)</h3>
-      <div class="chart-box"><canvas id="costChart" role="img" aria-label="Line chart of daily diesel cost in thousands of rupees"></canvas></div>
-    </div>
+  <div class="footer">
+    <span id="dataStatus">● Live Connected — Last Updated: —</span>
+    <span>Data source: Google Sheets (published CSV) · Fuel Tracker</span>
   </div>
-
-  <div class="grid-2">
-    <div class="panel">
-      <h3>Alerts & exceptions</h3>
-      <div class="alert-list" id="alertList"></div>
-    </div>
-    <div class="panel">
-      <h3>Highest consumption machines (L/hr)</h3>
-      <div class="chart-box short"><canvas id="highConsChart" role="img" aria-label="Horizontal bar chart of machines with the highest average litres consumed per hour"></canvas></div>
-    </div>
-  </div>
-
-  <div class="panel">
-    <h3>Detailed fuel log (latest entries)</h3>
-    <div style="overflow-x:auto;">
-      <table id="logTable">
-        <thead>
-          <tr>
-            <th>Date</th><th>Machine no</th><th>Category</th><th>Site</th><th>Owner</th>
-            <th class="num">Fuel (L)</th><th class="num">Hours</th><th class="num">Dist (km)</th><th class="num">L/hr</th><th class="num">Cost (₹)</th>
-          </tr>
-        </thead>
-        <tbody id="logBody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="foot-note">AGRAWAL GLOBAL INFRATECH PVT. LTD. — Fuel Tracker sheet se generate hua, 2,485 entries across 245 machines. Odometer misreads wale outlier rows distance total mein filter kiye gaye hain.</div>
 </div>
 
 <script>
-const DATA = {"period": "01 Jun 2026 - 09 Jul 2026", "kpi": {"total_fuel": 140961, "active_vehicles": 245, "total_cost": 14164859, "total_hours": 7878.4, "total_distance": 236090, "avg_consumption": 8.71, "avg_utilization": 25.2, "high_consumption_count": 5, "low_util_count": 117}, "daily_trend": {"labels": ["26 Jun", "27 Jun", "28 Jun", "29 Jun", "30 Jun", "01 Jul", "02 Jul", "03 Jul", "04 Jul", "05 Jul", "06 Jul", "07 Jul", "08 Jul", "09 Jul"], "values": [3890.0, 3621.0, 3976.0, 5589.0, 2511.0, 1244.0, 1763.0, 984.0, 1551.0, 886.0, 506.0, 212.0, 378.0, 410.0]}, "cost_trend": {"labels": ["26 Jun", "27 Jun", "28 Jun", "29 Jun", "30 Jun", "01 Jul", "02 Jul", "03 Jul", "04 Jul", "05 Jul", "06 Jul", "07 Jul", "08 Jul", "09 Jul"], "values": [404.4, 370.4, 419.6, 412.8, 264.0, 130.6, 185.6, 102.4, 162.9, 91.5, 52.4, 22.0, 39.5, 40.7]}, "site_wise": {"labels": ["IRCON PKG 1A", "NAGPUR TO KATOL NH ROAD PKG-5", "AURANGABAD PKG-4", "ARJUNI - MORGAON", "IRCON PKG 1B"], "values": [64306.0, 32068.0, 21410.0, 17596.0, 5582.0]}, "category_wise": {"labels": ["Hmv Tipper", "Excavator", "Motor Grader", "Transit Mixer", "Hot Mix Plant", "Diesel Generator", "Water Tanker", "Soil Compactor"], "values": [38717.0, 35199.0, 9547.0, 8680.0, 8056.0, 6120.0, 4548.0, 4424.0]}, "top_machines": {"labels": ["HOT MIX PLANT-5", "SYI11023HT3C00066", "HIRE/EXCAVATOR/URMILLA", "HIRE/EXCAVATOR/URMILLA", "HIRE/EXCAVATOR/URMILLA", "HIRE/EXCAVATOR/XCMG210", "HIRE/EXCAVATOR/HIT 210", "EXCAVATOR -TATA HITACH", "HIRE GRADER GMMCO-02", "EXCAVATOR /SANY/225C-0"], "values": [8056.0, 4225.0, 3564.0, 3133.0, 2991.0, 2898.0, 2330.0, 2309.0, 2240.0, 2095.0]}, "owner_hours": {"self": 6086.9, "hired": 1791.5}, "efficiency_status": {"Excellent": 27, "Poor": 27, "Good": 26, "Average": 26}, "top_high_consumers": [{"name": "EXCAVATOR -TATA HITACHI ZX22", "val": 17.53}, {"name": "SENSOR PAVER/VOGGLE/1800-3", "val": 16.89}, {"name": "EXCAVATOR - CAT 320D2 (RSB06", "val": 16.43}, {"name": "EXCAVATOR - TATA HITACHI ZX2", "val": 16.09}, {"name": "MH35AR-6739 WHEEL LOADER - C", "val": 14.57}], "sample_log": [{"date": "09 Jul", "machine_no": "HIRE/JCB/MH16CQ-8347/SEKH ", "category": "BACKHOE LOADER - 9213", "site": "AURANGABAD PKG-4", "owner": "Hired", "fuel": 30.0, "hours": 3.1, "dist": 0, "ltrhr": 9.68, "cost": 2971.0}, {"date": "09 Jul", "machine_no": "DG/30KVA/MAHINDRA", "category": "DIESEL GENERATOR - 9219", "site": "AURANGABAD PKG-4", "owner": "Self", "fuel": 20.0, "hours": 8.0, "dist": 0, "ltrhr": 2.5, "cost": 1981.0}, {"date": "09 Jul", "machine_no": "HIRE/ROLLER/ACE115", "category": "SOIL COMPACTOR - 9235", "site": "AURANGABAD PKG-4", "owner": "Hired", "fuel": 30.0, "hours": 3.7, "dist": 0, "ltrhr": 8.11, "cost": 2971.0}, {"date": "09 Jul", "machine_no": "DG/30KVA/MAHINDRA/04", "category": "DIESEL GENERATOR - 9219", "site": "AURANGABAD PKG-4", "owner": "Self", "fuel": 20.0, "hours": 5.0, "dist": 0, "ltrhr": 4.0, "cost": 1981.0}, {"date": "09 Jul", "machine_no": "HIRE/TRACTOR WATER TANKER", "category": "TRACTOR - 9251", "site": "AURANGABAD PKG-4", "owner": "Hired", "fuel": 10.0, "hours": 2.9, "dist": 0, "ltrhr": 3.45, "cost": 990.0}, {"date": "09 Jul", "machine_no": "MH35AJ-2867 - TRANSIT MIXE", "category": "TRANSIT MIXER - 9253", "site": "AURANGABAD PKG-4", "owner": "Self", "fuel": 30.0, "hours": 2.2, "dist": 78, "ltrhr": 13.64, "cost": 2971.0}, {"date": "09 Jul", "machine_no": "ACE014XWHN0460363 - HYDRA ", "category": "HYDRA CRANE - 9227", "site": "AURANGABAD PKG-4", "owner": "Self", "fuel": 15.0, "hours": 5.0, "dist": 0, "ltrhr": 3.0, "cost": 1485.0}, {"date": "09 Jul", "machine_no": "EXCAVATOR /SANY/225C-02", "category": "EXCAVATOR - 9222", "site": "AURANGABAD PKG-4", "owner": "Self", "fuel": 60.0, "hours": 5.5, "dist": 0, "ltrhr": 10.91, "cost": 5942.0}, {"date": "09 Jul", "machine_no": "CG04QH7538", "category": "BIKE - 9243", "site": "AURANGABAD PKG-4", "owner": "Self", "fuel": 5.0, "hours": 0.0, "dist": 278, "ltrhr": 0.0, "cost": 562.0}, {"date": "09 Jul", "machine_no": "MH35AJ-2879 - TIPPER-TATA ", "category": "HMV TIPPER - 9248", "site": "AURANGABAD PKG-4", "owner": "Self", "fuel": 50.0, "hours": 0.0, "dist": 149, "ltrhr": 0.0, "cost": 4952.0}]};
+/* ============================================================
+   CONFIG
+=============================================================*/
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTzL0DqqbBOvZV2ESQvVt8OdmHeMfOBkQ8Q_uZLJaRtDzQJf_MlMcfV0NYLMK88Yg/pub?output=csv";
+const STANDARD_HOURS_PER_DAY = 10; // assumption used for Utilization% — documented in KPI tooltip
 
-const CYAN='#3FD0F2', AMBER='#F2A93F', GREEN='#3FE08C', RED='#F2574B', MUTED='#7C96AB', GRID='#1B3247';
-function inr(n){return '₹'+Number(n).toLocaleString('en-IN',{maximumFractionDigits:0});}
+const COLORS = {
+  cyan:'#22D3EE', blue:'#3B82F6', amber:'#F5A524', red:'#F04747',
+  green:'#22C55E', purple:'#A78BFA', pink:'#F472B6', dim:'#5A6A85'
+};
+const PALETTE = [COLORS.cyan, COLORS.blue, COLORS.purple, COLORS.pink, COLORS.amber, COLORS.green, '#38BDF8', '#FB923C'];
 
-document.getElementById('periodChip').textContent = DATA.period;
+Chart.defaults.font.family = "'Inter',system-ui,sans-serif";
+Chart.defaults.color = '#8B9AB3';
+Chart.defaults.borderColor = '#1E2D45';
 
-const k = DATA.kpi;
-document.getElementById('kpiRow').innerHTML = `
-  <div class="kpi"><div class="label">Total fuel issued</div><div class="value">${k.total_fuel.toLocaleString('en-IN')} L</div><div class="delta">${DATA.period}</div></div>
-  <div class="kpi"><div class="label">Active machines</div><div class="value">${k.active_vehicles}</div><div class="delta">across 5 sites</div></div>
-  <div class="kpi"><div class="label">Total fuel cost</div><div class="value">${inr(k.total_cost)}</div><div class="delta">diesel amount</div></div>
-  <div class="kpi"><div class="label">Total working hours</div><div class="value">${k.total_hours.toLocaleString('en-IN')} hrs</div><div class="delta">logged hours</div></div>
-  <div class="kpi"><div class="label">Total distance</div><div class="value">${k.total_distance.toLocaleString('en-IN')} km</div><div class="delta">odometer-based machines</div></div>
-  <div class="kpi"><div class="label">Avg consumption</div><div class="value">${k.avg_consumption} L/hr</div><div class="delta">hourly machines</div></div>
-  <div class="kpi"><div class="label">Avg utilization</div><div class="value">${k.avg_utilization}%</div><div class="delta">days logged / period</div></div>
-  <div class="kpi warn"><div class="label">High consumption</div><div class="value">${k.high_consumption_count} machines</div><div class="delta">needs attention</div></div>
-`;
+/* ============================================================
+   STATE
+=============================================================*/
+let RAW = [];              // parsed + normalized rows
+let CHARTS = {};           // chart instances keyed by canvas id
+let LAST_UPDATED = null;
 
-Chart.defaults.font.family = "'Inter',sans-serif";
-Chart.defaults.color = MUTED;
+const filters = {
+  dateFrom: null, dateTo: null,
+  category: new Set(), machineNo: new Set(), owner: new Set(), site: new Set()
+};
+let t2SelectedMachine = null; // null = aggregate
 
-new Chart(document.getElementById('dailyChart'), {
-  type:'line',
-  data:{labels:DATA.daily_trend.labels, datasets:[{data:DATA.daily_trend.values, borderColor:CYAN, backgroundColor:'rgba(63,208,242,0.12)', fill:true, tension:.35, pointRadius:3, pointBackgroundColor:CYAN}]},
-  options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
-    scales:{y:{grid:{color:GRID}, ticks:{color:MUTED}}, x:{grid:{display:false}, ticks:{color:MUTED, maxRotation:0}}}}
+/* ============================================================
+   UTILS
+=============================================================*/
+function num(v){ if(v===undefined||v===null) return NaN; const s=String(v).replace(/,/g,'').trim(); if(s==='') return NaN; const n=parseFloat(s); return isNaN(n)?NaN:n; }
+function fmt0(n){ return isFinite(n)? Math.round(n).toLocaleString('en-IN') : '—'; }
+function fmt1(n){ return isFinite(n)? n.toLocaleString('en-IN',{minimumFractionDigits:1,maximumFractionDigits:1}) : '—'; }
+function fmt2(n){ return isFinite(n)? n.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}) : '—'; }
+function curr(n){ return isFinite(n)? '₹'+Math.round(n).toLocaleString('en-IN') : '—'; }
+
+function findCol(headers, aliases){
+  const norm = h => h.toLowerCase().replace(/[^a-z0-9]/g,'');
+  const map = {}; headers.forEach(h=>map[norm(h)]=h);
+  for(const a of aliases){ const k=norm(a); if(map[k]) return map[k]; }
+  // fuzzy contains fallback
+  for(const a of aliases){ const k=norm(a); for(const h of headers){ if(norm(h).includes(k)) return h; } }
+  return null;
+}
+
+// Excel/Sheets serial date -> JS date
+function excelSerialToDate(n){
+  const utcDays = Math.floor(n - 25569);
+  const utcMs = utcDays * 86400000;
+  return new Date(utcMs);
+}
+function parseDate(v){
+  if(v===undefined||v===null||v==='') return null;
+  if(typeof v==='number' || /^\d+(\.\d+)?$/.test(String(v).trim())){
+    const n = num(v); if(n>20000 && n<80000) return excelSerialToDate(n);
+  }
+  const s = String(v).trim();
+  let d = new Date(s);
+  if(!isNaN(d.getTime())) return d;
+  // try dd/mm/yyyy
+  const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+  if(m){ let [_,a,b,y]=m; if(y.length===2) y = '20'+y; d = new Date(+y, +b-1, +a); if(!isNaN(d.getTime())) return d; }
+  return null;
+}
+function isoDate(d){ if(!d) return ''; return d.toISOString().slice(0,10); }
+function monthKey(d){ if(!d) return '—'; return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+function monthLabel(key){ if(key==='—') return '—'; const [y,m]=key.split('-'); return new Date(+y,+m-1,1).toLocaleString('en-IN',{month:'short',year:'2-digit'}); }
+
+function normOwner(v){
+  const s=(v||'').toString().trim().toLowerCase();
+  if(s.startsWith('hire')||s.startsWith('hired')) return 'Hire';
+  if(s.startsWith('self')) return 'Self';
+  return v? v.toString().trim() : 'Unknown';
+}
+
+function groupSum(rows, keyFn, valFn){
+  const m = new Map();
+  for(const r of rows){
+    const k = keyFn(r); if(k===null||k===undefined||k==='') continue;
+    const v = valFn(r); if(!isFinite(v)) continue;
+    m.set(k, (m.get(k)||0)+v);
+  }
+  return m;
+}
+function sortMapDesc(m){ return [...m.entries()].sort((a,b)=>b[1]-a[1]); }
+
+/* ============================================================
+   LOAD + PARSE
+=============================================================*/
+async function loadData(){
+  const loadingText = document.getElementById('loadingText');
+  try{
+    loadingText.textContent = 'Fetching latest data from Google Sheet…';
+    const res = await fetch(CSV_URL + '&cachebust=' + Date.now());
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const text = await res.text();
+    loadingText.textContent = 'Parsing fuel log…';
+    const parsed = Papa.parse(text, {header:true, skipEmptyLines:true});
+    const headers = parsed.meta.fields || [];
+
+    const col = {
+      category: findCol(headers, ['Machine Category']),
+      machineNo: findCol(headers, ['Machine No','Machine No.']),
+      machineType: findCol(headers, ['Machine Type']),
+      logDate: findCol(headers, ['Log Date']),
+      owner: findCol(headers, ['Owner']),
+      totalDistance: findCol(headers, ['Total Distance']),
+      fuelIssue: findCol(headers, ['Fuel Issue']),
+      timeFrom: findCol(headers, ['Time From']),
+      timeTo: findCol(headers, ['Time To']),
+      site: findCol(headers, ['Site Name']),
+      dieselRate: findCol(headers, ['Diesel Rate']),
+      dieselAmt: findCol(headers, ['Diesel Amt'])
+    };
+    if(!col.category || !col.machineNo || !col.fuelIssue){
+      throw new Error('MISSING_COLUMNS');
+    }
+
+    RAW = parsed.data.map(row=>{
+      const d = parseDate(row[col.logDate]);
+      const tf = col.timeFrom? num(row[col.timeFrom]) : NaN;
+      const tt = col.timeTo? num(row[col.timeTo]) : NaN;
+      let hrs = NaN;
+      if(isFinite(tf) && isFinite(tt) && tt>=tf) hrs = tt-tf;
+      const fuel = num(row[col.fuelIssue]);
+      const rate = col.dieselRate? num(row[col.dieselRate]) : NaN;
+      let amt = col.dieselAmt? num(row[col.dieselAmt]) : NaN;
+      if(!isFinite(amt) && isFinite(fuel) && isFinite(rate)) amt = fuel*rate;
+      return {
+        category: (row[col.category]||'').toString().trim(),
+        machineNo: (row[col.machineNo]||'').toString().trim(),
+        machineType: col.machineType? (row[col.machineType]||'').toString().trim().toUpperCase() : '',
+        date: d, dateISO: isoDate(d), month: monthKey(d),
+        owner: normOwner(row[col.owner]),
+        distance: col.totalDistance? num(row[col.totalDistance]) : NaN,
+        fuel: isFinite(fuel)? fuel : 0,
+        hours: hrs,
+        site: col.site? (row[col.site]||'').toString().trim() : '',
+        amt: isFinite(amt)? amt : 0
+      };
+    }).filter(r=>r.machineNo && r.category);
+
+    if(RAW.length===0) throw new Error('NO_ROWS');
+
+    LAST_UPDATED = new Date();
+    buildSlicerOptions();
+    renderAll();
+    document.getElementById('loadingScreen').style.display='none';
+    document.getElementById('app').style.display='flex';
+    setStatus(true);
+  }catch(err){
+    console.error(err);
+    showLoadError(err);
+  }
+}
+
+function showLoadError(err){
+  const box = document.getElementById('loadingScreen');
+  let msg = 'Could not load the Google Sheet.';
+  if(err && err.message==='MISSING_COLUMNS') msg = 'Sheet loaded, but expected columns (Machine Category / Machine No / Fuel Issue) were not found in the published tab.';
+  else if(err && err.message==='NO_ROWS') msg = 'Sheet loaded but contains no usable data rows.';
+  box.innerHTML = `<div class="err-box"><b>⚠ ${msg}</b><br><br>
+    Make sure the sheet is published as CSV (File → Share → Publish to web → CSV) and the "Fuel Tracker" tab is the one being published.<br><br>
+    <code>${CSV_URL}</code><br><br>
+    <span class="pill refresh" id="retryBtn" style="display:inline-flex;margin-top:8px;">⟳ Retry</span></div>`;
+  document.getElementById('retryBtn').onclick = ()=>{ box.innerHTML = '<div class="spinner"></div><p id="loadingText">Retrying…</p>'; loadData(); };
+}
+
+function setStatus(ok){
+  document.getElementById('statusDot').className = ok? 'dot':'dot loading';
+  document.getElementById('statusText').textContent = ok? 'Live Connected':'Reconnecting…';
+  document.getElementById('dataStatus').textContent = '● Live Connected — Last Updated: '+ (LAST_UPDATED? LAST_UPDATED.toLocaleString('en-IN'): '—');
+}
+
+/* ============================================================
+   FILTERING
+=============================================================*/
+function applyFilters(){
+  return RAW.filter(r=>{
+    if(filters.dateFrom && (!r.dateISO || r.dateISO < filters.dateFrom)) return false;
+    if(filters.dateTo && (!r.dateISO || r.dateISO > filters.dateTo)) return false;
+    if(filters.category.size && !filters.category.has(r.category)) return false;
+    if(filters.machineNo.size && !filters.machineNo.has(r.machineNo)) return false;
+    if(filters.owner.size && !filters.owner.has(r.owner)) return false;
+    if(filters.site.size && !filters.site.has(r.site)) return false;
+    return true;
+  });
+}
+
+function toggleFilter(dim, val){
+  const s = filters[dim];
+  if(s.has(val)) s.delete(val); else s.add(val);
+  refreshUIAfterFilterChange();
+}
+function setDateRange(from,to){ filters.dateFrom=from||null; filters.dateTo=to||null; refreshUIAfterFilterChange(); }
+function clearFilter(dim){
+  if(dim==='date'){ filters.dateFrom=null; filters.dateTo=null; document.getElementById('dateFrom').value=''; document.getElementById('dateTo').value=''; }
+  else filters[dim].clear();
+  refreshUIAfterFilterChange();
+}
+function clearAllFilters(){
+  filters.dateFrom=null; filters.dateTo=null;
+  filters.category.clear(); filters.machineNo.clear(); filters.owner.clear(); filters.site.clear();
+  document.getElementById('dateFrom').value=''; document.getElementById('dateTo').value='';
+  refreshUIAfterFilterChange();
+}
+function refreshUIAfterFilterChange(){
+  syncMultiselectChecks();
+  renderChips();
+  renderAll();
+}
+
+/* ============================================================
+   SLICER UI
+=============================================================*/
+function buildSlicerOptions(){
+  const cats = [...new Set(RAW.map(r=>r.category))].sort();
+  const machs = [...new Set(RAW.map(r=>r.machineNo))].sort();
+  const owners = [...new Set(RAW.map(r=>r.owner))].sort();
+  const sites = [...new Set(RAW.map(r=>r.site).filter(Boolean))].sort();
+
+  fillList('catList','category',cats);
+  fillList('machList','machineNo',machs);
+  fillList('ownerList','owner',owners);
+  fillList('siteList','site',sites);
+  fillList('t2machList', '__t2__', machs);
+
+  const dates = RAW.map(r=>r.dateISO).filter(Boolean).sort();
+  if(dates.length){
+    document.getElementById('dateFrom').min = dates[0]; document.getElementById('dateFrom').max = dates[dates.length-1];
+    document.getElementById('dateTo').min = dates[0]; document.getElementById('dateTo').max = dates[dates.length-1];
+  }
+}
+
+function fillList(listId, dim, values){
+  const el = document.getElementById(listId);
+  el.innerHTML = values.map(v=>{
+    const id = listId+'_'+btoa(unescape(encodeURIComponent(v))).replace(/[^a-zA-Z0-9]/g,'');
+    return `<label class="msel-item"><input type="checkbox" data-dim="${dim}" data-val="${encodeURIComponent(v)}"> ${v}</label>`;
+  }).join('');
+  el.querySelectorAll('input[type=checkbox]').forEach(cb=>{
+    cb.addEventListener('change', ()=>{
+      const dim = cb.getAttribute('data-dim'); const val = decodeURIComponent(cb.getAttribute('data-val'));
+      if(dim==='__t2__'){ t2SelectedMachine = cb.checked? val : null;
+        if(cb.checked){ el.querySelectorAll('input[type=checkbox]').forEach(o=>{ if(o!==cb) o.checked=false; }); }
+        document.getElementById('t2machLabel').textContent = t2SelectedMachine || 'All Machines (Aggregate)';
+        renderTab2(); document.getElementById('msel-t2machine').classList.remove('open');
+        return;
+      }
+      toggleFilter(dim, val);
+    });
+  });
+}
+
+function syncMultiselectChecks(){
+  document.querySelectorAll('#catList input').forEach(cb=> cb.checked = filters.category.has(decodeURIComponent(cb.getAttribute('data-val'))));
+  document.querySelectorAll('#machList input').forEach(cb=> cb.checked = filters.machineNo.has(decodeURIComponent(cb.getAttribute('data-val'))));
+  document.querySelectorAll('#ownerList input').forEach(cb=> cb.checked = filters.owner.has(decodeURIComponent(cb.getAttribute('data-val'))));
+  document.querySelectorAll('#siteList input').forEach(cb=> cb.checked = filters.site.has(decodeURIComponent(cb.getAttribute('data-val'))));
+
+  document.getElementById('catBtnLabel').textContent = filters.category.size? filters.category.size+' Category selected' : 'All Categories';
+  document.getElementById('machBtnLabel').textContent = filters.machineNo.size? filters.machineNo.size+' Machine selected' : 'All Machine No.';
+  document.getElementById('ownerBtnLabel').textContent = filters.owner.size? [...filters.owner].join(', ') : 'All Owners';
+  document.getElementById('siteBtnLabel').textContent = filters.site.size? filters.site.size+' Site selected' : 'All Sites';
+  document.getElementById('dateBtnLabel').textContent = (filters.dateFrom||filters.dateTo)? (filters.dateFrom||'…')+' → '+(filters.dateTo||'…') : 'All Dates';
+}
+
+function renderChips(){
+  const chips = [];
+  if(filters.dateFrom||filters.dateTo) chips.push(['date', (filters.dateFrom||'…')+' → '+(filters.dateTo||'…')]);
+  filters.category.forEach(v=>chips.push(['category',v]));
+  filters.machineNo.forEach(v=>chips.push(['machineNo',v]));
+  filters.owner.forEach(v=>chips.push(['owner',v]));
+  filters.site.forEach(v=>chips.push(['site',v]));
+  const wrap = document.getElementById('activeChips');
+  wrap.innerHTML = chips.map(([dim,label])=>
+    `<span class="chip">${label}<button data-dim="${dim}" data-val="${encodeURIComponent(label)}">✕</button></span>`).join('');
+  wrap.querySelectorAll('button').forEach(b=>{
+    b.onclick = ()=>{
+      const dim = b.getAttribute('data-dim');
+      if(dim==='date') clearFilter('date');
+      else toggleFilter(dim, decodeURIComponent(b.getAttribute('data-val')));
+    };
+  });
+}
+
+// dropdown open/close
+document.addEventListener('click', (e)=>{
+  const btn = e.target.closest('.msel-btn');
+  document.querySelectorAll('.msel.open').forEach(m=>{ if(!btn || m.id!==btn.getAttribute('data-target')) m.classList.remove('open'); });
+  if(btn){ document.getElementById(btn.getAttribute('data-target')).classList.toggle('open'); }
+  const closeBtn = e.target.closest('[data-close]');
+  if(closeBtn) document.getElementById(closeBtn.getAttribute('data-close')).classList.remove('open');
+  const clearBtn = e.target.closest('[data-clear]');
+  if(clearBtn) clearFilter(clearBtn.getAttribute('data-clear'));
+});
+document.querySelectorAll('.msel-search').forEach(inp=>{
+  inp.addEventListener('input', ()=>{
+    const list = document.getElementById(inp.getAttribute('data-list'));
+    const q = inp.value.toLowerCase();
+    list.querySelectorAll('.msel-item').forEach(item=>{
+      item.style.display = item.textContent.toLowerCase().includes(q)? 'flex':'none';
+    });
+  });
+});
+document.getElementById('dateApply').onclick = ()=>{
+  setDateRange(document.getElementById('dateFrom').value, document.getElementById('dateTo').value);
+  document.getElementById('msel-date').classList.remove('open');
+};
+document.getElementById('dateClear').onclick = ()=> clearFilter('date');
+document.getElementById('clearAllBtn').onclick = clearAllFilters;
+document.getElementById('refreshBtn').onclick = ()=>{ setStatus(false); loadData(); };
+
+/* tabs */
+document.querySelectorAll('.tabbtn').forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.content').forEach(c=>c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.getAttribute('data-tab')).classList.add('active');
+  };
 });
 
-new Chart(document.getElementById('costChart'), {
-  type:'line',
-  data:{labels:DATA.cost_trend.labels, datasets:[{data:DATA.cost_trend.values, borderColor:AMBER, backgroundColor:'rgba(242,169,63,0.12)', fill:true, tension:.35, pointRadius:3, pointBackgroundColor:AMBER}]},
-  options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
-    scales:{y:{grid:{color:GRID}, ticks:{color:MUTED, callback:(v)=>'₹'+v+'K'}}, x:{grid:{display:false}, ticks:{color:MUTED, maxRotation:0}}}}
-});
+/* ============================================================
+   RENDER — MASTER
+=============================================================*/
+function renderAll(){
+  renderTab1();
+  renderTab2();
+}
 
-new Chart(document.getElementById('catChart'), {
-  type:'bar',
-  data:{labels:DATA.category_wise.labels, datasets:[{data:DATA.category_wise.values, backgroundColor:CYAN, borderRadius:4, maxBarThickness:26}]},
-  options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
-    scales:{y:{grid:{color:GRID}, ticks:{color:MUTED}}, x:{grid:{display:false}, ticks:{color:MUTED, maxRotation:45, autoSkip:false, font:{size:10}}}}}
-});
+function destroyChart(id){ if(CHARTS[id]){ CHARTS[id].destroy(); delete CHARTS[id]; } }
 
-new Chart(document.getElementById('siteChart'), {
-  type:'bar',
-  data:{labels:DATA.site_wise.labels.map(s=>s.length>14?s.slice(0,14)+'…':s), datasets:[{data:DATA.site_wise.values, backgroundColor:AMBER, borderRadius:4, maxBarThickness:30}]},
-  options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
-    scales:{y:{grid:{color:GRID}, ticks:{color:MUTED}}, x:{grid:{display:false}, ticks:{color:MUTED, maxRotation:30, font:{size:10}}}}}
-});
+/* ---------------- TAB 1 ---------------- */
+function renderTab1(){
+  const rows = applyFilters();
+  renderKPIs(rows);
+  renderDailyTrend(rows);
+  renderOwnerDonut(rows);
+  renderTop10(rows);
+  renderCategoryBar(rows);
+  renderSiteBar(rows);
+  renderGauge(rows);
+  renderCostTrend(rows);
+  renderAlerts(rows);
+  renderLogTable(rows);
+  renderEfficiencyDonut(rows);
+}
 
-new Chart(document.getElementById('topMachinesChart'), {
-  type:'bar',
-  data:{labels:DATA.top_machines.labels, datasets:[{data:DATA.top_machines.values, backgroundColor:CYAN, borderRadius:4, maxBarThickness:16}]},
-  options:{indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
-    scales:{x:{grid:{color:GRID}, ticks:{color:MUTED}}, y:{grid:{display:false}, ticks:{color:MUTED, font:{size:10.5}}}}}
-});
+function renderKPIs(rows){
+  const totalFuel = rows.reduce((a,r)=>a+r.fuel,0);
+  const activeVeh = new Set(rows.map(r=>r.machineNo)).size;
+  const totalCost = rows.reduce((a,r)=>a+r.amt,0);
+  const totalHrs = rows.reduce((a,r)=> a + (isFinite(r.hours)?r.hours:0), 0);
+  const totalDist = rows.reduce((a,r)=> a + (isFinite(r.distance)?r.distance:0), 0);
+  const avgCons = totalHrs>0? totalFuel/totalHrs : 0;
+  const machineDays = new Set(rows.filter(r=>r.dateISO).map(r=>r.machineNo+'|'+r.dateISO)).size;
+  const util = machineDays>0? (totalHrs/(machineDays*STANDARD_HOURS_PER_DAY))*100 : 0;
 
-new Chart(document.getElementById('highConsChart'), {
-  type:'bar',
-  data:{labels:DATA.top_high_consumers.map(d=>d.name), datasets:[{data:DATA.top_high_consumers.map(d=>d.val), backgroundColor:RED, borderRadius:4, maxBarThickness:18}]},
-  options:{indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
-    scales:{x:{grid:{color:GRID}, ticks:{color:MUTED, callback:(v)=>v+' L/hr'}}, y:{grid:{display:false}, ticks:{color:MUTED, font:{size:10}}}}}
-});
+  // high consumption: machine avg L/Hr > 1.4x category avg L/Hr
+  const {flagged} = highConsumptionMachines(rows);
 
-const oh = DATA.owner_hours;
-const ohTotal = oh.self + oh.hired;
-document.getElementById('ownerTotalHrs').textContent = Math.round(ohTotal).toLocaleString('en-IN');
-document.getElementById('selfPct').textContent = Math.round(oh.self/ohTotal*100) + '% · ' + oh.self.toLocaleString('en-IN') + ' hrs';
-document.getElementById('hiredPct').textContent = Math.round(oh.hired/ohTotal*100) + '% · ' + oh.hired.toLocaleString('en-IN') + ' hrs';
+  const kpis = [
+    {ico:'⛽',label:'TOTAL FUEL ISSUED',val:fmt0(totalFuel)+' Ltr'},
+    {ico:'🚚',label:'ACTIVE MACHINES',val:fmt0(activeVeh)},
+    {ico:'₹',label:'TOTAL FUEL COST',val:curr(totalCost)},
+    {ico:'⏱',label:'TOTAL WORKING HOURS',val:fmt1(totalHrs)+' Hrs'},
+    {ico:'📏',label:'TOTAL DISTANCE',val:fmt0(totalDist)+' Km'},
+    {ico:'📊',label:'AVG CONSUMPTION',val:fmt2(avgCons)+' L/Hr'},
+    {ico:'%',label:'AVG UTILIZATION',val:fmt1(util)+'%',title:'Assumes '+STANDARD_HOURS_PER_DAY+' std working hrs/day per logged machine-day'},
+    {ico:'⚠',label:'HIGH CONSUMPTION',val:flagged.length,warn:true,sub:'Machines — Needs Review'}
+  ];
+  document.getElementById('kpiRow').innerHTML = kpis.map(k=>`
+    <div class="kpi ${k.warn?'warn':''}" title="${k.title||''}">
+      <div class="kpi-top"><div class="kpi-ico">${k.ico}</div><div class="kpi-label">${k.label}</div></div>
+      <div class="kpi-val">${k.val}</div>
+      ${k.sub? `<div class="kpi-sub">${k.sub}</div>` : ''}
+    </div>`).join('');
+}
 
-new Chart(document.getElementById('ownerDonut'), {
-  type:'doughnut',
-  data:{labels:['Self','Hired'], datasets:[{data:[oh.self, oh.hired], backgroundColor:[CYAN, AMBER], borderColor:'#0C1A28', borderWidth:3}]},
-  options:{responsive:true, maintainAspectRatio:false, cutout:'72%', plugins:{legend:{display:false}, tooltip:{enabled:true}}}
-});
+function highConsumptionMachines(rows){
+  // per-machine L/Hr vs category average L/Hr
+  const byMachine = new Map();
+  for(const r of rows){
+    if(!isFinite(r.hours) || r.hours<=0) continue;
+    if(!byMachine.has(r.machineNo)) byMachine.set(r.machineNo,{fuel:0,hours:0,category:r.category});
+    const o = byMachine.get(r.machineNo); o.fuel+=r.fuel; o.hours+=r.hours;
+  }
+  const byCategory = new Map();
+  for(const [m,o] of byMachine){
+    if(!byCategory.has(o.category)) byCategory.set(o.category,{fuel:0,hours:0});
+    const c = byCategory.get(o.category); c.fuel+=o.fuel; c.hours+=o.hours;
+  }
+  const flagged = [];
+  for(const [m,o] of byMachine){
+    const rate = o.fuel/o.hours;
+    const c = byCategory.get(o.category);
+    const catRate = c.hours>0? c.fuel/c.hours : 0;
+    if(catRate>0 && rate > catRate*1.4) flagged.push({machineNo:m, rate, catRate, category:o.category});
+  }
+  return {flagged: flagged.sort((a,b)=>b.rate-a.rate)};
+}
 
-const effColors = {Excellent:GREEN, Good:CYAN, Average:AMBER, Poor:RED};
-const effOrder = ['Excellent','Good','Average','Poor'];
-const effTotal = Object.values(DATA.efficiency_status).reduce((a,b)=>a+b,0);
-document.getElementById('effLegend').innerHTML = effOrder.map(key => {
-  const v = DATA.efficiency_status[key] || 0;
-  const pct = Math.round(v/effTotal*100);
-  return `<div class="legend-item"><span class="dot" style="background:${effColors[key]};"></span>${key}<b style="margin-left:auto;">${v} machines (${pct}%)</b></div>`;
-}).join('');
+function baseLineOpts(){
+  return {responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}, tooltip:{backgroundColor:'#0D1728',borderColor:'#1E2D45',borderWidth:1,titleColor:'#E7EFFB',bodyColor:'#8B9AB3'}},
+    scales:{x:{grid:{color:'#152238'},ticks:{color:'#5A6A85',font:{size:10}}}, y:{grid:{color:'#152238'},ticks:{color:'#5A6A85',font:{size:10}}}}};
+}
 
-const alerts = [
-  {cls:'', title:`${k.high_consumption_count} machines high consumption`, sub:'Standard L/hr se zyada consume kar rahe — breakdown ya operator habit check karo.'},
-  {cls:'amber', title:`${k.low_util_count} machines low utilization`, sub:'Period ke 20% se kam din log entry hui hai — idle assets ho sakte hain.'},
-  {cls:'amber', title:'Distance data quality', sub:'Kuch machines mein odometer misread (bahut zyada km jump) mile — total distance filter karke nikala gaya hai.'}
-];
-document.getElementById('alertList').innerHTML = alerts.map(a => `
-  <div class="alert ${a.cls}">
-    <div>
-      <div class="a-title">${a.title}</div>
-      <div class="a-sub">${a.sub}</div>
-    </div>
-  </div>
-`).join('');
+function renderDailyTrend(rows){
+  const m = groupSum(rows, r=>r.dateISO, r=>r.fuel);
+  const keys = [...m.keys()].sort();
+  const labels = keys.map(k=> new Date(k).toLocaleDateString('en-IN',{day:'2-digit',month:'short'}));
+  const data = keys.map(k=>m.get(k));
+  destroyChart('chartDaily');
+  const ctx = document.getElementById('chartDaily').getContext('2d');
+  const grad = ctx.createLinearGradient(0,0,0,220); grad.addColorStop(0,'rgba(34,211,238,.35)'); grad.addColorStop(1,'rgba(34,211,238,0)');
+  CHARTS.chartDaily = new Chart(ctx,{type:'line',data:{labels,datasets:[{data,borderColor:COLORS.cyan,backgroundColor:grad,fill:true,tension:.35,pointRadius:3,pointBackgroundColor:COLORS.cyan,pointHoverRadius:5}]},
+    options:{...baseLineOpts(), onClick:(evt,els)=>{ if(els.length){ const k=keys[els[0].index]; setDateRange(k,k);} }}});
+}
 
-document.getElementById('logBody').innerHTML = DATA.sample_log.map(r => `
-  <tr>
-    <td>${r.date}</td>
-    <td>${r.machine_no}</td>
-    <td>${r.category.replace(/ - \d+$/,'')}</td>
-    <td>${r.site}</td>
-    <td><span class="badge ${r.owner.toLowerCase()==='self'?'self':'hired'}">${r.owner}</span></td>
-    <td class="num">${r.fuel}</td>
-    <td class="num">${r.hours}</td>
-    <td class="num">${r.dist}</td>
-    <td class="num">${r.ltrhr}</td>
-    <td class="num">${inr(r.cost)}</td>
-  </tr>
-`).join('');
+function renderCostTrend(rows){
+  const m = groupSum(rows, r=>r.dateISO, r=>r.amt);
+  const keys = [...m.keys()].sort();
+  const labels = keys.map(k=> new Date(k).toLocaleDateString('en-IN',{day:'2-digit',month:'short'}));
+  const data = keys.map(k=>m.get(k));
+  destroyChart('chartCost');
+  const ctx = document.getElementById('chartCost').getContext('2d');
+  CHARTS.chartCost = new Chart(ctx,{type:'line',data:{labels,datasets:[{data,borderColor:COLORS.amber,backgroundColor:'transparent',tension:.35,pointRadius:2,pointBackgroundColor:COLORS.amber}]},
+    options:{...baseLineOpts(), onClick:(evt,els)=>{ if(els.length){ const k=keys[els[0].index]; setDateRange(k,k);} }}});
+}
+
+function renderOwnerDonut(rows){
+  const m = groupSum(rows, r=>r.owner, r=>(isFinite(r.hours)?r.hours:0));
+  const labels = [...m.keys()]; const data=[...m.values()];
+  const total = data.reduce((a,b)=>a+b,0);
+  destroyChart('chartOwner');
+  const ctx = document.getElementById('chartOwner').getContext('2d');
+  CHARTS.chartOwner = new Chart(ctx,{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:[COLORS.blue,COLORS.amber,COLORS.purple],borderColor:'#0F1B2E',borderWidth:3}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'70%',
+      plugins:{legend:{position:'bottom',labels:{color:'#8B9AB3',font:{size:10},boxWidth:8,padding:10}},
+        tooltip:{backgroundColor:'#0D1728',borderColor:'#1E2D45',borderWidth:1}},
+      onClick:(evt,els)=>{ if(els.length){ toggleFilter('owner', labels[els[0].index]); } }}});
+  document.getElementById('ownerCenter').innerHTML = `<div class="v">${fmt0(total)}</div><div class="l">Hrs</div>`;
+}
+
+function renderEfficiencyDonut(rows){
+  // bucket each machine's overall L/Hr into quartile-based Excellent/Good/Average/Poor
+  const byMachine = new Map();
+  for(const r of rows){ if(!isFinite(r.hours)||r.hours<=0) continue;
+    if(!byMachine.has(r.machineNo)) byMachine.set(r.machineNo,{fuel:0,hours:0});
+    const o=byMachine.get(r.machineNo); o.fuel+=r.fuel; o.hours+=r.hours; }
+  const rates = [...byMachine.values()].map(o=>o.fuel/o.hours).filter(isFinite).sort((a,b)=>a-b);
+  let buckets = {Excellent:0,Good:0,Average:0,Poor:0};
+  if(rates.length){
+    const q1=rates[Math.floor(rates.length*0.25)], q2=rates[Math.floor(rates.length*0.5)], q3=rates[Math.floor(rates.length*0.75)];
+    for(const r of rates){ if(r<=q1) buckets.Excellent++; else if(r<=q2) buckets.Good++; else if(r<=q3) buckets.Average++; else buckets.Poor++; }
+  }
+  destroyChart('chartEff');
+  const ctx = document.getElementById('chartEff').getContext('2d');
+  const labels=Object.keys(buckets), data=Object.values(buckets);
+  CHARTS.chartEff = new Chart(ctx,{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:[COLORS.green,COLORS.blue,COLORS.amber,COLORS.red],borderColor:'#0F1B2E',borderWidth:3}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'68%',
+      plugins:{legend:{position:'bottom',labels:{color:'#8B9AB3',font:{size:9.5},boxWidth:8,padding:8}}}}});
+  document.getElementById('effCenter').innerHTML = `<div class="v">${byMachine.size}</div><div class="l">Machines</div>`;
+}
+
+function renderTop10(rows){
+  const m = groupSum(rows, r=>r.machineNo, r=>r.fuel);
+  const top = sortMapDesc(m).slice(0,10);
+  destroyChart('chartTop10');
+  const ctx = document.getElementById('chartTop10').getContext('2d');
+  CHARTS.chartTop10 = new Chart(ctx,{type:'bar',data:{labels:top.map(t=>t[0]),datasets:[{data:top.map(t=>t[1]),backgroundColor:COLORS.blue,borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{grid:{color:'#152238'},ticks:{color:'#5A6A85',font:{size:9}}},y:{grid:{display:false},ticks:{color:'#8B9AB3',font:{size:9}}}},
+      onClick:(evt,els)=>{ if(els.length){ toggleFilter('machineNo', top[els[0].index][0]); } }}});
+}
+
+function renderCategoryBar(rows){
+  const m = groupSum(rows, r=>r.category, r=>r.fuel);
+  const top = sortMapDesc(m).slice(0,8);
+  destroyChart('chartCategory');
+  const ctx = document.getElementById('chartCategory').getContext('2d');
+  CHARTS.chartCategory = new Chart(ctx,{type:'bar',data:{labels:top.map(t=>t[0]),datasets:[{data:top.map(t=>t[1]),backgroundColor:COLORS.cyan,borderRadius:5,maxBarThickness:34}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{grid:{display:false},ticks:{color:'#8B9AB3',font:{size:8.5},maxRotation:35,minRotation:35}},y:{grid:{color:'#152238'},ticks:{color:'#5A6A85',font:{size:9}}}},
+      onClick:(evt,els)=>{ if(els.length){ toggleFilter('category', top[els[0].index][0]); } }}});
+}
+
+function renderSiteBar(rows){
+  const m = groupSum(rows, r=>r.site, r=>r.fuel);
+  const top = sortMapDesc(m);
+  destroyChart('chartSite');
+  const ctx = document.getElementById('chartSite').getContext('2d');
+  CHARTS.chartSite = new Chart(ctx,{type:'bar',data:{labels:top.map(t=>t[0]),datasets:[{data:top.map(t=>t[1]),backgroundColor:COLORS.purple,borderRadius:5,maxBarThickness:34}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{grid:{display:false},ticks:{color:'#8B9AB3',font:{size:8},maxRotation:25,minRotation:0}},y:{grid:{color:'#152238'},ticks:{color:'#5A6A85',font:{size:9}}}},
+      onClick:(evt,els)=>{ if(els.length){ toggleFilter('site', top[els[0].index][0]); } }}});
+}
+
+function renderGauge(rows){
+  const totalFuel = rows.reduce((a,r)=>a+r.fuel,0);
+  const totalHrs = rows.reduce((a,r)=>a+(isFinite(r.hours)?r.hours:0),0);
+  const val = totalHrs>0? totalFuel/totalHrs : 0;
+  document.getElementById('gaugeVal').textContent = fmt2(val);
+  const canvas = document.getElementById('chartGauge');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const cx=canvas.width/2, cy=canvas.height-8, r=88;
+  const zones = [[0,0.35,COLORS.green],[0.35,0.6,'#A3E635'],[0.6,0.8,COLORS.amber],[0.8,1,COLORS.red]];
+  const start=Math.PI, end=2*Math.PI;
+  zones.forEach(([a,b,c])=>{
+    ctx.beginPath(); ctx.arc(cx,cy,r,start+(end-start)*a,start+(end-start)*b); ctx.lineWidth=14; ctx.strokeStyle=c; ctx.lineCap='butt'; ctx.stroke();
+  });
+  const max=10; const frac=Math.min(val/max,1);
+  const ang = Math.PI + Math.PI*frac;
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(ang);
+  ctx.beginPath(); ctx.moveTo(0,-3); ctx.lineTo(r-6,0); ctx.lineTo(0,3); ctx.closePath(); ctx.fillStyle='#E7EFFB'; ctx.fill();
+  ctx.restore();
+  ctx.beginPath(); ctx.arc(cx,cy,6,0,2*Math.PI); ctx.fillStyle='#E7EFFB'; ctx.fill();
+}
+
+function renderAlerts(rows){
+  const {flagged} = highConsumptionMachines(rows);
+  const byMachine = new Map();
+  for(const r of rows){ if(!byMachine.has(r.machineNo)) byMachine.set(r.machineNo,{hours:0,days:new Set()});
+    const o=byMachine.get(r.machineNo); o.hours += isFinite(r.hours)?r.hours:0; if(r.dateISO) o.days.add(r.dateISO); }
+  const lowUtil = [...byMachine.entries()].map(([m,o])=>({m,util:o.days.size? (o.hours/(o.days.size*STANDARD_HOURS_PER_DAY))*100:0}))
+    .filter(x=>x.util<40 && x.util>0).sort((a,b)=>a.util-b.util);
+  const anomalyDist = rows.filter(r=>isFinite(r.distance) && r.distance>5000).length;
+
+  const items = [];
+  if(flagged.length) items.push({cls:'red',ico:'⚠',t:'High Fuel Consumption', d:flagged.length+' machines consuming >40% above category average', dim:'machineNo', val:flagged[0]?.machineNo});
+  if(lowUtil.length) items.push({cls:'amber',ico:'⏳',t:'Low Utilization', d:lowUtil.length+' machines utilization less than 40%', dim:'machineNo', val:lowUtil[0]?.m});
+  if(anomalyDist) items.push({cls:'blue',ico:'📏',t:'Odometer / Meter Anomaly', d:anomalyDist+' log entries show >5,000 Km in a single day — check meter entry'});
+  if(!items.length) items.push({cls:'blue',ico:'✓',t:'All Clear', d:'No alerts for the current filter selection'});
+
+  document.getElementById('alertsPanel').innerHTML = items.map(it=>`
+    <div class="alert-item ${it.cls}" data-dim="${it.dim||''}" data-val="${it.val?encodeURIComponent(it.val):''}">
+      <div class="alert-ico">${it.ico}</div>
+      <div class="alert-txt"><div class="t">${it.t}</div><div class="d">${it.d}</div></div>
+    </div>`).join('');
+  document.querySelectorAll('#alertsPanel .alert-item').forEach(el=>{
+    el.onclick = ()=>{ const dim=el.getAttribute('data-dim'), val=el.getAttribute('data-val'); if(dim && val) toggleFilter(dim, decodeURIComponent(val)); };
+  });
+}
+
+function renderLogTable(rows){
+  const sorted = [...rows].filter(r=>r.date).sort((a,b)=>b.date-a.date).slice(0,60);
+  document.getElementById('logCount').textContent = rows.length+' entries (showing latest '+sorted.length+')';
+  if(!sorted.length){ document.getElementById('logTableWrap').innerHTML = '<div class="empty">No log entries match the current filters</div>'; return; }
+  const rowsHtml = sorted.map(r=>{
+    const rate = isFinite(r.hours)&&r.hours>0? r.fuel/r.hours : null;
+    const badge = rate===null? '' : rate<3? 'good' : rate<6? 'avg' : 'poor';
+    const badgeTxt = rate===null? '—' : rate<3? 'Good':rate<6?'Average':'Poor';
+    return `<tr data-machine="${encodeURIComponent(r.machineNo)}">
+      <td>${r.date.toLocaleDateString('en-IN',{day:'2-digit',month:'short'})}</td>
+      <td>${r.machineNo}</td>
+      <td>${r.category}</td>
+      <td>${r.site||'—'}</td>
+      <td><span class="owner-tag ${r.owner==='Self'?'self':'hire'}">${r.owner}</span></td>
+      <td class="num">${fmt1(r.fuel)}</td>
+      <td class="num">${isFinite(r.hours)?fmt1(r.hours):'—'}</td>
+      <td class="num">${curr(r.amt)}</td>
+      <td>${badge? `<span class="badge ${badge}">${badgeTxt}</span>`:'—'}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('logTableWrap').innerHTML = `<table><thead><tr>
+    <th>Date</th><th>Machine No</th><th>Category</th><th>Site</th><th>Owner</th><th>Fuel (L)</th><th>Hours</th><th>Cost</th><th>Status</th>
+  </tr></thead><tbody>${rowsHtml}</tbody></table>`;
+  document.querySelectorAll('#logTableWrap tbody tr').forEach(tr=>{
+    tr.onclick = ()=> toggleFilter('machineNo', decodeURIComponent(tr.getAttribute('data-machine')));
+  });
+}
+
+/* ---------------- TAB 2 : TREND CHART ---------------- */
+function renderTab2(){
+  let rows = applyFilters();
+  if(t2SelectedMachine) rows = rows.filter(r=>r.machineNo===t2SelectedMachine);
+
+  const totalFuel = rows.reduce((a,r)=>a+r.fuel,0);
+  const totalHrs = rows.reduce((a,r)=>a+(isFinite(r.hours)?r.hours:0),0);
+  const avgRate = totalHrs>0? totalFuel/totalHrs : 0;
+  const months = new Set(rows.map(r=>r.month)).size;
+
+  document.getElementById('t2Kpis').innerHTML = [
+    {l:'TOTAL FUEL ISSUED', v:fmt0(totalFuel)+' Ltr', c:COLORS.cyan},
+    {l:'TOTAL HOURS USED', v:fmt1(totalHrs)+' Hrs', c:COLORS.blue},
+    {l:'AVG CONSUMPTION', v:fmt2(avgRate)+' L/Hr', c:COLORS.amber},
+    {l:'MONTHS OF DATA', v:months, c:COLORS.purple}
+  ].map(k=>`<div class="kpi"><div class="kpi-label">${k.l}</div><div class="kpi-val" style="color:${k.c}">${k.v}</div></div>`).join('');
+
+  // month-wise aggregation
+  const monthMap = new Map(); // key -> {hours, fuel}
+  for(const r of rows){
+    if(!monthMap.has(r.month)) monthMap.set(r.month,{hours:0,fuel:0});
+    const o = monthMap.get(r.month);
+    o.hours += isFinite(r.hours)?r.hours:0;
+    o.fuel += r.fuel;
+  }
+  const keys = [...monthMap.keys()].filter(k=>k!=='—').sort();
+  const labels = keys.map(monthLabel);
+  const hoursData = keys.map(k=>monthMap.get(k).hours);
+  const fuelData = keys.map(k=>monthMap.get(k).fuel);
+  const rateData = keys.map(k=>{ const o=monthMap.get(k); return o.hours>0? o.fuel/o.hours : 0; });
+
+  destroyChart('chartMonthHours');
+  const ctx1 = document.getElementById('chartMonthHours').getContext('2d');
+  CHARTS.chartMonthHours = new Chart(ctx1,{type:'bar',data:{labels,datasets:[{data:hoursData,backgroundColor:COLORS.blue,borderRadius:6,maxBarThickness:46}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{grid:{display:false},ticks:{color:'#8B9AB3',font:{size:10}}},y:{grid:{color:'#152238'},ticks:{color:'#5A6A85',font:{size:9}}}},
+      onClick:(evt,els)=>{ if(els.length){ const k=keys[els[0].index]; const [y,m]=k.split('-'); const first=y+'-'+m+'-01'; const last=new Date(+y,+m,0).toISOString().slice(0,10); setDateRange(first,last);} }}});
+
+  destroyChart('chartMonthFuel');
+  const ctx2 = document.getElementById('chartMonthFuel').getContext('2d');
+  CHARTS.chartMonthFuel = new Chart(ctx2,{data:{labels,datasets:[
+      {type:'bar',label:'Fuel Issued (L)',data:fuelData,backgroundColor:COLORS.cyan,borderRadius:6,yAxisID:'y',maxBarThickness:40},
+      {type:'line',label:'Avg L/Hr',data:rateData,borderColor:COLORS.amber,backgroundColor:COLORS.amber,yAxisID:'y1',tension:.35,pointRadius:3}
+    ]},options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{color:'#8B9AB3',font:{size:9.5},boxWidth:10}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#8B9AB3',font:{size:10}}},
+        y:{position:'left',grid:{color:'#152238'},ticks:{color:'#5A6A85',font:{size:9}}},
+        y1:{position:'right',grid:{display:false},ticks:{color:'#5A6A85',font:{size:9}}}},
+      onClick:(evt,els)=>{ if(els.length){ const k=keys[els[0].index]; const [y,m]=k.split('-'); const first=y+'-'+m+'-01'; const last=new Date(+y,+m,0).toISOString().slice(0,10); setDateRange(first,last);} }}});
+
+  // machine-wise summary table (respects filters, ignores t2SelectedMachine so you can pick from it)
+  const allFiltered = applyFilters();
+  const byMachine = new Map();
+  for(const r of allFiltered){
+    if(!byMachine.has(r.machineNo)) byMachine.set(r.machineNo,{category:r.category,fuel:0,hours:0});
+    const o = byMachine.get(r.machineNo); o.fuel+=r.fuel; o.hours+= isFinite(r.hours)?r.hours:0;
+  }
+  const summary = [...byMachine.entries()].map(([m,o])=>({m,...o,rate:o.hours>0?o.fuel/o.hours:0})).sort((a,b)=>b.fuel-a.fuel);
+  document.getElementById('machineSummaryWrap').innerHTML = summary.length? `<table><thead><tr>
+      <th>Machine No</th><th>Category</th><th>Fuel (L)</th><th>Hours</th><th>Avg L/Hr</th>
+    </tr></thead><tbody>${summary.map(s=>`
+      <tr data-m="${encodeURIComponent(s.m)}" style="${t2SelectedMachine===s.m?'background:#152744;':''}">
+        <td>${s.m}</td><td>${s.category}</td><td class="num">${fmt1(s.fuel)}</td><td class="num">${fmt1(s.hours)}</td><td class="num">${fmt2(s.rate)}</td>
+      </tr>`).join('')}</tbody></table>` : '<div class="empty">No machines match the current filters</div>';
+  document.querySelectorAll('#machineSummaryWrap tbody tr').forEach(tr=>{
+    tr.onclick = ()=>{
+      const m = decodeURIComponent(tr.getAttribute('data-m'));
+      t2SelectedMachine = (t2SelectedMachine===m)? null : m;
+      document.getElementById('t2machLabel').textContent = t2SelectedMachine || 'All Machines (Aggregate)';
+      document.querySelectorAll('#t2machList input').forEach(cb=> cb.checked = decodeURIComponent(cb.getAttribute('data-val'))===t2SelectedMachine);
+      renderTab2();
+    };
+  });
+}
+
+/* ============================================================
+   INIT
+=============================================================*/
+loadData();
 </script>
 </body>
 </html>
