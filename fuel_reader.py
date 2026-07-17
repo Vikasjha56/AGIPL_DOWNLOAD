@@ -4,11 +4,10 @@
 # =====================================================
 
 import pandas as pd
-import requests
 
 
 FUEL_GOOGLE_SHEET = (
-"https://docs.google.com/spreadsheets/d/e/2PACX-1vT3e08cKMWasrA0FhI8Z8lAhSwgswvOoyYijyqGbHqetAUk-ga0LP3NuoCcVyMp7A/pub?output=csv"
+    "https://docs.google.com/spreadsheets/d/e/2PACX-1vT3e08cKMWasrA0FhI8Z8lAhSwgswvOoyYijyqGbHqetAUk-ga0LP3NuoCcVyMp7A/pub?output=csv"
 )
 
 
@@ -22,6 +21,14 @@ def get_fuel_sheet_data():
 
         df = pd.read_csv(
             FUEL_GOOGLE_SHEET
+        )
+
+
+        # Clean column names
+        df.columns = (
+            df.columns
+            .astype(str)
+            .str.strip()
         )
 
 
@@ -43,9 +50,11 @@ def get_fuel_sheet_data():
 
     except Exception as e:
 
+
         print(
             "Fuel Sheet Error:",
             e
         )
+
 
         return pd.DataFrame()
