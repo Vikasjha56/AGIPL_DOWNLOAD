@@ -3,121 +3,140 @@
 // =====================================================
 
 
-let RAW_DATA = null;
-
+let RAW_DATA = {};
 let FILTER_DATA = [];
-
 
 let charts = {};
 
 
 
-
-
 // =====================================================
-// LOAD DATA
+// LOAD API DATA
 // =====================================================
 
 
 document.addEventListener(
-"DOMContentLoaded",
-()=>{
+    "DOMContentLoaded",
+    function(){
 
-fetch("/fuel_data")
+        fetch("/fuel_data")
 
-.then(
-res=>res.json()
-)
+        .then(response=>response.json())
 
-.then(
-data=>{
+        .then(data=>{
 
 
-RAW_DATA=data;
+            console.log(
+                "Fuel API Response",
+                data
+            );
 
 
-FILTER_DATA=data.table;
+            if(data.error){
+
+                alert(data.error);
+
+                return;
+            }
 
 
-loadSlicers();
+            RAW_DATA = data;
 
 
-applyFilters();
+            FILTER_DATA =
+            data.table || [];
 
 
-})
+            loadSlicers();
 
-.catch(
-err=>{
 
-console.log(
-"Fuel API Error",
-err
+            applyFilters();
+
+
+        })
+
+        .catch(error=>{
+
+
+            console.error(
+                "Fuel API Error",
+                error
+            );
+
+
+            alert(
+                "Fuel Data Loading Failed"
+            );
+
+
+        });
+
+
+    }
 );
-
-});
-
-
-});
-
-
-
-
 
 
 
 
 
 // =====================================================
-// LOAD SLICERS
+// LOAD FILTERS
 // =====================================================
 
 
 function loadSlicers(){
 
 
-fillSelect(
-"dateFilter",
-RAW_DATA.slicers.dates
-);
-
-
-fillSelect(
-"siteFilter",
-RAW_DATA.slicers.sites
-);
-
-
-fillSelect(
-"categoryFilter",
-RAW_DATA.slicers.categories
-);
-
-
-fillSelect(
-"machineFilter",
-RAW_DATA.slicers.machines
-);
-
-
-fillSelect(
-"statusFilter",
-RAW_DATA.slicers.status
-);
+    let slicers =
+    RAW_DATA.slicers || {};
 
 
 
-document
-.querySelectorAll("select")
-.forEach(
-s=>{
+    fillSelect(
+        "dateFilter",
+        slicers.dates || []
+    );
 
-s.addEventListener(
-"change",
-applyFilters
-);
 
-});
+    fillSelect(
+        "siteFilter",
+        slicers.sites || []
+    );
+
+
+    fillSelect(
+        "categoryFilter",
+        slicers.categories || []
+    );
+
+
+    fillSelect(
+        "machineFilter",
+        slicers.machines || []
+    );
+
+
+    fillSelect(
+        "statusFilter",
+        slicers.status || []
+    );
+
+
+
+
+    document
+    .querySelectorAll("select")
+    .forEach(select=>{
+
+
+        select.addEventListener(
+            "change",
+            applyFilters
+        );
+
+
+    });
+
 
 
 }
@@ -126,32 +145,39 @@ applyFilters
 
 
 
-
-function fillSelect(id,list){
-
-
-let select=document.getElementById(id);
+function fillSelect(id,data){
 
 
-list.forEach(
-x=>{
-
-
-let option=document.createElement(
-"option"
-);
-
-
-option.value=x;
-
-option.textContent=x;
-
-
-select.appendChild(option);
+    let select =
+    document.getElementById(id);
 
 
 
-});
+    if(!select)
+    return;
+
+
+
+    data.forEach(value=>{
+
+
+        let option =
+        document.createElement(
+            "option"
+        );
+
+
+        option.value=value;
+
+        option.textContent=value;
+
+
+        select.appendChild(option);
+
+
+
+    });
+
 
 
 }
@@ -171,81 +197,111 @@ select.appendChild(option);
 function applyFilters(){
 
 
-let date=
-document.getElementById(
-"dateFilter"
-).value;
-
-
-let site=
-document.getElementById(
-"siteFilter"
-).value;
+    let date =
+    document.getElementById(
+        "dateFilter"
+    ).value;
 
 
 
-let category=
-document.getElementById(
-"categoryFilter"
-).value;
+    let site =
+    document.getElementById(
+        "siteFilter"
+    ).value;
 
 
 
-let machine=
-document.getElementById(
-"machineFilter"
-).value;
+    let category =
+    document.getElementById(
+        "categoryFilter"
+    ).value;
 
 
 
-let status=
-document.getElementById(
-"statusFilter"
-).value;
+    let machine =
+    document.getElementById(
+        "machineFilter"
+    ).value;
 
 
 
-
-FILTER_DATA =
-RAW_DATA.table.filter(
-row=>{
-
-
-return (
-
-(date=="ALL" ||
-formatDate(row["Working Date"])==date)
-
-&&
-
-(site=="ALL" ||
-row["Log Book No."]==site)
-
-&&
-
-(category=="ALL" ||
-row["Machine Category"]==category)
-
-&&
-
-(machine=="ALL" ||
-row["Machine"]==machine)
-
-&&
-
-(status=="ALL" ||
-row["Machine Status"]==status)
-
-
-);
-
-
-});
+    let status =
+    document.getElementById(
+        "statusFilter"
+    ).value;
 
 
 
 
-updateDashboard();
+    FILTER_DATA =
+
+
+    (RAW_DATA.table || [])
+
+    .filter(row=>{
+
+
+        return (
+
+            date=="ALL" ||
+            formatDate(
+                row["Working Date"]
+            )
+            ==
+            date
+
+        )
+
+        &&
+
+        (
+
+            site=="ALL" ||
+            String(row["Log Book No."])
+            ==
+            site
+
+        )
+
+        &&
+
+        (
+
+            category=="ALL" ||
+            row["Machine Category"]
+            ==
+            category
+
+        )
+
+        &&
+
+        (
+
+            machine=="ALL" ||
+            row["Machine"]
+            ==
+            machine
+
+        )
+
+        &&
+
+        (
+
+            status=="ALL" ||
+            row["Machine Status"]
+            ==
+            status
+
+        );
+
+
+    });
+
+
+
+    updateDashboard();
 
 
 }
@@ -256,20 +312,21 @@ updateDashboard();
 
 
 
-function formatDate(d){
-
-if(!d)
-return "";
+function formatDate(value){
 
 
-return d.substring(
-0,
-10
-);
+    if(!value)
+    return "";
+
+
+    return String(value)
+    .substring(
+        0,
+        10
+    );
+
 
 }
-
-
 
 
 
@@ -287,108 +344,124 @@ function updateDashboard(){
 
 
 
-let totalFuel =
-sum(
-"Fuel Used"
-);
+    let fuel =
+    sumColumn(
+        "Fuel Used"
+    );
 
 
 
-let totalHours =
-sum(
-"Run Hours"
-);
+    let hours =
+    sumColumn(
+        "Run Hours"
+    );
 
 
 
-let machines =
-new Set(
+    let machineCount =
 
-FILTER_DATA.map(
-x=>x.Machine
-)
+    new Set(
 
-).size;
+        FILTER_DATA.map(
+            x=>x["Machine"]
+        )
 
-
-
-
-let avg =
-totalHours>0 ?
-
-(totalFuel/totalHours).toFixed(2)
-
-:
-
-0;
+    ).size;
 
 
 
-let days =
-new Set(
+    let avg =
 
-FILTER_DATA.map(
-x=>x["Working Date"]
-)
+    hours>0
 
-).size;
+    ?
 
+    (fuel/hours)
+    .toFixed(2)
 
+    :
 
-
-let high =
-FILTER_DATA.filter(
-x=>x["Fuel Average"]>=15
-).length;
+    0;
 
 
 
-document.getElementById(
-"fuelKpi"
-).innerHTML =
-number(totalFuel)+" L";
+    let days =
+
+    new Set(
+
+        FILTER_DATA.map(
+            x=>x["Working Date"]
+        )
+
+    ).size;
 
 
 
-document.getElementById(
-"hourKpi"
-).innerHTML =
-number(totalHours);
+
+    let high =
+
+    FILTER_DATA.filter(
+
+        x=>
+
+        Number(
+            x["Fuel Average"]
+        )
+        >15
+
+    ).length;
 
 
 
-document.getElementById(
-"machineKpi"
-).innerHTML =
-machines;
+
+
+    document.getElementById(
+        "fuelKpi"
+    ).innerHTML =
+    formatNumber(fuel)
+    +" L";
 
 
 
-document.getElementById(
-"avgKpi"
-).innerHTML =
-avg+" L/Hr";
+    document.getElementById(
+        "hourKpi"
+    ).innerHTML =
+    formatNumber(hours);
 
 
 
-document.getElementById(
-"dayKpi"
-).innerHTML =
-days;
+    document.getElementById(
+        "machineKpi"
+    ).innerHTML =
+    machineCount;
 
 
 
-document.getElementById(
-"highKpi"
-).innerHTML =
-high;
+    document.getElementById(
+        "avgKpi"
+    ).innerHTML =
+    avg+" L/Hr";
 
 
 
-renderCharts();
+    document.getElementById(
+        "dayKpi"
+    ).innerHTML =
+    days;
 
 
-renderTable();
+
+    document.getElementById(
+        "highKpi"
+    ).innerHTML =
+    high;
+
+
+
+    renderCharts();
+
+
+    renderTable();
 
 
 
@@ -398,40 +471,38 @@ renderTable();
 
 
 
-
-function sum(col){
-
-return FILTER_DATA.reduce(
-
-(a,b)=>
-
-a+
-Number(b[col]||0)
-
-,0
-
-);
-
-}
+function sumColumn(col){
 
 
+    return FILTER_DATA.reduce(
 
+        (sum,row)=>
 
+        sum+
+        Number(
+            row[col] || 0
+        ),
 
+        0
 
-function number(v){
-
-return Number(v)
-.toLocaleString(
-"en-IN",
-{
-maximumFractionDigits:2
-}
-);
+    );
 
 }
 
 
+
+function formatNumber(num){
+
+
+    return Number(num)
+    .toLocaleString(
+        "en-IN",
+        {
+            maximumFractionDigits:2
+        }
+    );
+
+}
 
 
 
@@ -440,102 +511,94 @@ maximumFractionDigits:2
 
 
 // =====================================================
-// CHART CREATOR
+// CHART
 // =====================================================
 
 
 function createChart(
-id,
-type,
-labels,
-values
+    id,
+    type,
+    labels,
+    values
 ){
 
 
-if(charts[id]){
 
-charts[id].destroy();
+    if(charts[id]){
 
-}
+        charts[id].destroy();
 
-
-
-charts[id]=new Chart(
-
-document
-.getElementById(id),
-
-{
-
-
-type:type,
-
-
-data:{
-
-
-labels:labels,
-
-
-datasets:[{
-
-
-data:values,
-
-
-backgroundColor:
-
-"#3FD0F2",
-
-
-borderRadius:6,
-
-
-borderWidth:1
-
-
-}]
-
-
-},
-
-
-options:{
-
-
-responsive:true,
-
-
-maintainAspectRatio:false,
-
-
-plugins:{
-
-
-legend:{
-display:false
-}
-
-
-}
+    }
 
 
 
-}
+
+    let canvas =
+    document.getElementById(id);
 
 
-}
+
+    if(!canvas)
+    return;
 
 
-);
+
+    charts[id] =
+
+    new Chart(
+        canvas,
+        {
+
+        type:type,
 
 
+        data:{
+
+
+            labels:labels,
+
+
+            datasets:[{
+
+                data:values,
+
+
+                backgroundColor:
+                "#35d5ff"
+
+
+            }]
+
+        },
+
+
+        options:{
+
+
+            responsive:true,
+
+
+            maintainAspectRatio:false,
+
+
+            plugins:{
+
+
+                legend:{
+                    display:false
+                }
+
+            }
+
+
+        }
+
+
+        }
+
+    );
 
 }
-
-
-
-
 
 
 
@@ -549,134 +612,72 @@ display:false
 function renderCharts(){
 
 
+    let daily={};
 
-let daily={};
 
+    FILTER_DATA.forEach(row=>{
 
-FILTER_DATA.forEach(
-r=>{
 
+        let d =
+        formatDate(
+            row["Working Date"]
+        );
 
-let d =
-formatDate(
-r["Working Date"]
-);
 
+        daily[d]=
+        (daily[d]||0)
+        +
+        Number(
+            row["Fuel Used"]||0
+        );
 
-daily[d]=
-(daily[d]||0)
-+
-Number(r["Fuel Used"]);
 
+    });
 
 
-});
 
+    createChart(
 
+        "dailyChart",
+        "line",
+        Object.keys(daily),
+        Object.values(daily)
 
+    );
 
-createChart(
 
-"dailyChart",
 
-"line",
 
-Object.keys(daily),
 
-Object.values(daily)
+    groupChart(
+        "monthChart",
+        "Month"
+    );
 
-);
 
+    groupChart(
+        "siteChart",
+        "Log Book No."
+    );
 
 
+    groupChart(
+        "categoryChart",
+        "Machine Category"
+    );
 
 
+    groupChart(
+        "machineChart",
+        "Machine"
+    );
 
 
-let month={};
-
-
-FILTER_DATA.forEach(
-r=>{
-
-
-let m=r.Month;
-
-
-month[m]=
-(month[m]||0)
-+
-Number(r["Fuel Used"]);
-
-
-
-});
-
-
-
-createChart(
-
-"monthChart",
-
-"bar",
-
-Object.keys(month),
-
-Object.values(month)
-
-);
-
-
-
-
-
-
-
-
-createGroupChart(
-
-"siteChart",
-
-"Log Book No."
-
-);
-
-
-
-
-createGroupChart(
-
-"categoryChart",
-
-"Machine Category"
-
-);
-
-
-
-
-createGroupChart(
-
-"machineChart",
-
-"Machine"
-
-);
-
-
-
-
-
-createGroupChart(
-
-"avgChart",
-
-"Machine",
-
-"Fuel Average"
-
-);
-
+    groupChart(
+        "avgChart",
+        "Machine",
+        "Fuel Average"
+    );
 
 
 }
@@ -686,75 +687,72 @@ createGroupChart(
 
 
 
-
-
-
-function createGroupChart(
+function groupChart(
 id,
 column,
 value="Fuel Used"
 ){
 
 
-let obj={};
+    let obj={};
 
 
 
-FILTER_DATA.forEach(
-r=>{
+    FILTER_DATA.forEach(row=>{
 
 
-let key =
-r[column];
+        let key =
+        row[column] || "Unknown";
 
 
-obj[key]=
+        obj[key] =
 
-(obj[key]||0)
+        (obj[key]||0)
 
-+
+        +
 
-Number(r[value]||0);
-
-
-
-});
+        Number(
+            row[value]||0
+        );
 
 
-
-let sorted =
-Object.entries(obj)
-.sort(
-(a,b)=>b[1]-a[1]
-)
-.slice(
-0,
-10
-);
+    });
 
 
 
-createChart(
+    let data =
 
-id,
+    Object.entries(obj)
 
-"bar",
+    .sort(
+        (a,b)=>b[1]-a[1]
+    )
 
-sorted.map(
-x=>x[0]
-),
+    .slice(
+        0,
+        10
+    );
 
-sorted.map(
-x=>x[1]
-)
 
-);
 
+    createChart(
+
+        id,
+
+        "bar",
+
+        data.map(
+            x=>x[0]
+        ),
+
+        data.map(
+            x=>x[1]
+        )
+
+    );
 
 
 }
-
-
 
 
 
@@ -770,62 +768,57 @@ x=>x[1]
 function renderTable(){
 
 
-let body =
-document.getElementById(
-"fuelTable"
-);
+    let body =
+    document.getElementById(
+        "fuelTable"
+    );
+
+
+    body.innerHTML="";
 
 
 
-body.innerHTML="";
+    FILTER_DATA.forEach(
+
+        (row,index)=>{
 
 
+        body.innerHTML +=
 
-FILTER_DATA.forEach(
+        `
 
-(row,index)=>{
+        <tr>
 
+        <td>${index+1}</td>
 
-body.innerHTML +=
+        <td>${row.Month||""}</td>
 
-`
+        <td>${formatDate(row["Working Date"])}</td>
 
-<tr>
+        <td>${row["Log Book No."]||""}</td>
 
-<td>${index+1}</td>
+        <td>${row["Machine Category"]||""}</td>
 
-<td>${row.Month||""}</td>
+        <td>${row["Machine"]||""}</td>
 
-<td>${formatDate(row["Working Date"])}</td>
+        <td>${row["RTO Number"]||""}</td>
 
-<td>${row["Log Book No."]||""}</td>
+        <td>${row["Machine Status"]||""}</td>
 
-<td>${row["Machine Category"]||""}</td>
+        <td>${row["Fuel Used"]||0}</td>
 
-<td>${row["Machine"]||""}</td>
+        <td>${row["Run Hours"]||0}</td>
 
-<td>${row["RTO Number"]||""}</td>
+        <td>${row["Fuel Average"]||0}</td>
 
-<td>${row["Machine Status"]||""}</td>
+        </tr>
 
-<td>${row["Fuel Used"]||0}</td>
-
-<td>${row["Run Hours"]||0}</td>
-
-<td>${row["Fuel Average"]||0}</td>
+        `;
 
 
-</tr>
+        }
 
-
-`;
-
-
-
-}
-
-);
-
+    );
 
 
 }
