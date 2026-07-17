@@ -1,5 +1,4 @@
 from reportlab.lib import colors
-import pandas as pd
 from reportlab.lib.pagesizes import landscape, A3
 from reportlab.platypus import (
     SimpleDocTemplate,
@@ -10,11 +9,12 @@ from reportlab.platypus import (
     Flowable
 )
 from reportlab.lib.styles import getSampleStyleSheet
+import pandas as pd
 
 
-# -----------------------------
-# Alert Icon Drawing
-# -----------------------------
+# ==========================================================
+# ALERT ICON
+# ==========================================================
 
 class AlertIcon(Flowable):
 
@@ -22,35 +22,30 @@ class AlertIcon(Flowable):
 
         Flowable.__init__(self)
 
-        self.level = level
+        self.level = str(level)
 
         self.width = 15
         self.height = 15
 
-
-
     def draw(self):
 
-        if "High" in self.level:
+        level = self.level.lower()
+
+        if "high" in level:
 
             color = colors.red
 
-
-        elif "Medium" in self.level:
+        elif "medium" in level:
 
             color = colors.orange
 
-
-        elif "Low" in self.level:
+        elif "low" in level:
 
             color = colors.green
-
 
         else:
 
             color = colors.grey
-
-
 
         self.canv.setFillColor(color)
 
@@ -62,157 +57,151 @@ class AlertIcon(Flowable):
         )
 
 
-
-# -----------------------------
-# PDF Generator
-# -----------------------------
+# ==========================================================
+# PDF EXPORT
+# ==========================================================
 
 def create_pdf(master_df):
 
-
     file_path = "AGIPL_Breakdown_Report.pdf"
 
+    master_df = master_df.copy()
+
+    # ======================================================
+    # CLEAN COLUMN NAMES
+    # ======================================================
+
+    master_df.columns = (
+        master_df.columns
+        .astype(str)
+        .str.strip()
+    )
+
+    master_df = master_df.dropna(how="all")
 
 
-    # ===============================
-    # FILTER PENDING + OWNED DATA
-    # ===============================
+    # ======================================================
+    # RENAME SERIAL COLUMN
+    # (app.py sends No column)
+    # ======================================================
 
-    if "Owned/Hired" in master_df.columns:
+    if "No" in master_df.columns:
 
-        master_df = master_df[
-            (master_df["Resolved"]
-             .astype(str)
-             .str.strip()
-             .str.upper() == "NO")
-            &
-            (master_df["Owned/Hired"]
-             .astype(str)
-             .str.strip()
-             .str.upper() == "OWNED")
-        ].copy()
+        master_df.rename(
+            columns={
+                "No": "Index Number"
+            },
+            inplace=True
+        )
+
+
+    # ======================================================
+    # CREATE INDEX IF NOT PRESENT
+    # ======================================================
+
+    if "Index Number" not in master_df.columns:
+
+        master_df.insert(
+            0,
+            "Index Number",
+            range(
+                1,
+                len(master_df) + 1
+            )
+        )
+
+
+    # ======================================================
+    # BREAKDOWN ALERT ICON
+    # app.py already sends:
+    # Low Alert
+    # Medium Alert
+    # High Alert
+    # ======================================================
+
+    if "Breakdown Alert Icon" in master_df.columns:
+
+        master_df["Alert Icon"] = master_df[
+            "Breakdown Alert Icon"
+        ].apply(AlertIcon)
 
     else:
 
-        master_df = master_df[
-            master_df["Resolved"]
-            .astype(str)
-            .str.strip()
-            .str.upper() == "NO"
-        ].copy()
+        master_df["Breakdown Alert Icon"] = ""
+
+        master_df["Alert Icon"] = master_df[
+            "Breakdown Alert Icon"
+        ].apply(AlertIcon)
 
 
+    # ======================================================
+    # COLUMN ORDER
+    # EXACT SAME AS breakdown.html
+    # ======================================================
 
+    required_columns = [
 
-    # Fresh Sequence
-
-    master_df["Index Number"] = range(
-        1,
-        len(master_df)+1
-    )
-
-
-
-        # ===============================
-    # STOCK ALERT LOGIC
-    # ===============================
-
-    def alert_level(days):
-
-        try:
-
-            qty = float(days)
-
-            if 1 <= qty <= 15:
-
-                return "C [Low Alert]"
-
-            elif 16 <= qty <= 30:
-
-                return "B [Medium Alert]"
-
-            elif qty >= 31:
-
-                return "A [High Alert]"
-
-            else:
-
-                return "[No Breakdown]"
-
-        except:
-
-            return "[No Breakdown]"
-
-
-    master_df["Stock Alert Level"] = (
-        master_df["Pending for (no of days)"]
-        .apply(alert_level)
-    )
-
-
-    # ===============================
-    # REQUIRED COLUMNS
-    # ===============================
-
-    final_df = master_df[
-        [
-            "Index Number",
-            "Site",
-            "Date of breakdown",
-            "Category",
-            "Vehcile No",
-            "Breakdown Details",
-            "Reason for pendency",
-            "Pending for (no of days)",
-            "Stock Alert Level"
-        ]
-    ].copy()
-
-
-    # ===============================
-    # CONVERT PENDING DAYS TO INTEGER
-    # ===============================
-
-    final_df["Pending for (no of days)"] = (
-        pd.to_numeric(
-            final_df["Pending for (no of days)"],
-            errors="coerce"
-        )
-        .fillna(0)
-        .astype(int)
-    )
-
-
-    # ===============================
-    # ALERT ICON COLUMN
-    # ===============================
-
-    final_df["Alert Icon"] = (
-        final_df["Stock Alert Level"]
-        .apply(AlertIcon)
-    )
-
-
-    # ===============================
-    # RENAME COLUMNS
-    # ===============================
-
-    final_df.columns = [
         "Index Number",
+
         "Site",
-        "Date of Breakdown",
+
+        "Date of breakdown",
+
         "Category",
-        "Vehicle No",
+
+        "Vehcile No",
+
         "Breakdown Details",
-        "Reason for Pendency",
-        "Pending (No of Days)",
-        "Stock Alert Level",
+
+        "Reason for pendency",
+
+        "Pending for (no of days)",
+
+        "Owned/Hired",
+
+        "Breakdown Alert Icon",
+
         "Alert Icon"
+
     ]
 
 
+    for col in required_columns:
 
+        if col not in master_df.columns:
+
+            master_df[col] = ""
+
+
+    final_df = master_df[
+        required_columns
+    ].copy()
+
+
+    final_df.rename(
+
+        columns={
+
+            "Vehcile No":"Vehicle No",
+
+            "Date of breakdown":"Date of Breakdown",
+
+            "Reason for pendency":"Reason for Pendency",
+
+            "Pending for (no of days)":"Pending Days",
+
+            "Breakdown Alert Icon":"Alert Level"
+
+        },
+
+        inplace=True
+
+    )
+
+
+    # ======================================================
     # PDF
+    # ======================================================
 
     doc = SimpleDocTemplate(
 
@@ -220,86 +209,92 @@ def create_pdf(master_df):
 
         pagesize=landscape(A3),
 
-        rightMargin=20,
+        leftMargin=18,
 
-        leftMargin=20,
+        rightMargin=18,
 
-        topMargin=30,
+        topMargin=25,
 
-        bottomMargin=30
+        bottomMargin=20
 
     )
 
 
-
     styles = getSampleStyleSheet()
 
-
     elements = []
-
 
     elements.append(
 
         Paragraph(
 
-            "AGIPL Breakdown Pending Report",
+            "<b>AGIPL BREAKDOWN PENDING REPORT</b>",
 
-            styles["Heading2"]
+            styles["Title"]
 
         )
 
     )
 
-
     elements.append(
-        Spacer(1,20)
+
+        Spacer(1,18)
+
     )
 
 
+    # ======================================================
+    # TABLE DATA
+    # ======================================================
 
-    # Wrap text
+    data = []
 
-    data = [
+    data.append(
 
         [
 
             Paragraph(
-                str(col),
-                styles["Normal"]
+
+                "<b>"+str(col)+"</b>",
+
+                styles["BodyText"]
+
             )
 
             for col in final_df.columns
 
         ]
 
-    ]
-
+    )
 
 
     for _, row in final_df.iterrows():
 
-        data.append(
+        row_data = []
 
-            [
+        for column in final_df.columns:
 
-                Paragraph(
-                    str(value),
-                    styles["Normal"]
+            value = row[column]
+
+            if column == "Alert Icon":
+
+                row_data.append(value)
+
+            else:
+
+                row_data.append(
+
+                    Paragraph(
+
+                        str(value),
+
+                        styles["BodyText"]
+
+                    )
+
                 )
 
-                if column != "Alert Icon"
-
-                else value
-
-                for column,value in zip(
-                    final_df.columns,
-                    row
-                )
-
-            ]
-
-        )
-
+        data.append(row_data)
 
 
     table = Table(
@@ -311,58 +306,135 @@ def create_pdf(master_df):
     )
 
 
-
     table.setStyle(
 
-        TableStyle(
+        TableStyle([
 
-            [
+            (
 
-                (
-                    "GRID",
-                    (0,0),
-                    (-1,-1),
-                    0.5,
-                    colors.black
-                ),
+                "BACKGROUND",
 
+                (0,0),
 
-                (
-                    "BACKGROUND",
-                    (0,0),
-                    (-1,0),
-                    colors.lightgrey
-                ),
+                (-1,0),
 
+                colors.HexColor("#0B3B6F")
 
-                (
-                    "FONTSIZE",
-                    (0,0),
-                    (-1,-1),
-                    7
-                ),
+            ),
 
+            (
 
-                (
-                    "VALIGN",
-                    (0,0),
-                    (-1,-1),
-                    "TOP"
-                )
+                "TEXTCOLOR",
 
-            ]
+                (0,0),
 
-        )
+                (-1,0),
+
+                colors.white
+
+            ),
+
+            (
+
+                "GRID",
+
+                (0,0),
+
+                (-1,-1),
+
+                0.5,
+
+                colors.grey
+
+            ),
+
+            (
+
+                "FONTNAME",
+
+                (0,0),
+
+                (-1,0),
+
+                "Helvetica-Bold"
+
+            ),
+
+            (
+
+                "FONTSIZE",
+
+                (0,0),
+
+                (-1,-1),
+
+                8
+
+            ),
+
+            (
+
+                "BOTTOMPADDING",
+
+                (0,0),
+
+                (-1,0),
+
+                8
+
+            ),
+
+            (
+
+                "VALIGN",
+
+                (0,0),
+
+                (-1,-1),
+
+                "TOP"
+
+            ),
+
+            (
+
+                "ALIGN",
+
+                (0,0),
+
+                (-1,-1),
+
+                "CENTER"
+
+            ),
+
+            (
+
+                "ROWBACKGROUNDS",
+
+                (0,1),
+
+                (-1,-1),
+
+                [
+
+                    colors.whitesmoke,
+
+                    colors.beige
+
+                ]
+
+            )
+
+        ])
 
     )
 
 
-
     elements.append(table)
-
 
     doc.build(elements)
 
-
+    print("PDF Report Generated Successfully")
 
     return file_path
