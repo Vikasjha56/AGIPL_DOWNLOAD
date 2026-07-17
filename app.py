@@ -387,9 +387,23 @@ def breakdown():
 # ==========================
 
 # =====================================================
-# FUEL DASHBOARD API
+# FUEL DASHBOARD PAGE
 # =====================================================
 
+@app.route("/fuel")
+def fuel():
+
+    return render_template(
+        "fuel.html"
+    )
+
+
+
+
+
+# =====================================================
+# FUEL DATA API
+# =====================================================
 
 @app.route("/fuel_data")
 def fuel_data():
@@ -398,13 +412,13 @@ def fuel_data():
     try:
 
 
-        # Google Sheet Read
+        # Read Google Sheet
 
         df = get_fuel_sheet_data()
 
 
 
-        # Analysis
+        # Process Calculation
 
         df = prepare_fuel_analysis(df)
 
@@ -416,15 +430,38 @@ def fuel_data():
             return jsonify({
 
                 "error":
-                "No Fuel Data Found"
+                "Fuel data not found"
 
             })
 
 
 
-        # =================================================
+
+        # =========================
+        # TABLE SERIAL NUMBER
+        # =========================
+
+
+        df["Sr.No."] = range(
+            1,
+            len(df)+1
+        )
+
+
+
+        # Date convert for JSON
+
+        df["Working Date"] = (
+            df["Working Date"]
+            .astype(str)
+        )
+
+
+
+
+        # =========================
         # KPI
-        # =================================================
+        # =========================
 
 
         total_fuel = round(
@@ -445,19 +482,14 @@ def fuel_data():
         )
 
 
-        avg_consumption = 0
 
+        avg = 0
 
         if total_hours > 0:
 
-
-            avg_consumption = round(
-
-                total_fuel /
-                total_hours,
-
+            avg = round(
+                total_fuel / total_hours,
                 2
-
             )
 
 
@@ -479,7 +511,7 @@ def fuel_data():
 
 
             "average":
-            avg_consumption,
+            avg,
 
 
             "working_days":
@@ -492,250 +524,20 @@ def fuel_data():
 
 
 
-        # =================================================
-        # DATE TREND
-        # =================================================
-
-
-        daily = (
-
-            df.groupby(
-                df["Working Date"]
-                .dt.strftime("%d %b")
-            )["Fuel Used"]
-
-            .sum()
-
-        )
-
-
-
-        daily_trend = {
-
-
-            "labels":
-            daily.index.tolist(),
-
-
-            "values":
-            daily.values.tolist()
-
-        }
-
-
-
-
-
-
-
-        # =================================================
-        # MONTH TREND
-        # =================================================
-
-
-        monthly = (
-
-            df.groupby(
-                "Month"
-            )["Fuel Used"]
-
-            .sum()
-
-        )
-
-
-
-        month_trend = {
-
-
-            "labels":
-            monthly.index.tolist(),
-
-
-            "values":
-            monthly.values.tolist()
-
-        }
-
-
-
-
-
-
-
-        # =================================================
-        # SITE / LOG BOOK
-        # =================================================
-
-
-        site = (
-
-            df.groupby(
-                "Log Book No."
-            )["Fuel Used"]
-
-            .sum()
-
-            .sort_values(
-                ascending=False
-            )
-
-            .head(10)
-
-        )
-
-
-        site_chart = {
-
-
-            "labels":
-            site.index.tolist(),
-
-
-            "values":
-            site.values.tolist()
-
-        }
-
-
-
-
-
-
-
-        # =================================================
-        # CATEGORY
-        # =================================================
-
-
-        category = (
-
-            df.groupby(
-                "Machine Category"
-            )["Fuel Used"]
-
-            .sum()
-
-            .sort_values(
-                ascending=False
-            )
-
-            .head(10)
-
-        )
-
-
-        category_chart = {
-
-
-            "labels":
-            category.index.tolist(),
-
-
-            "values":
-            category.values.tolist()
-
-        }
-
-
-
-
-
-
-
-        # =================================================
-        # TOP MACHINE
-        # =================================================
-
-
-        machines = (
-
-            df.groupby(
-                "Machine"
-            )["Fuel Used"]
-
-            .sum()
-
-            .sort_values(
-                ascending=False
-            )
-
-            .head(10)
-
-        )
-
-
-        machine_chart = {
-
-
-            "labels":
-            machines.index.tolist(),
-
-
-            "values":
-            machines.values.tolist()
-
-        }
-
-
-
-
-
-
-        # =================================================
-        # ALERT DATA
-        # =================================================
-
-
-        alerts=[]
-
-
-
-        high = df[
-            df["Consumption Status"]
-            ==
-            "High"
-        ]
-
-
-
-        for _,row in high.head(5).iterrows():
-
-
-            alerts.append({
-
-                "machine":
-                row["Machine"],
-
-
-                "average":
-                row["Fuel Average"]
-
-            })
-
-
-
-
-
-
-
-        # =================================================
+        # =========================
         # SLICERS
-        # =================================================
+        # =========================
 
 
         slicers = {
 
 
             "dates":
-            sorted(
 
+            sorted(
                 df["Working Date"]
-                .dt.strftime("%Y-%m-%d")
-                .dropna()
                 .unique()
                 .tolist()
-
             ),
 
 
@@ -743,12 +545,11 @@ def fuel_data():
             "sites":
 
             sorted(
-
                 df["Log Book No."]
                 .dropna()
+                .astype(str)
                 .unique()
                 .tolist()
-
             ),
 
 
@@ -756,12 +557,11 @@ def fuel_data():
             "categories":
 
             sorted(
-
                 df["Machine Category"]
                 .dropna()
+                .astype(str)
                 .unique()
                 .tolist()
-
             ),
 
 
@@ -769,12 +569,11 @@ def fuel_data():
             "machines":
 
             sorted(
-
                 df["Machine"]
                 .dropna()
+                .astype(str)
                 .unique()
                 .tolist()
-
             ),
 
 
@@ -782,12 +581,11 @@ def fuel_data():
             "status":
 
             sorted(
-
                 df["Machine Status"]
                 .dropna()
+                .astype(str)
                 .unique()
                 .tolist()
-
             )
 
         }
@@ -796,60 +594,112 @@ def fuel_data():
 
 
 
+        # =========================
+        # TABLE
+        # =========================
 
 
-        # =================================================
-        # TABLE DATA
-        # =================================================
+        table_columns = [
+
+
+            "Sr.No.",
+
+            "Month",
+
+            "Working Date",
+
+            "Log Book No.",
+
+            "Machine Category",
+
+            "Machine",
+
+            "RTO Number",
+
+            "Machine Status",
+
+            "Fuel Used",
+
+            "Run Hours",
+
+            "Fuel Average"
+
+        ]
 
 
 
-        table = df.copy()
+        table = (
 
-
-
-        table["Sr.No."] = range(
-
-            1,
-            len(table)+1
+            df[table_columns]
+            .fillna("")
+            .to_dict(
+                orient="records"
+            )
 
         )
 
 
 
-        table = table[
 
-        [
 
-        "Sr.No.",
+        # =========================
+        # CHART DATA
+        # =========================
 
-        "Month",
 
-        "Working Date",
+        daily = (
 
-        "Log Book No.",
-
-        "Machine Category",
-
-        "Machine",
-
-        "RTO Number",
-
-        "Machine Status",
-
-        "Fuel Used",
-
-        "Run Hours",
-
-        "Fuel Average"
-
-        ]
-
-        ]
+            df.groupby(
+                "Working Date"
+            )["Fuel Used"]
+            .sum()
+        )
 
 
 
-        table = table.fillna("")
+        category = (
+
+            df.groupby(
+                "Machine Category"
+            )["Fuel Used"]
+            .sum()
+            .sort_values(
+                ascending=False
+            )
+            .head(10)
+
+        )
+
+
+
+        machine = (
+
+            df.groupby(
+                "Machine"
+            )["Fuel Used"]
+            .sum()
+            .sort_values(
+                ascending=False
+            )
+            .head(10)
+
+        )
+
+
+
+        site = (
+
+            df.groupby(
+                "Log Book No."
+            )["Fuel Used"]
+            .sum()
+            .sort_values(
+                ascending=False
+            )
+            .head(10)
+
+        )
+
 
 
 
@@ -861,40 +711,76 @@ def fuel_data():
             kpi,
 
 
-            "daily":
-            daily_trend,
-
-
-            "monthly":
-            month_trend,
-
-
-            "site":
-            site_chart,
-
-
-            "category":
-            category_chart,
-
-
-            "machine":
-            machine_chart,
-
-
-            "alerts":
-            alerts,
-
-
             "slicers":
             slicers,
 
 
+            "daily":
+
+            {
+
+                "labels":
+                daily.index.tolist(),
+
+
+                "values":
+                daily.values.tolist()
+
+            },
+
+
+
+            "category":
+
+            {
+
+                "labels":
+                category.index.tolist(),
+
+
+                "values":
+                category.values.tolist()
+
+            },
+
+
+
+            "machine":
+
+            {
+
+                "labels":
+                machine.index.tolist(),
+
+
+                "values":
+                machine.values.tolist()
+
+            },
+
+
+
+            "site":
+
+            {
+
+                "labels":
+                site.index.tolist(),
+
+
+                "values":
+                site.values.tolist()
+
+            },
+
+
+
             "table":
-            table.to_dict(
-                orient="records"
-            )
+            table
+
 
         })
+
 
 
 
@@ -908,6 +794,11 @@ def fuel_data():
             str(e)
 
         })
+
+
+
+
+
 
 
 @app.route("/hr")
