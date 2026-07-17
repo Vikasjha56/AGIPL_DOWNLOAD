@@ -1,5 +1,6 @@
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import landscape, A3
+
 from reportlab.platypus import (
     SimpleDocTemplate,
     Table,
@@ -8,13 +9,15 @@ from reportlab.platypus import (
     Spacer,
     Flowable
 )
+
 from reportlab.lib.styles import getSampleStyleSheet
+
 import pandas as pd
 
 
-# ==========================================================
+# =====================================================
 # ALERT ICON
-# ==========================================================
+# =====================================================
 
 class AlertIcon(Flowable):
 
@@ -27,25 +30,27 @@ class AlertIcon(Flowable):
         self.width = 15
         self.height = 15
 
+
     def draw(self):
 
-        level = self.level.lower()
+        level = self.level.upper()
 
-        if "high" in level:
+        if "HIGH" in level:
 
             color = colors.red
 
-        elif "medium" in level:
+        elif "MEDIUM" in level:
 
             color = colors.orange
 
-        elif "low" in level:
+        elif "LOW" in level:
 
             color = colors.green
 
         else:
 
             color = colors.grey
+
 
         self.canv.setFillColor(color)
 
@@ -57,9 +62,9 @@ class AlertIcon(Flowable):
         )
 
 
-# ==========================================================
+# =====================================================
 # PDF EXPORT
-# ==========================================================
+# =====================================================
 
 def create_pdf(master_df):
 
@@ -67,9 +72,10 @@ def create_pdf(master_df):
 
     master_df = master_df.copy()
 
-    # ======================================================
+
+    # ==========================================
     # CLEAN COLUMN NAMES
-    # ======================================================
+    # ==========================================
 
     master_df.columns = (
         master_df.columns
@@ -77,27 +83,56 @@ def create_pdf(master_df):
         .str.strip()
     )
 
+
     master_df = master_df.dropna(how="all")
 
 
-    # ======================================================
-    # RENAME SERIAL COLUMN
-    # (app.py sends No column)
-    # ======================================================
+    # ==========================================
+    # EXPORT ONLY OWNED
+    # ==========================================
+
+    if "Owned/Hired" in master_df.columns:
+
+        master_df = master_df[
+            master_df["Owned/Hired"]
+            .astype(str)
+            .str.strip()
+            .str.upper()
+            == "OWNED"
+        ].copy()
+
+
+    # ==========================================
+    # RESET INDEX
+    # ==========================================
+
+    master_df.reset_index(
+        drop=True,
+        inplace=True
+    )
+
+
+    # ==========================================
+    # INDEX NUMBER
+    # ==========================================
+
+    if "Index Number" in master_df.columns:
+
+        master_df.drop(
+            columns=["Index Number"],
+            inplace=True
+        )
+
 
     if "No" in master_df.columns:
 
         master_df.rename(
             columns={
-                "No": "Index Number"
+                "No":"Index Number"
             },
             inplace=True
         )
 
-
-    # ======================================================
-    # CREATE INDEX IF NOT PRESENT
-    # ======================================================
 
     if "Index Number" not in master_df.columns:
 
@@ -106,38 +141,28 @@ def create_pdf(master_df):
             "Index Number",
             range(
                 1,
-                len(master_df) + 1
+                len(master_df)+1
             )
         )
 
 
-    # ======================================================
-    # BREAKDOWN ALERT ICON
-    # app.py already sends:
-    # Low Alert
-    # Medium Alert
-    # High Alert
-    # ======================================================
+    # ==========================================
+    # ALERT ICON
+    # ==========================================
 
-    if "Breakdown Alert Icon" in master_df.columns:
-
-        master_df["Alert Icon"] = master_df[
-            "Breakdown Alert Icon"
-        ].apply(AlertIcon)
-
-    else:
+    if "Breakdown Alert Icon" not in master_df.columns:
 
         master_df["Breakdown Alert Icon"] = ""
 
-        master_df["Alert Icon"] = master_df[
-            "Breakdown Alert Icon"
-        ].apply(AlertIcon)
+
+    master_df["Alert Icon"] = master_df[
+        "Breakdown Alert Icon"
+    ].apply(AlertIcon)
 
 
-    # ======================================================
+    # ==========================================
     # COLUMN ORDER
-    # EXACT SAME AS breakdown.html
-    # ======================================================
+    # ==========================================
 
     required_columns = [
 
@@ -199,9 +224,9 @@ def create_pdf(master_df):
     )
 
 
-    # ======================================================
-    # PDF
-    # ======================================================
+    # ==========================================
+    # PDF DOCUMENT
+    # ==========================================
 
     doc = SimpleDocTemplate(
 
@@ -238,14 +263,14 @@ def create_pdf(master_df):
 
     elements.append(
 
-        Spacer(1,18)
+        Spacer(1,20)
 
     )
 
 
-    # ======================================================
+    # ==========================================
     # TABLE DATA
-    # ======================================================
+    # ==========================================
 
     data = []
 
@@ -266,7 +291,10 @@ def create_pdf(master_df):
         ]
 
     )
-
+	
+	    # ==========================================
+    # TABLE ROWS
+    # ==========================================
 
     for _, row in final_df.iterrows():
 
@@ -297,139 +325,121 @@ def create_pdf(master_df):
         data.append(row_data)
 
 
+    # ==========================================
+    # COLUMN WIDTHS
+    # ==========================================
+
+    col_widths = [
+
+        45,     # Index Number
+        80,     # Site
+        70,     # Date
+        80,     # Category
+        70,     # Vehicle
+        180,    # Breakdown Details
+        170,    # Reason
+        55,     # Pending Days
+        55,     # Owned/Hired
+        65,     # Alert Level
+        35      # Alert Icon
+
+    ]
+
+
     table = Table(
 
         data,
+
+        colWidths=col_widths,
 
         repeatRows=1
 
     )
 
 
+    # ==========================================
+    # TABLE STYLE
+    # ==========================================
+
     table.setStyle(
 
         TableStyle([
 
             (
-
                 "BACKGROUND",
-
                 (0,0),
-
                 (-1,0),
-
                 colors.HexColor("#0B3B6F")
-
             ),
 
             (
-
                 "TEXTCOLOR",
-
                 (0,0),
-
                 (-1,0),
-
                 colors.white
-
             ),
 
             (
-
-                "GRID",
-
-                (0,0),
-
-                (-1,-1),
-
-                0.5,
-
-                colors.grey
-
-            ),
-
-            (
-
                 "FONTNAME",
-
                 (0,0),
-
                 (-1,0),
-
                 "Helvetica-Bold"
-
             ),
 
             (
-
                 "FONTSIZE",
-
                 (0,0),
-
                 (-1,-1),
-
                 8
-
             ),
 
             (
-
                 "BOTTOMPADDING",
-
                 (0,0),
-
                 (-1,0),
-
                 8
-
             ),
 
             (
+                "GRID",
+                (0,0),
+                (-1,-1),
+                0.5,
+                colors.grey
+            ),
 
+            (
                 "VALIGN",
-
                 (0,0),
-
                 (-1,-1),
-
                 "TOP"
-
             ),
 
             (
-
                 "ALIGN",
-
                 (0,0),
-
                 (-1,-1),
-
                 "CENTER"
-
             ),
 
             (
-
                 "ROWBACKGROUNDS",
-
                 (0,1),
-
                 (-1,-1),
-
                 [
-
                     colors.whitesmoke,
-
                     colors.beige
-
                 ]
-
             )
 
         ])
 
     )
 
+
+    # ==========================================
+    # BUILD PDF
+    # ==========================================
 
     elements.append(table)
 
