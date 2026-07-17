@@ -22,7 +22,7 @@ common WhatsApp API for this kind of use case, but if you're already using
 a different provider (Gupshup, official WhatsApp Business API, etc.) let
 me know and I'll swap send_whatsapp() to match it.
 """
-
+pip install twilio apscheduler
 import os
 from apscheduler.schedulers.background import BackgroundScheduler
 
