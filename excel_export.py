@@ -8,24 +8,25 @@ from openpyxl.styles import (
     Side,
     Alignment
 )
+
 from openpyxl.utils import get_column_letter
 
 from datetime import datetime
 import pytz
 
 
-# ======================================================
+# =====================================================
 # AGIPL THEME
-# ======================================================
+# =====================================================
 
 HEADER_COLOR = "0B3B6F"
 WHITE = "FFFFFF"
 BORDER_COLOR = "C9C9C9"
 
 
-# ======================================================
+# =====================================================
 # BORDER
-# ======================================================
+# =====================================================
 
 thin = Side(
     border_style="thin",
@@ -40,9 +41,9 @@ border = Border(
 )
 
 
-# ======================================================
+# =====================================================
 # FONT
-# ======================================================
+# =====================================================
 
 title_font = Font(
     size=18,
@@ -57,17 +58,17 @@ header_font = Font(
 )
 
 
-# ======================================================
+# =====================================================
 # CREATE EXCEL
-# ======================================================
+# =====================================================
 
 def create_excel(master_df):
 
-    # ==================================================
-    # CLEAN COLUMN NAMES
-    # ==================================================
-
     master_df = master_df.copy()
+
+    # ==========================================
+    # CLEAN COLUMN NAMES
+    # ==========================================
 
     master_df.columns = (
         master_df.columns
@@ -75,18 +76,45 @@ def create_excel(master_df):
         .str.strip()
     )
 
-
-    # ==================================================
-    # REMOVE EMPTY ROWS
-    # ==================================================
-
     master_df = master_df.dropna(how="all")
 
 
-    # ==================================================
-    # RENAME SERIAL COLUMN
-    # app.py already sends filtered dataframe
-    # ==================================================
+    # ==========================================
+    # EXPORT ONLY OWNED DATA
+    # ==========================================
+
+    if "Owned/Hired" in master_df.columns:
+
+        master_df = master_df[
+            master_df["Owned/Hired"]
+            .astype(str)
+            .str.strip()
+            .str.upper()
+            == "OWNED"
+        ].copy()
+
+
+    # ==========================================
+    # RESET INDEX
+    # ==========================================
+
+    master_df.reset_index(
+        drop=True,
+        inplace=True
+    )
+
+
+    # ==========================================
+    # INDEX NUMBER
+    # ==========================================
+
+    if "Index Number" in master_df.columns:
+
+        master_df.drop(
+            columns=["Index Number"],
+            inplace=True
+        )
+
 
     if "No" in master_df.columns:
 
@@ -98,21 +126,6 @@ def create_excel(master_df):
         )
 
 
-    # ==================================================
-    # REMOVE OLD INDEX IF DUPLICATE
-    # ==================================================
-
-    duplicated = master_df.columns.duplicated()
-
-    if duplicated.any():
-
-        master_df = master_df.loc[:, ~duplicated]
-
-
-    # ==================================================
-    # RECREATE INDEX IF MISSING
-    # ==================================================
-
     if "Index Number" not in master_df.columns:
 
         master_df.insert(
@@ -120,14 +133,14 @@ def create_excel(master_df):
             "Index Number",
             range(
                 1,
-                len(master_df) + 1
+                len(master_df)+1
             )
         )
 
 
-    # ==================================================
-    # CREATE WORKBOOK
-    # ==================================================
+    # ==========================================
+    # WORKBOOK
+    # ==========================================
 
     wb = Workbook()
 
@@ -139,6 +152,7 @@ def create_excel(master_df):
     last_column = get_column_letter(
         len(master_df.columns)
     )
+
 
     ws.merge_cells(
         f"A1:{last_column}1"
@@ -164,17 +178,17 @@ def create_excel(master_df):
     ws.row_dimensions[1].height = 30
 
 
-    # ==================================================
+    # ==========================================
     # REPORT DATE
-    # ==================================================
+    # ==========================================
 
-    india = datetime.now(
+    india_time = datetime.now(
         pytz.timezone("Asia/Kolkata")
     )
 
     ws["A2"] = "Report Generated"
 
-    ws["B2"] = india.strftime(
+    ws["B2"] = india_time.strftime(
         "%d-%m-%Y %I:%M:%S %p"
     )
 
@@ -183,9 +197,9 @@ def create_excel(master_df):
     )
 
 
-    # ==================================================
+    # ==========================================
     # HEADER
-    # ==================================================
+    # ==========================================
 
     start_row = 5
 
@@ -217,13 +231,13 @@ def create_excel(master_df):
         cell.border = border
 
 
-    # ==================================================
-    # DATA
-    # ==================================================
+    # ==========================================
+    # INSERT DATA
+    # ==========================================
 
     for row_num, row in enumerate(
-        master_df.itertuples(index=False),
-        start=start_row + 1
+        master_df.values,
+        start=start_row+1
     ):
 
         for col_num, value in enumerate(
@@ -244,32 +258,24 @@ def create_excel(master_df):
                 vertical="top",
                 wrap_text=True
             )
-
-
-    # ==================================================
+			
+			
+			
+	    # ==========================================
     # COLUMN WIDTH
-    # ==================================================
+    # ==========================================
 
     width_map = {
 
         "Index Number": 12,
-
         "Site": 20,
-
         "Date of breakdown": 18,
-
         "Category": 22,
-
         "Vehcile No": 18,
-
         "Breakdown Details": 45,
-
         "Reason for pendency": 40,
-
         "Pending for (no of days)": 18,
-
         "Owned/Hired": 15,
-
         "Breakdown Alert Icon": 20
 
     }
@@ -277,72 +283,130 @@ def create_excel(master_df):
 
     for column_cells in ws.columns:
 
-        column_index = column_cells[0].column
+        column_number = column_cells[0].column
 
-        letter = get_column_letter(
-            column_index
+        column_letter = get_column_letter(
+            column_number
         )
 
         header = ws.cell(
             row=start_row,
-            column=column_index
+            column=column_number
         ).value
 
 
         if header in width_map:
 
             ws.column_dimensions[
-                letter
+                column_letter
             ].width = width_map[header]
 
         else:
 
-            max_len = len(str(header))
+            max_length = len(str(header))
 
             for cell in column_cells:
 
                 if cell.value is not None:
 
-                    max_len = max(
-                        max_len,
+                    max_length = max(
+                        max_length,
                         len(str(cell.value))
                     )
 
             ws.column_dimensions[
-                letter
+                column_letter
             ].width = min(
-                max_len + 3,
+                max_length + 3,
                 30
             )
 
 
-    # ==================================================
-    # FREEZE HEADER
-    # ==================================================
+    # ==========================================
+    # HEADER STYLE
+    # ==========================================
+
+    for cell in ws[start_row]:
+
+        cell.font = header_font
+
+        cell.fill = PatternFill(
+            fill_type="solid",
+            fgColor=HEADER_COLOR
+        )
+
+        cell.border = border
+
+        cell.alignment = Alignment(
+            horizontal="center",
+            vertical="center",
+            wrap_text=True
+        )
+
+
+    # ==========================================
+    # DATA STYLE
+    # ==========================================
+
+    for row in ws.iter_rows(
+        min_row=start_row+1,
+        max_row=ws.max_row
+    ):
+
+        for cell in row:
+
+            cell.border = border
+
+            cell.alignment = Alignment(
+                vertical="top",
+                wrap_text=True
+            )
+
+
+    # ==========================================
+    # FREEZE PANE
+    # ==========================================
 
     ws.freeze_panes = "A6"
 
 
-    # ==================================================
-    # ROW HEIGHT
-    # ==================================================
+    # ==========================================
+    # AUTO FILTER
+    # ==========================================
 
-    for r in range(
+    last_column = get_column_letter(
+        ws.max_column
+    )
+
+    ws.auto_filter.ref = (
+        f"A5:{last_column}{ws.max_row}"
+    )
+
+
+    # ==========================================
+    # ROW HEIGHT
+    # ==========================================
+
+    for row in range(
         6,
         ws.max_row + 1
     ):
 
-        ws.row_dimensions[r].height = 42
+        ws.row_dimensions[row].height = 40
 
 
-    # ==================================================
+    # ==========================================
     # SAVE
-    # ==================================================
+    # ==========================================
 
-    file_name = "Pending_Breakdown_Report.xlsx"
+    output_file = (
+        "Pending_Breakdown_Report.xlsx"
+    )
 
-    wb.save(file_name)
+    wb.save(output_file)
 
-    print("Excel Report Generated Successfully")
+    print(
+        "Pending Excel Report Created Successfully"
+    )
 
-    return file_name
+    return output_file
