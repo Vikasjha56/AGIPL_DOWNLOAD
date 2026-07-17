@@ -66,6 +66,7 @@ def create_excel(master_df):
 
     master_df = master_df.copy()
 
+
     # ==========================================
     # CLEAN COLUMN NAMES
     # ==========================================
@@ -76,11 +77,14 @@ def create_excel(master_df):
         .str.strip()
     )
 
-    master_df = master_df.dropna(how="all")
+
+    master_df = master_df.dropna(
+        how="all"
+    )
 
 
     # ==========================================
-    # EXPORT ONLY OWNED DATA
+    # OWNED DATA ONLY
     # ==========================================
 
     if "Owned/Hired" in master_df.columns:
@@ -95,7 +99,7 @@ def create_excel(master_df):
 
 
     # ==========================================
-    # RESET INDEX
+    # RESET DATA INDEX
     # ==========================================
 
     master_df.reset_index(
@@ -105,7 +109,7 @@ def create_excel(master_df):
 
 
     # ==========================================
-    # INDEX NUMBER
+    # CREATE FRESH SERIAL INDEX NUMBER
     # ==========================================
 
     if "Index Number" in master_df.columns:
@@ -118,24 +122,20 @@ def create_excel(master_df):
 
     if "No" in master_df.columns:
 
-        master_df.rename(
-            columns={
-                "No": "Index Number"
-            },
+        master_df.drop(
+            columns=["No"],
             inplace=True
         )
 
 
-    if "Index Number" not in master_df.columns:
-
-        master_df.insert(
-            0,
-            "Index Number",
-            range(
-                1,
-                len(master_df)+1
-            )
+    master_df.insert(
+        0,
+        "Index Number",
+        range(
+            1,
+            len(master_df) + 1
         )
+    )
 
 
     # ==========================================
@@ -161,7 +161,9 @@ def create_excel(master_df):
 
     title = ws["A1"]
 
-    title.value = "AGIPL BREAKDOWN PENDING REPORT"
+    title.value = (
+        "AGIPL BREAKDOWN PENDING REPORT"
+    )
 
     title.font = title_font
 
@@ -175,7 +177,9 @@ def create_excel(master_df):
         vertical="center"
     )
 
+
     ws.row_dimensions[1].height = 30
+
 
 
     # ==========================================
@@ -183,8 +187,11 @@ def create_excel(master_df):
     # ==========================================
 
     india_time = datetime.now(
-        pytz.timezone("Asia/Kolkata")
+        pytz.timezone(
+            "Asia/Kolkata"
+        )
     )
+
 
     ws["A2"] = "Report Generated"
 
@@ -192,9 +199,11 @@ def create_excel(master_df):
         "%d-%m-%Y %I:%M:%S %p"
     )
 
+
     ws["A2"].font = Font(
         bold=True
     )
+
 
 
     # ==========================================
@@ -203,15 +212,18 @@ def create_excel(master_df):
 
     start_row = 5
 
+
     for col_num, column in enumerate(
         master_df.columns,
         start=1
     ):
 
+
         cell = ws.cell(
             row=start_row,
             column=col_num
         )
+
 
         cell.value = column
 
@@ -231,24 +243,28 @@ def create_excel(master_df):
         cell.border = border
 
 
+
     # ==========================================
-    # INSERT DATA
+    # DATA INSERT
     # ==========================================
 
     for row_num, row in enumerate(
         master_df.values,
-        start=start_row+1
+        start=start_row + 1
     ):
+
 
         for col_num, value in enumerate(
             row,
             start=1
         ):
 
+
             cell = ws.cell(
                 row=row_num,
                 column=col_num
             )
+
 
             cell.value = value
 
@@ -258,36 +274,52 @@ def create_excel(master_df):
                 vertical="top",
                 wrap_text=True
             )
-			
-			
-			
-	    # ==========================================
+
+
+
+    # ==========================================
     # COLUMN WIDTH
     # ==========================================
 
     width_map = {
 
-        "Index Number": 12,
-        "Site": 20,
-        "Date of breakdown": 18,
-        "Category": 22,
-        "Vehcile No": 18,
-        "Breakdown Details": 45,
-        "Reason for pendency": 40,
-        "Pending for (no of days)": 18,
-        "Owned/Hired": 15,
-        "Breakdown Alert Icon": 20
+
+        "Index Number":12,
+
+        "Site":20,
+
+        "Date of breakdown":18,
+
+        "Category":22,
+
+        "Vehcile No":18,
+
+        "Breakdown Details":45,
+
+        "Reason for pendency":40,
+
+        "Pending for (no of days)":18,
+
+        "Owned/Hired":15,
+
+        "Breakdown Alert Icon":20
 
     }
 
 
+
     for column_cells in ws.columns:
 
-        column_number = column_cells[0].column
+
+        column_number = (
+            column_cells[0].column
+        )
+
 
         column_letter = get_column_letter(
             column_number
         )
+
 
         header = ws.cell(
             row=start_row,
@@ -295,17 +327,25 @@ def create_excel(master_df):
         ).value
 
 
+
         if header in width_map:
+
 
             ws.column_dimensions[
                 column_letter
             ].width = width_map[header]
 
+
         else:
 
-            max_length = len(str(header))
+
+            max_length = len(
+                str(header)
+            )
+
 
             for cell in column_cells:
+
 
                 if cell.value is not None:
 
@@ -313,6 +353,7 @@ def create_excel(master_df):
                         max_length,
                         len(str(cell.value))
                     )
+
 
             ws.column_dimensions[
                 column_letter
@@ -322,65 +363,28 @@ def create_excel(master_df):
             )
 
 
-    # ==========================================
-    # HEADER STYLE
-    # ==========================================
-
-    for cell in ws[start_row]:
-
-        cell.font = header_font
-
-        cell.fill = PatternFill(
-            fill_type="solid",
-            fgColor=HEADER_COLOR
-        )
-
-        cell.border = border
-
-        cell.alignment = Alignment(
-            horizontal="center",
-            vertical="center",
-            wrap_text=True
-        )
-
 
     # ==========================================
-    # DATA STYLE
-    # ==========================================
-
-    for row in ws.iter_rows(
-        min_row=start_row+1,
-        max_row=ws.max_row
-    ):
-
-        for cell in row:
-
-            cell.border = border
-
-            cell.alignment = Alignment(
-                vertical="top",
-                wrap_text=True
-            )
-
-
-    # ==========================================
-    # FREEZE PANE
+    # FREEZE
     # ==========================================
 
     ws.freeze_panes = "A6"
 
 
+
     # ==========================================
-    # AUTO FILTER
+    # FILTER
     # ==========================================
 
     last_column = get_column_letter(
         ws.max_column
     )
 
+
     ws.auto_filter.ref = (
         f"A5:{last_column}{ws.max_row}"
     )
+
 
 
     # ==========================================
@@ -395,18 +399,24 @@ def create_excel(master_df):
         ws.row_dimensions[row].height = 40
 
 
+
     # ==========================================
-    # SAVE
+    # SAVE FILE
     # ==========================================
 
     output_file = (
         "Pending_Breakdown_Report.xlsx"
     )
 
-    wb.save(output_file)
+
+    wb.save(
+        output_file
+    )
+
 
     print(
         "Pending Excel Report Created Successfully"
     )
+
 
     return output_file
