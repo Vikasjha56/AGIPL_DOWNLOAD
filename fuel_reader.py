@@ -50,10 +50,9 @@ def get_fuel_sheet_data():
 
     except Exception as e:
 
-
         print(
             "Fuel Sheet Error:",
-            e
+            repr(e)
         )
 
 
