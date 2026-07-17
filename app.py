@@ -398,77 +398,47 @@ def fuel():
     )
 
 
-
-
-
 # =====================================================
 # FUEL DATA API
 # =====================================================
 
-
-FUEL_CACHE = None
-FUEL_CACHE_TIME = 0
-FUEL_CACHE_DURATION = 300
-
-
-
 @app.route("/fuel_data")
 def fuel_data():
 
-    global FUEL_CACHE, FUEL_CACHE_TIME
-
-
     try:
 
+        print("FUEL API START")
 
-        now = time.time()
-
-
-        # =========================
-        # CACHE
-        # =========================
-
-        if (
-            FUEL_CACHE is None
-            or now - FUEL_CACHE_TIME > FUEL_CACHE_DURATION
-        ):
-
-            print("Loading Fuel Sheet...")
-
-            raw = get_fuel_sheet_data()
+        df = get_fuel_sheet_data()
 
 
-            df, analysis = prepare_fuel_analysis(raw)
+        print(
+            "RAW DATA:",
+            len(df)
+        )
 
 
-            FUEL_CACHE = df
-
-            FUEL_CACHE_TIME = now
-
-
-        else:
-
-            print("Using Fuel Cache")
-
-            df = FUEL_CACHE.copy()
-
-
+        print(
+            "COLUMNS:",
+            df.columns.tolist()
+        )
 
 
         if df.empty:
 
-            return jsonify(
-                {
-                    "error":
-                    "Fuel data not found"
-                }
-            )
+            return jsonify({
+
+                "error":
+                "Google Sheet Empty"
+
+            })
+
+
+        df, = prepare_fuel_analysis(df)
 
 
 
-        # =========================
-        # SERIAL NUMBER
-        # =========================
+        # Serial No
 
         df["Sr.No."] = range(
             1,
@@ -476,76 +446,16 @@ def fuel_data():
         )
 
 
-
         df["Working Date"] = (
-            pd.to_datetime(
-                df["Working Date"],
-                errors="coerce"
-            )
-            .dt.strftime("%Y-%m-%d")
+            df["Working Date"]
+            .astype(str)
         )
 
-
-
-
-        # =========================
-        # KPI FROM ANALYSIS
-        # =========================
 
         kpi = df.attrs.get(
             "kpi",
             {}
         )
-
-
-
-
-        slicers = {
-
-
-            "dates":
-            sorted(
-                df["Working Date"]
-                .dropna()
-                .unique()
-                .tolist()
-            ),
-
-
-            "sites":
-            sorted(
-                df["Log Book No."]
-                .astype(str)
-                .unique()
-                .tolist()
-            ),
-
-
-            "categories":
-            sorted(
-                df["Machine Category"]
-                .astype(str)
-                .unique()
-                .tolist()
-            ),
-
-
-            "machines":
-            sorted(
-                df["Machine"]
-                .astype(str)
-                .unique()
-                .tolist()
-            )
-
-        }
-
-
-
-
-        # =========================
-        # SAFE TABLE
-        # =========================
 
 
         table_columns = [
@@ -565,11 +475,11 @@ def fuel_data():
         ]
 
 
-        for c in table_columns:
+        for col in table_columns:
 
-            if c not in df.columns:
+            if col not in df.columns:
 
-                df[c] = ""
+                df[col] = ""
 
 
 
@@ -584,84 +494,16 @@ def fuel_data():
         )
 
 
-
-
-        # =========================
-        # CHART DATA
-        # =========================
-
-
-        daily = df.attrs["daily"]
-
-        category = df.attrs["category"]
-
-        machine = df.attrs["machine"]
-
-        site = df.attrs["site"]
-
-
-
-
         return jsonify({
 
-            "kpi":kpi,
+            "status":
+            "success",
 
+            "kpi":
+            kpi,
 
-            "slicers":slicers,
-
-
-            "daily":{
-
-                "labels":
-                daily["Working Date"].tolist(),
-
-                "values":
-                daily["Fuel Used"].tolist()
-
-            },
-
-
-            "category":{
-
-                "labels":
-                category["Machine Category"].tolist(),
-
-                "values":
-                category["Fuel"].tolist()
-
-            },
-
-
-            "machine":{
-
-                "labels":
-                machine["Machine"].tolist(),
-
-                "values":
-                machine["Fuel"].tolist()
-
-            },
-
-
-            "site":{
-
-                "labels":
-                site["Log Book No."].tolist(),
-
-                "values":
-                site["Fuel"].tolist()
-
-            },
-
-
-            "table":table,
-
-
-            "alerts":
-            df.attrs.get(
-                "alerts",
-                []
-            )
+            "table":
+            table
 
 
         })
@@ -672,8 +514,8 @@ def fuel_data():
 
 
         print(
-            "FUEL API ERROR:",
-            e
+            "FUEL ERROR:",
+            str(e)
         )
 
 
@@ -683,8 +525,6 @@ def fuel_data():
             str(e)
 
         })
-
-
 
 @app.route("/hr")
 def hr():
@@ -733,4 +573,9 @@ if start_scheduler and (not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == 
 # ==========================
 
 if __name__ == "__main__":
-    app.run()
+
+    app.run(
+        host="0.0.0.0",
+        port=5000,
+        debug=True
+    )
