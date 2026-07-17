@@ -1,425 +1,600 @@
 # ==========================================================
-# fuel_reader.py
-# AGIPL Fuel Dashboard
-# Read Machine Working Report from Google Spreadsheet
+# fuel_analysis.py
+# AGIPL Fuel Dashboard Analytics
 # ==========================================================
 
 import pandas as pd
 import numpy as np
 
-from config import GOOGLE_SHEETS
-
 
 # ==========================================================
-# Fuel Sheet Link
-# (Last link of config.py)
+# Safe Float
 # ==========================================================
 
-FUEL_URL = GOOGLE_SHEETS[-1]
-
-
-# ==========================================================
-# Safe Float Converter
-# ==========================================================
-
-def to_float(value):
-
-    if pd.isna(value):
-        return 0.0
-
-    txt = str(value).strip()
-
-    if txt == "":
-        return 0.0
-
-    txt = txt.replace(",", "")
+def safe(v):
 
     try:
-        return float(txt)
+        return float(v)
     except:
         return 0.0
 
 
 # ==========================================================
-# Read Fuel Sheet
+# Prepare Fuel Analysis
 # ==========================================================
 
-def get_fuel_sheet_data():
+def prepare_fuel_analysis(df):
 
-    df = pd.read_csv(FUEL_URL)
+    df = df.copy()
 
-    # -----------------------------
-    # Remove blank column names
-    # -----------------------------
-
-    df.columns = (
-        df.columns
-        .astype(str)
-        .str.strip()
-    )
-
-    df = df.loc[:, ~df.columns.str.contains("^Unnamed")]
-
-    # -----------------------------
-    # Required Columns
-    # -----------------------------
-
-    required = [
-
-        "Working Date",
-        "Log Book No.",
-        "Machine Category",
-        "Machine",
-        "Machine Status",
-
-        "From Reading",
-        "To Reading",
-
-        "Time Op. Reading",
-        "Time Cls. Reading",
-
-        "Fuel Issue",
-        "Average",
-
-        "Driver",
-        "Helper",
-
-        "Shift",
-
-        "Remark",
-        "Work Done"
-
-    ]
-
-    for col in required:
-
-        if col not in df.columns:
-
-            df[col] = ""
-
-
-    # -----------------------------
-    # Numeric Conversion
-    # -----------------------------
+    # ---------------------------------------------
+    # Numeric Safety
+    # ---------------------------------------------
 
     numeric = [
 
-        "From Reading",
-        "To Reading",
-
-        "Time Op. Reading",
-        "Time Cls. Reading",
-
-        "Fuel Issue",
-        "Average"
+        "Fuel Used",
+        "Run Hours",
+        "Fuel Average"
 
     ]
 
     for c in numeric:
 
-        df[c] = df[c].apply(to_float)
+        if c in df.columns:
+
+            df[c] = (
+
+                df[c]
+                .fillna(0)
+                .apply(safe)
+
+            )
 
 
-    # -----------------------------
-    # Date Conversion
-    # -----------------------------
-
-    df["Working Date"] = pd.to_datetime(
-
-        df["Working Date"],
-
-        errors="coerce"
-
-    )
-
-
-    df = df.sort_values(
-
-        "Working Date"
-
-    )
-
-
-    # -----------------------------
+    # ---------------------------------------------
     # Month
-    # -----------------------------
+    # ---------------------------------------------
 
-    df["Month"] = (
+    if "Month" not in df.columns:
+
+        df["Month"] = (
+
+            pd.to_datetime(
+
+                df["Working Date"],
+
+                errors="coerce"
+
+            )
+
+            .dt.strftime("%b-%Y")
+
+        )
+
+
+    # ---------------------------------------------
+    # Efficiency Status
+    # ---------------------------------------------
+
+    def efficiency(row):
+
+        avg = row["Fuel Average"]
+
+        unit = row["Average Unit"]
+
+
+        # Hour Meter
+
+        if unit == "L/Hr":
+
+            if avg <= 4:
+                return "Excellent"
+
+            elif avg <= 7:
+                return "Good"
+
+            elif avg <= 10:
+                return "Average"
+
+            else:
+                return "Poor"
+
+
+        # KM Based
+
+        if unit == "KM/L":
+
+            if avg >= 5:
+                return "Excellent"
+
+            elif avg >= 3.5:
+                return "Good"
+
+            elif avg >= 2:
+                return "Average"
+
+            else:
+                return "Poor"
+
+
+        return "Unknown"
+
+
+    df["Efficiency"] = (
+
+        df.apply(
+
+            efficiency,
+
+            axis=1
+
+        )
+
+    )
+
+
+    # ---------------------------------------------
+    # High Consumption Flag
+    # ---------------------------------------------
+
+    df["High Consumption"] = (
+
+        df["Efficiency"] ==
+
+        "Poor"
+
+    )
+
+
+    # ---------------------------------------------
+    # Utilization %
+    # ---------------------------------------------
+
+    util = (
+
+        df.groupby(
+
+            "Machine"
+
+        )["Working Date"]
+
+        .nunique()
+
+    )
+
+
+    total_days = (
 
         df["Working Date"]
 
-        .dt.strftime("%b-%Y")
+        .nunique()
 
     )
 
 
-    # -----------------------------
-    # Machine Name
-    # -----------------------------
+    util_pct = (
 
-    df["Machine"] = (
+        util /
+
+        max(total_days, 1)
+
+    ) * 100
+
+
+    util_pct = util_pct.round(1)
+
+
+    df["Utilization %"] = (
 
         df["Machine"]
 
-        .fillna("")
-
-        .astype(str)
-
-        .str.strip()
+        .map(util_pct)
 
     )
 
 
-    # -----------------------------
-    # RTO Number
-    # Example:
-    # BACK HOE LOADER-JCB(6616)-AGIPL
-    # -----------------------------
+    # ---------------------------------------------
+    # Utilization Status
+    # ---------------------------------------------
 
-    def get_rto(machine):
+    def util_status(v):
 
-        machine = str(machine)
+        if v >= 80:
 
-        if "(" in machine and ")" in machine:
+            return "Excellent"
 
-            return machine.split("(")[-1].split(")")[0]
+        elif v >= 60:
 
-        return ""
+            return "Good"
 
+        elif v >= 30:
 
-    df["RTO Number"] = (
-
-        df["Machine"]
-
-        .apply(get_rto)
-
-    )
-
-
-    # =====================================================
-    # AUTO DETECT HOURS OR KM
-    # =====================================================
-
-    run_hours = []
-
-    fuel_average = []
-
-    average_unit = []
-
-    fuel_used = []
-
-    working_type = []
-
-
-    for _, row in df.iterrows():
-
-        fuel = to_float(
-
-            row["Fuel Issue"]
-
-        )
-
-
-        op = to_float(
-
-            row["Time Op. Reading"]
-
-        )
-
-
-        cls = to_float(
-
-            row["Time Cls. Reading"]
-
-        )
-
-
-        frm = to_float(
-
-            row["From Reading"]
-
-        )
-
-
-        to = to_float(
-
-            row["To Reading"]
-
-        )
-
-
-        # ===================================
-        # Hour Meter Machine
-        # ===================================
-
-        if cls > op:
-
-            hrs = round(
-
-                cls - op,
-
-                2
-
-            )
-
-            run_hours.append(
-
-                hrs
-
-            )
-
-            fuel_used.append(
-
-                fuel
-
-            )
-
-            working_type.append(
-
-                "Hour Meter"
-
-            )
-
-
-            if hrs > 0:
-
-                fuel_average.append(
-
-                    round(
-
-                        fuel / hrs,
-
-                        2
-
-                    )
-
-                )
-
-            else:
-
-                fuel_average.append(0)
-
-
-            average_unit.append(
-
-                "L/Hr"
-
-            )
-
-
-        # ===================================
-        # KM Based Machine
-        # ===================================
-
-        elif to > frm:
-
-            km = round(
-
-                to - frm,
-
-                2
-
-            )
-
-            run_hours.append(
-
-                km
-
-            )
-
-            fuel_used.append(
-
-                fuel
-
-            )
-
-            working_type.append(
-
-                "Odometer"
-
-            )
-
-
-            if fuel > 0:
-
-                fuel_average.append(
-
-                    round(
-
-                        km / fuel,
-
-                        2
-
-                    )
-
-                )
-
-            else:
-
-                fuel_average.append(0)
-
-
-            average_unit.append(
-
-                "KM/L"
-
-            )
-
-
-        # ===================================
-        # No Reading
-        # ===================================
+            return "Average"
 
         else:
 
-            run_hours.append(0)
-
-            fuel_used.append(fuel)
-
-            fuel_average.append(0)
-
-            average_unit.append("-")
-
-            working_type.append("Unknown")
+            return "Poor"
 
 
-    # =====================================================
-    # Final Columns
-    # =====================================================
+    df["Utilization Status"] = (
 
-    df["Run Hours"] = run_hours
+        df["Utilization %"]
 
-    df["Fuel Used"] = fuel_used
-
-    df["Fuel Average"] = fuel_average
-
-    df["Average Unit"] = average_unit
-
-    df["Working Type"] = working_type
-
-
-    # =====================================================
-    # Remove Blank Machine
-    # =====================================================
-
-    df = df[
-
-        df["Machine"] != ""
-
-    ].copy()
-
-
-    # =====================================================
-    # Reset Index
-    # =====================================================
-
-    df.reset_index(
-
-        drop=True,
-
-        inplace=True
+        .apply(util_status)
 
     )
+
+
+    # ---------------------------------------------
+    # Alerts
+    # ---------------------------------------------
+
+    alerts = []
+
+
+    poor = (
+
+        df["Efficiency"]
+
+        == "Poor"
+
+    ).sum()
+
+
+    if poor > 0:
+
+        alerts.append(
+
+            {
+
+                "title":
+
+                f"{poor} High Fuel Consumption Machines",
+
+                "type":
+
+                "danger"
+
+            }
+
+        )
+
+
+    low_util = (
+
+        df["Utilization %"]
+
+        < 25
+
+    ).sum()
+
+
+    if low_util > 0:
+
+        alerts.append(
+
+            {
+
+                "title":
+
+                f"{low_util} Low Utilization Machines",
+
+                "type":
+
+                "warning"
+
+            }
+
+        )
+
+
+    unknown = (
+
+        df["Working Type"]
+
+        == "Unknown"
+
+    ).sum()
+
+
+    if unknown > 0:
+
+        alerts.append(
+
+            {
+
+                "title":
+
+                f"{unknown} Machines Missing Meter Reading",
+
+                "type":
+
+                "warning"
+
+            }
+
+        )
+
+
+    # ---------------------------------------------
+    # Daily Fuel Trend
+    # ---------------------------------------------
+
+    daily = (
+
+        df.groupby(
+
+            "Working Date"
+
+        )["Fuel Used"]
+
+        .sum()
+
+        .reset_index()
+
+    )
+
+
+    # ---------------------------------------------
+    # Monthly Trend
+    # ---------------------------------------------
+
+    monthly = (
+
+        df.groupby(
+
+            "Month"
+
+        )["Fuel Used"]
+
+        .sum()
+
+        .reset_index()
+
+    )
+
+
+    # ---------------------------------------------
+    # Site Summary
+    # ---------------------------------------------
+
+    site = (
+
+        df.groupby(
+
+            "Log Book No."
+
+        )
+
+        .agg(
+
+            Fuel=("Fuel Used", "sum"),
+
+            Hours=("Run Hours", "sum"),
+
+            Machines=("Machine", "nunique")
+
+        )
+
+        .reset_index()
+
+    )
+
+
+    # ---------------------------------------------
+    # Category Summary
+    # ---------------------------------------------
+
+    category = (
+
+        df.groupby(
+
+            "Machine Category"
+
+        )
+
+        .agg(
+
+            Fuel=("Fuel Used", "sum"),
+
+            Hours=("Run Hours", "sum"),
+
+            Machines=("Machine", "nunique")
+
+        )
+
+        .reset_index()
+
+    )
+
+
+    # ---------------------------------------------
+    # Machine Summary
+    # ---------------------------------------------
+
+    machine = (
+
+        df.groupby(
+
+            "Machine"
+
+        )
+
+        .agg(
+
+            Fuel=("Fuel Used", "sum"),
+
+            Hours=("Run Hours", "sum"),
+
+            Average=("Fuel Average", "mean"),
+
+            Status=("Machine Status", "first"),
+
+            Utilization=("Utilization %", "max")
+
+        )
+
+        .reset_index()
+
+    )
+
+
+    machine = (
+
+        machine
+
+        .sort_values(
+
+            "Fuel",
+
+            ascending=False
+
+        )
+
+    )
+
+
+    # ---------------------------------------------
+    # Top Consumers
+    # ---------------------------------------------
+
+    top10 = (
+
+        machine
+
+        .head(10)
+
+    )
+
+
+    # ---------------------------------------------
+    # Dashboard KPIs
+    # ---------------------------------------------
+
+    total_fuel = (
+
+        round(
+
+            df["Fuel Used"]
+
+            .sum(),
+
+            2
+
+        )
+
+    )
+
+
+    total_hours = (
+
+        round(
+
+            df["Run Hours"]
+
+            .sum(),
+
+            2
+
+        )
+
+    )
+
+
+    total_machine = (
+
+        df["Machine"]
+
+        .nunique()
+
+    )
+
+
+    total_site = (
+
+        df["Log Book No."]
+
+        .nunique()
+
+    )
+
+
+    avg = (
+
+        round(
+
+            df["Fuel Average"]
+
+            .replace(
+
+                0,
+
+                np.nan
+
+            )
+
+            .mean(),
+
+            2
+
+        )
+
+    )
+
+
+    kpi = {
+
+        "total_fuel":
+
+        total_fuel,
+
+        "total_hours":
+
+        total_hours,
+
+        "total_machine":
+
+        total_machine,
+
+        "total_site":
+
+        total_site,
+
+        "average":
+
+        avg,
+
+        "high_consumption":
+
+        poor,
+
+        "low_utilization":
+
+        low_util
+
+    }
+
+
+    # ---------------------------------------------
+    # Attach Objects
+    # ---------------------------------------------
+
+    df.attrs["kpi"] = kpi
+
+    df.attrs["daily"] = daily
+
+    df.attrs["monthly"] = monthly
+
+    df.attrs["site"] = site
+
+    df.attrs["category"] = category
+
+    df.attrs["machine"] = machine
+
+    df.attrs["top10"] = top10
+
+    df.attrs["alerts"] = alerts
 
 
     return df
