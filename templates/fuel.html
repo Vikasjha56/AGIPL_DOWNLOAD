@@ -9,103 +9,109 @@
 
 {% block content %}
 <style>
-  .fl-wrap{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:8px;overflow:hidden;
+  html, body { overflow: hidden; }
+
+  .fl-wrap{flex:1 1 auto;min-height:0;height:100%;display:flex;flex-direction:column;gap:6px;overflow:hidden;
     margin-top:-10px;}
 
   .no-data-banner{
     display:none;flex:0 0 auto;background:rgba(229,72,77,.15);border:1px solid #E5484D;
-    color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;}
+    color:#fff;padding:8px 14px;border-radius:10px;font-size:12px;}
   .no-data-banner.show{display:block;}
 
-  .filters{flex:0 0 auto;display:flex;gap:10px;flex-wrap:wrap;align-items:center;
-    padding:8px 18px;border-radius:14px;background:rgba(255,255,255,.12);
+  .filters{flex:0 0 auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+    padding:6px 14px;border-radius:14px;background:rgba(255,255,255,.12);
     backdrop-filter:blur(20px);box-shadow:0 10px 25px #0007;}
-  .filter-group{display:flex;align-items:center;gap:6px;}
-  .filter-group label{font-size:11px;font-weight:600;opacity:.85;}
+  .filter-group{display:flex;align-items:center;gap:5px;}
+  .filter-group label{font-size:10.5px;font-weight:600;opacity:.85;white-space:nowrap;}
   .filter-group select, .filter-group input[type="date"]{
-    padding:6px 10px;border-radius:9px;border:1px solid rgba(0,255,255,.5);
-    background:rgba(255,255,255,.1);color:#fff;font-size:12.5px;outline:none;
-    max-width:170px;color-scheme:dark;}
+    padding:5px 8px;border-radius:9px;border:1px solid rgba(0,255,255,.5);
+    background:rgba(255,255,255,.1);color:#fff;font-size:12px;outline:none;
+    max-width:150px;color-scheme:dark;}
   .filter-group select option{color:#000;}
+  .date-range-group{display:flex;align-items:center;gap:4px;}
+  .date-range-group input[type="date"]{max-width:130px;}
+  .date-range-group .to-label{font-size:10.5px;opacity:.75;}
   .clear-btn{
     border:1px solid rgba(255,80,80,.6);background:rgba(255,60,60,.15);color:#fff;
-    padding:6px 13px;border-radius:9px;font-size:12px;cursor:pointer;margin-left:auto;
+    padding:5px 12px;border-radius:9px;font-size:11.5px;cursor:pointer;margin-left:auto;
     display:inline-flex;align-items:center;gap:6px;font-weight:700;transition:.2s;white-space:nowrap;}
   .clear-btn:hover{background:rgba(255,60,60,.35);box-shadow:0 0 10px rgba(255,80,80,.5);}
   .clear-btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none;}
-  .tabs{display:flex;gap:6px;background:rgba(255,255,255,.08);padding:4px;border-radius:11px;}
-  .tab-btn{border:none;padding:6px 14px;border-radius:8px;font-size:12.5px;font-weight:600;
+  .tabs{display:flex;gap:5px;background:rgba(255,255,255,.08);padding:3px;border-radius:11px;}
+  .tab-btn{border:none;padding:5px 12px;border-radius:8px;font-size:11.5px;font-weight:600;
     cursor:pointer;background:transparent;color:#fff;opacity:.7;transition:.25s;white-space:nowrap;}
   .tab-btn.active{background:linear-gradient(135deg,#0077ff,#00c6ff);opacity:1;box-shadow:0 0 14px cyan;}
   .tab-btn:hover{opacity:1;}
 
-  .view{display:none;flex:1 1 auto;min-height:0;flex-direction:column;gap:8px;overflow-y:auto;overflow-x:hidden;}
+  .view{display:none;flex:1 1 auto;min-height:0;flex-direction:column;gap:6px;overflow:hidden;}
   .view.active{display:flex;}
 
-  .kpi-row{flex:0 0 auto;display:grid;grid-template-columns:repeat(6,1fr);gap:8px;}
+  .kpi-row{flex:0 0 auto;display:grid;grid-template-columns:repeat(6,1fr);gap:6px;}
   .kpi{background:rgba(255,255,255,.1);border:1px solid rgba(0,255,255,.35);border-radius:10px;
-    padding:7px 10px;text-align:center;transition:.3s;min-width:0;}
+    padding:6px 8px;text-align:center;transition:.3s;min-width:0;}
   .kpi:hover{transform:translateY(-2px);box-shadow:0 0 14px cyan;}
-  .kpi-label{font-size:9.5px;color:#8CA3C4;text-transform:uppercase;letter-spacing:.3px;}
-  .kpi-value{font-size:17px;font-weight:700;text-shadow:0 0 8px cyan;margin-top:2px;}
-  .kpi-sub{font-size:9.5px;color:#8CA3C4;margin-top:1px;}
+  .kpi-label{font-size:9px;color:#8CA3C4;text-transform:uppercase;letter-spacing:.3px;}
+  .kpi-value{font-size:15px;font-weight:700;text-shadow:0 0 8px cyan;margin-top:1px;}
+  .kpi-sub{font-size:9px;color:#8CA3C4;margin-top:1px;}
   .kpi-value.up{color:#5CE68A;text-shadow:0 0 8px #5CE68A;}
   .kpi-value.down{color:#FF8A8A;text-shadow:0 0 8px #FF8A8A;}
 
-  .grid2{flex:0 0 auto;display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .grid2{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:6px;}
   .panel{background:rgba(255,255,255,.12);border:1px solid rgba(0,255,255,.35);border-radius:12px;
-    padding:8px 12px;display:flex;flex-direction:column;min-height:0;backdrop-filter:blur(20px);
-    min-width:0;}
-  .panel h3{margin:0 0 4px;font-size:11.5px;color:#2DD4BF;text-transform:uppercase;letter-spacing:.4px;text-align:center;}
-  .panel-head{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;position:relative;}
+    padding:6px 10px;display:flex;flex-direction:column;min-height:0;backdrop-filter:blur(20px);
+    min-width:0;overflow:hidden;}
+  .panel h3{margin:0 0 3px;font-size:10.5px;color:#2DD4BF;text-transform:uppercase;letter-spacing:.4px;text-align:center;}
+  .panel-head{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:3px;flex-wrap:wrap;position:relative;flex:0 0 auto;}
   .panel-head h3{margin:0;}
   .panel-head .export-btns{position:absolute;right:0;top:50%;transform:translateY(-50%);}
 
-  /* Fixed, non-flex heights on every chart container -> this is the fix for
-     charts growing unbounded / overlapping on any screen size. */
-  .chart-wrap{height:300px;min-height:300px;max-height:300px;position:relative;overflow:hidden;width:100%;}
-  .chart-wrap canvas{max-width:100%;}
+  /* Charts fill available panel space, never overflow it */
+  .chart-wrap{flex:1 1 auto;min-height:0;position:relative;overflow:hidden;width:100%;}
+  .chart-wrap canvas{max-width:100%;max-height:100%;}
 
   .chart-scroll-x{width:100%;height:100%;overflow-x:auto;overflow-y:hidden;}
-  .chart-scroll-x::-webkit-scrollbar{height:6px;}
+  .chart-scroll-x::-webkit-scrollbar{height:5px;}
   .chart-scroll-x::-webkit-scrollbar-thumb{background:rgba(45,212,191,.5);border-radius:4px;}
   .chart-inner{height:100%;position:relative;}
 
-  .trend-header{flex:0 0 auto;text-align:center;font-size:12.5px;color:#EAF1FB;font-weight:600;
-    background:rgba(255,255,255,.08);border-radius:9px;padding:6px 10px;}
+  .full-row{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
+
+  .trend-header{flex:0 0 auto;text-align:center;font-size:11.5px;color:#EAF1FB;font-weight:600;
+    background:rgba(255,255,255,.08);border-radius:9px;padding:5px 10px;}
   .trend-header b{color:#2DD4BF;}
 
-  .month-table-panel{flex:0 0 auto;min-height:0;display:flex;flex-direction:column;
+  .month-table-panel{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;
     background:rgba(255,255,255,.12);border:1px solid rgba(0,255,255,.35);border-radius:12px;
-    padding:8px 12px;backdrop-filter:blur(20px);}
-  .month-table-panel h3{margin:0;font-size:11.5px;color:#2DD4BF;text-transform:uppercase;text-align:center;}
-  .mini-table-scroll{height:220px;overflow-y:auto;overflow-x:auto;border:1px solid rgba(0,255,255,.25);border-radius:8px;}
+    padding:6px 10px;backdrop-filter:blur(20px);overflow:hidden;}
+  .month-table-panel h3{margin:0 0 3px;font-size:10.5px;color:#2DD4BF;text-transform:uppercase;text-align:center;}
+  .mini-table-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:auto;border:1px solid rgba(0,255,255,.25);border-radius:8px;}
 
   .details-panel{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;
     background:rgba(255,255,255,.12);border:1px solid rgba(0,255,255,.35);border-radius:12px;
-    padding:10px 14px;backdrop-filter:blur(20px);}
-  .details-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;}
-  .details-top h3{margin:0;font-size:14px;}
-  .export-btns{display:flex;gap:8px;flex-wrap:wrap;}
+    padding:8px 12px;backdrop-filter:blur(20px);overflow:hidden;}
+  .details-top{flex:0 0 auto;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:8px;}
+  .details-top h3{margin:0;font-size:13px;}
+  .export-btns{display:flex;gap:6px;flex-wrap:wrap;}
   .export-btns button{background:rgba(0,255,255,.1);border:1px solid #2DD4BF;color:#2DD4BF;
-    padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600;white-space:nowrap;}
+    padding:5px 12px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:600;white-space:nowrap;}
   .export-btns button:hover{background:#2DD4BF;color:#04211C;}
   .export-btns button:disabled{opacity:.5;cursor:wait;}
-  .table-scroll{flex:1;min-height:260px;overflow-y:auto;overflow-x:auto;border:1px solid rgba(0,255,255,.25);border-radius:8px;
+  .table-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:auto;border:1px solid rgba(0,255,255,.25);border-radius:8px;
     -webkit-overflow-scrolling:touch;}
-  table{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed;}
-  thead th{position:sticky;top:0;background:#0C2A54;color:#2DD4BF;padding:7px 6px;text-align:left;
+  table{width:100%;border-collapse:collapse;font-size:10.5px;table-layout:fixed;}
+  thead th{position:sticky;top:0;background:#0C2A54;color:#2DD4BF;padding:6px 5px;text-align:left;
     cursor:pointer;user-select:none;border-bottom:1px solid rgba(0,255,255,.25);
     overflow-wrap:break-word;word-break:break-word;}
   thead th:hover{background:#123a70;}
-  tbody td{padding:6px 6px;border-bottom:1px solid rgba(255,255,255,.1);
+  tbody td{padding:5px 5px;border-bottom:1px solid rgba(255,255,255,.1);
     overflow-wrap:break-word;word-break:break-word;white-space:normal;}
   tbody tr:nth-child(even){background:rgba(255,255,255,.03);}
   tbody tr:hover{background:rgba(45,212,191,.1);}
-  .pill{padding:3px 9px;border-radius:12px;font-size:10px;font-weight:700;color:#fff;display:inline-block;}
+  .pill{padding:2px 8px;border-radius:12px;font-size:9.5px;font-weight:700;color:#fff;display:inline-block;}
   .pill.Working{background:#1E9E63;} .pill.Idle{background:#F2994A;} .pill.NotDefined{background:#6B7A99;}
 
-  .avg-compare-note{font-size:11px;color:#8CA3C4;text-align:center;margin-top:2px;}
+  .avg-compare-note{flex:0 0 auto;font-size:10px;color:#8CA3C4;text-align:center;margin-top:2px;}
 
   @media(max-width:900px){
     .kpi-row{grid-template-columns:repeat(3,1fr);}
@@ -113,21 +119,25 @@
   }
 
   @media(max-width:640px){
+    html, body { overflow: auto; }
     .fl-wrap{overflow-y:auto;overflow-x:hidden;min-height:auto;height:auto;}
     .view.active{overflow:visible;}
     .filters{padding:8px 10px;gap:8px;}
     .filter-group{width:100%;}
     .filter-group select, .filter-group input[type="date"]{flex:1;max-width:none;}
+    .date-range-group{width:100%;}
     .clear-btn{margin-left:0;width:100%;justify-content:center;}
     .tabs{width:100%;}
     .tab-btn{flex:1;text-align:center;padding:8px 6px;}
     .kpi-row{grid-template-columns:repeat(2,1fr);}
     .kpi-value{font-size:15px;}
     .grid2{grid-template-columns:1fr;}
-    .chart-wrap{height:240px;min-height:240px;max-height:240px;}
+    .chart-wrap{height:240px;min-height:240px;max-height:240px;flex:none;}
     .panel-head .export-btns{position:static;transform:none;justify-content:center;margin-top:4px;}
     .details-panel{min-height:60vh;flex:none;}
     .table-scroll{max-height:60vh;}
+    .month-table-panel{flex:none;}
+    .mini-table-scroll{max-height:40vh;}
     table{font-size:10px;}
     thead th, tbody td{padding:6px 5px;}
     .export-btns{width:100%;}
@@ -144,8 +154,10 @@
   </div>
 
   <div class="filters">
-    <div class="filter-group"><label>Date</label>
-      <input type="date" id="fDate">
+    <div class="filter-group date-range-group"><label>Date Range</label>
+      <input type="date" id="fDateFrom">
+      <span class="to-label">to</span>
+      <input type="date" id="fDateTo">
     </div>
     <div class="filter-group"><label>Category</label>
       <select id="fCategory"><option value="All">All</option></select>
@@ -208,7 +220,7 @@
       </div>
     </div>
 
-    <div class="panel">
+    <div class="panel full-row">
       <h3>Daily Fuel Trend vs Average (filtered data — click point to filter by date)</h3>
       <div class="chart-wrap"><canvas id="dailyFuelChart"></canvas></div>
     </div>
@@ -249,7 +261,7 @@
       </div>
       <div class="mini-table-scroll">
         <table id="monthTable">
-          <thead><tr><th>Month</th><th>Total Hours</th><th>Total Fuel (Ltr)</th><th>Average (Ltr/Hr)</th></tr></thead>
+          <thead><tr><th>Site</th><th>Month</th><th>Total Hours</th><th>Total Fuel (Ltr)</th><th>Average (Ltr/Hr)</th></tr></thead>
           <tbody id="monthTableBody"></tbody>
         </table>
       </div>
@@ -308,50 +320,80 @@ const round2 = v => Math.round((v + Number.EPSILON) * 100) / 100;
 
 // ---------- Filter state (shared across all 3 tabs, so clicking any chart
 // anywhere updates the Dashboard + Trend + Details tabs together) ----------
-const filters = {date:"All", month:"All", category:"All", machine:"All", owner:"All", site:"All", status:"All"};
+const filters = {dateFrom:"All", dateTo:"All", month:"All", category:"All", machine:"All", owner:"All", site:"All", status:"All"};
 
 function uniqueSorted(arr, key){ return [...new Set(arr.map(d=>d[key]).filter(v=>v!==undefined && v!==""))].sort(); }
 
-const fDate = document.getElementById('fDate');
+const fDateFrom = document.getElementById('fDateFrom');
+const fDateTo = document.getElementById('fDateTo');
 const fCategory = document.getElementById('fCategory');
 const fMachine = document.getElementById('fMachine');
 const fOwner = document.getElementById('fOwner');
 const fSite = document.getElementById('fSite');
 
-// Calendar date input: constrain to the actual data range so users can't
+// Calendar date inputs: constrain to the actual data range so users can't
 // pick a date that will never match anything.
 const isoDates = uniqueSorted(allData,'dateIso');
-if(isoDates.length){ fDate.min = isoDates[0]; fDate.max = isoDates[isoDates.length-1]; }
+if(isoDates.length){
+  fDateFrom.min = isoDates[0]; fDateFrom.max = isoDates[isoDates.length-1];
+  fDateTo.min = isoDates[0]; fDateTo.max = isoDates[isoDates.length-1];
+}
 
 uniqueSorted(allData,'category').forEach(v=>fCategory.innerHTML += `<option value="${v}">${v}</option>`);
 uniqueSorted(allData,'machine').forEach(v=>fMachine.innerHTML += `<option value="${v}">${v}</option>`);
 uniqueSorted(allData,'owner').forEach(v=>fOwner.innerHTML += `<option value="${v}">${v}</option>`);
 uniqueSorted(allData,'site').forEach(v=>fSite.innerHTML += `<option value="${v}">${v}</option>`);
 
-fDate.addEventListener('change', ()=>{ filters.date = fDate.value || "All"; renderAll(); });
+fDateFrom.addEventListener('change', ()=>{
+  filters.dateFrom = fDateFrom.value || "All";
+  // keep "To" from going before "From"
+  if(filters.dateFrom !== "All" && fDateTo.value && fDateTo.value < filters.dateFrom){
+    fDateTo.value = fDateFrom.value; filters.dateTo = fDateFrom.value;
+  }
+  renderAll();
+});
+fDateTo.addEventListener('change', ()=>{
+  filters.dateTo = fDateTo.value || "All";
+  if(filters.dateTo !== "All" && fDateFrom.value && fDateFrom.value > filters.dateTo){
+    fDateFrom.value = fDateTo.value; filters.dateFrom = fDateTo.value;
+  }
+  renderAll();
+});
 fCategory.addEventListener('change', ()=>{ filters.category = fCategory.value; renderAll(); });
 fMachine.addEventListener('change', ()=>{ filters.machine = fMachine.value; renderAll(); });
 fOwner.addEventListener('change', ()=>{ filters.owner = fOwner.value; renderAll(); });
 fSite.addEventListener('change', ()=>{ filters.site = fSite.value; renderAll(); });
 
 document.getElementById('clearFilters').onclick = ()=>{
-  filters.date="All"; filters.month="All"; filters.category="All"; filters.machine="All";
+  filters.dateFrom="All"; filters.dateTo="All"; filters.month="All"; filters.category="All"; filters.machine="All";
   filters.owner="All"; filters.site="All"; filters.status="All";
-  fDate.value=""; fCategory.value="All"; fMachine.value="All"; fOwner.value="All"; fSite.value="All";
+  fDateFrom.value=""; fDateTo.value=""; fCategory.value="All"; fMachine.value="All"; fOwner.value="All"; fSite.value="All";
   renderAll();
 };
 
 function toggleFilter(type, value){
+  if(type === 'date'){
+    // clicking a chart point sets both From and To to that single date
+    if(filters.dateFrom === value && filters.dateTo === value){
+      filters.dateFrom = "All"; filters.dateTo = "All";
+    } else {
+      filters.dateFrom = value; filters.dateTo = value;
+    }
+    fDateFrom.value = filters.dateFrom === "All" ? "" : filters.dateFrom;
+    fDateTo.value = filters.dateTo === "All" ? "" : filters.dateTo;
+    renderAll();
+    return;
+  }
   filters[type] = (filters[type] === value) ? "All" : value;
   const map = {category:fCategory, machine:fMachine, owner:fOwner, site:fSite};
   if(map[type]) map[type].value = filters[type];
-  if(type === 'date') fDate.value = filters.date === "All" ? "" : filters.date;
   renderAll();
 }
 
 function getFiltered(){
   return allData.filter(r=>{
-    if(filters.date!=="All" && r.dateIso!==filters.date) return false;
+    if(filters.dateFrom!=="All" && r.dateIso < filters.dateFrom) return false;
+    if(filters.dateTo!=="All" && r.dateIso > filters.dateTo) return false;
     if(filters.month!=="All" && r.monthKey!==filters.month) return false;
     if(filters.category!=="All" && r.category!==filters.category) return false;
     if(filters.machine!=="All" && r.machine!==filters.machine) return false;
@@ -652,11 +694,21 @@ function renderTrend(base){
     ? `Dashed red line = ${filters.machine}'s normal average (${expectedAvg} Ltr/Hr) from its full history.`
     : `Dashed red line = fleet-wide normal average. Pick a Machine No above to see that machine's own target line.`;
 
-  // Monthly summary table (on-screen — unchanged aggregate view)
-  document.getElementById('monthTableBody').innerHTML = monthKeys.map(k=>{
-    const m = monthMap[k];
+  // ---- Monthly Summary table: now grouped by Site + Month (per-machine
+  // breakdown is available in the Excel/PDF export via buildMachineMonthMatrix) ----
+  const siteMonthMap = {};
+  base.forEach(r=>{
+    const key = r.site + '|' + r.monthKey;
+    if(!siteMonthMap[key]) siteMonthMap[key] = {site:r.site, monthKey:r.monthKey, monthLabel:r.monthLabel, fuel:0, hours:0};
+    siteMonthMap[key].fuel += r.fuel;
+    siteMonthMap[key].hours += r.hours;
+  });
+  const siteMonthRows = Object.values(siteMonthMap)
+    .sort((a,b)=> a.site.localeCompare(b.site) || a.monthKey.localeCompare(b.monthKey));
+
+  document.getElementById('monthTableBody').innerHTML = siteMonthRows.map(m=>{
     const avg = m.hours>0 ? round2(m.fuel/m.hours) : 0;
-    return `<tr><td>${m.label}</td><td>${round2(m.hours)}</td><td>${round2(m.fuel)}</td><td>${avg}</td></tr>`;
+    return `<tr><td>${m.site}</td><td>${m.monthLabel}</td><td>${round2(m.hours)}</td><td>${round2(m.fuel)}</td><td>${avg}</td></tr>`;
   }).join('');
 }
 
@@ -704,18 +756,18 @@ function renderAll(){
   renderDetails(base);
 }
 
-// ============ Machine x Month matrix (used by Monthly Summary export) ============
+// ============ Machine x Site x Month matrix (used by Monthly Summary export) ============
 function buildMachineMonthMatrix(base){
   const map = {};
   base.forEach(r=>{
-    const key = r.machine + '|' + r.monthKey;
-    if(!map[key]) map[key] = {machine:r.machine, monthKey:r.monthKey, monthLabel:r.monthLabel, hours:0, fuel:0};
+    const key = r.site + '|' + r.machine + '|' + r.monthKey;
+    if(!map[key]) map[key] = {site:r.site, machine:r.machine, monthKey:r.monthKey, monthLabel:r.monthLabel, hours:0, fuel:0};
     map[key].hours += r.hours;
     map[key].fuel += r.fuel;
   });
   return Object.values(map)
     .map(m=>({...m, avg: m.hours>0 ? round2(m.fuel/m.hours) : 0}))
-    .sort((a,b)=> a.machine.localeCompare(b.machine) || a.monthKey.localeCompare(b.monthKey));
+    .sort((a,b)=> a.site.localeCompare(b.site) || a.machine.localeCompare(b.machine) || a.monthKey.localeCompare(b.monthKey));
 }
 
 // ============ EXPORT EXCEL (Fuel Details tab) ============
@@ -805,7 +857,7 @@ document.getElementById('exportPdf').onclick = ()=>{
   doc.save(`Fuel_Details_Export_${new Date().toISOString().slice(0,10)}.pdf`);
 };
 
-// ============ EXPORT EXCEL (Monthly Summary — per machine, month-wise) ============
+// ============ EXPORT EXCEL (Monthly Summary — per Site + Machine, month-wise) ============
 document.getElementById('exportMonthExcel').onclick = async ()=>{
   const btn = document.getElementById('exportMonthExcel');
   btn.disabled = true; const oldTxt = btn.textContent; btn.textContent = '⏳ Preparing...';
@@ -816,18 +868,18 @@ document.getElementById('exportMonthExcel').onclick = async ()=>{
     workbook.created = new Date();
     const sheet = workbook.addWorksheet('Monthly Summary', {views:[{state:'frozen', ySplit:4}]});
 
-    const headers = ["Machine","Month","Total Hours","Total Fuel (Ltr)","Average (Ltr/Hr)"];
-    sheet.columns = [{width:32},{width:14},{width:14},{width:16},{width:16}];
+    const headers = ["Site","Machine","Month","Total Hours","Total Fuel (Ltr)","Average (Ltr/Hr)"];
+    sheet.columns = [{width:14},{width:32},{width:14},{width:14},{width:16},{width:16}];
 
-    sheet.mergeCells(1,1,1,5);
+    sheet.mergeCells(1,1,1,6);
     const titleCell = sheet.getCell(1,1);
-    titleCell.value = 'Monthly Summary — Per Machine';
+    titleCell.value = 'Monthly Summary — Per Site & Machine';
     titleCell.font = {bold:true, size:16, color:{argb:'FFFFFFFF'}};
     titleCell.alignment = {vertical:'middle', horizontal:'center'};
     titleCell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF0C2A54'}};
     sheet.getRow(1).height = 30;
 
-    sheet.mergeCells(2,1,2,5);
+    sheet.mergeCells(2,1,2,6);
     const subCell = sheet.getCell(2,1);
     subCell.value = `Generated: ${new Date().toLocaleString()}   |   Rows: ${rows.length}   |   Site: ${filters.site}   |   Category: ${filters.category}`;
     subCell.font = {italic:true, size:10, color:{argb:'FF2DD4BF'}};
@@ -849,23 +901,23 @@ document.getElementById('exportMonthExcel').onclick = async ()=>{
     rows.forEach((d,i)=>{
       const rowNum = 5+i;
       const row = sheet.getRow(rowNum);
-      const values = [d.machine, d.monthLabel, round2(d.hours), round2(d.fuel), round2(d.avg)];
+      const values = [d.site, d.machine, d.monthLabel, round2(d.hours), round2(d.fuel), round2(d.avg)];
       values.forEach((v,idx)=>{ row.getCell(idx+1).value = v; });
       row.eachCell((cell,colNumber)=>{
-        cell.alignment = {vertical:'middle', horizontal: colNumber<=2?'left':'center'};
+        cell.alignment = {vertical:'middle', horizontal: colNumber<=3?'left':'center'};
         cell.border = {bottom:{style:'thin', color:{argb:'FFDDE3EC'}}};
         if(i%2===1) cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FFF3F8FB'}};
       });
     });
 
     const lastRow = 4 + rows.length;
-    sheet.autoFilter = {from:'A4', to:`E${lastRow}`};
+    sheet.autoFilter = {from:'A4', to:`F${lastRow}`};
 
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], {type:'application/octet-stream'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = `Monthly_Summary_Per_Machine_${new Date().toISOString().slice(0,10)}.xlsx`;
+    a.href = url; a.download = `Monthly_Summary_Per_Site_Machine_${new Date().toISOString().slice(0,10)}.xlsx`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
   } finally {
@@ -873,23 +925,23 @@ document.getElementById('exportMonthExcel').onclick = async ()=>{
   }
 };
 
-// ============ EXPORT PDF (Monthly Summary — per machine, month-wise) ============
+// ============ EXPORT PDF (Monthly Summary — per Site + Machine, month-wise) ============
 document.getElementById('exportMonthPdf').onclick = ()=>{
   const rows = buildMachineMonthMatrix(getFiltered());
   const {jsPDF} = window.jspdf;
   const doc = new jsPDF({orientation:'landscape'});
-  const body = rows.map(d=>[d.machine, d.monthLabel, round2(d.hours), round2(d.fuel), round2(d.avg)]);
+  const body = rows.map(d=>[d.site, d.machine, d.monthLabel, round2(d.hours), round2(d.fuel), round2(d.avg)]);
 
   doc.setFontSize(14);
-  doc.text("Monthly Summary — Per Machine", 14, 12);
+  doc.text("Monthly Summary — Per Site & Machine", 14, 12);
   doc.autoTable({
     startY:18,
-    head:[["Machine","Month","Total Hours","Total Fuel (Ltr)","Average (Ltr/Hr)"]],
+    head:[["Site","Machine","Month","Total Hours","Total Fuel (Ltr)","Average (Ltr/Hr)"]],
     body:body,
     styles:{fontSize:8, valign:'middle'},
     headStyles:{fillColor:[10,31,61]},
   });
-  doc.save(`Monthly_Summary_Per_Machine_${new Date().toISOString().slice(0,10)}.pdf`);
+  doc.save(`Monthly_Summary_Per_Site_Machine_${new Date().toISOString().slice(0,10)}.pdf`);
 };
 
 renderAll();
