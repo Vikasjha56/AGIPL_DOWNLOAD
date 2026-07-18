@@ -393,9 +393,7 @@ def breakdown():
 # FUEL DASHBOARD PAGE
 # =====================================================
 
-@app.route("/fuel")
-def fuel():
-    return render_template("fuel.html")
+
 
 @app.route("/fuel")
 def fuel():
