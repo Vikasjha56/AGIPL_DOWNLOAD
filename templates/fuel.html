@@ -811,8 +811,13 @@ document.getElementById('exportExcel').onclick = async ()=>{
       row.eachCell((cell,colNumber)=>{
         cell.alignment = {vertical:'middle', horizontal: colNumber===1?'center':'left'};
         cell.border = {bottom:{style:'thin', color:{argb:'FFDDE3EC'}}};
-        if(i%2===1) cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FFF3F8FB'}};
+        if(i%2===1 && colNumber!==12) cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FFF3F8FB'}};
       });
+      const statusCell = row.getCell(12);
+      const col = statusColor(d.status);
+      statusCell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:col.argb}};
+      statusCell.font = {bold:true, color:{argb:'FFFFFFFF'}};
+      statusCell.alignment = {vertical:'middle', horizontal:'center'};
     });
 
     const lastRow = 4 + rows.length;
@@ -845,6 +850,16 @@ document.getElementById('exportPdf').onclick = ()=>{
     body:body,
     styles:{fontSize:7, valign:'middle'},
     headStyles:{fillColor:[10,31,61]},
+    didParseCell: function(data){
+      if(data.section === 'body' && data.column.index === 11){
+        const status = data.cell.raw;
+        const col = statusColor(status).rgb;
+        data.cell.styles.fillColor = col;
+        data.cell.styles.textColor = [255,255,255];
+        data.cell.styles.fontStyle = 'bold';
+        data.cell.styles.halign = 'center';
+      }
+    }
   });
   doc.save(`Fuel_Details_Export_${new Date().toISOString().slice(0,10)}.pdf`);
 };
