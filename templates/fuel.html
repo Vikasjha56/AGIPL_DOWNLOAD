@@ -1,840 +1,696 @@
 {% extends "base.html" %}
 
-
 {% block page_title %}
-⛽ Fuel Intelligence Center
+⛽ Fuel Analysis Dashboard
 {% endblock %}
-
 
 {% block page_subtitle %}
-<p>
-Machine Working Report Based Fuel Consumption & Utilization Analytics
-</p>
 {% endblock %}
 
-
-
 {% block content %}
-
-
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js">
-
-
-
 <style>
-
-
-.fuel-dashboard{
-
-padding:10px;
-
-}
-
-
-
-.fuel-header{
-
-display:flex;
-justify-content:space-between;
-align-items:center;
-margin-bottom:20px;
-
-}
-
-
-.fuel-title{
-
-font-size:26px;
-font-weight:700;
-
-}
-
-
-.fuel-sub{
-
-color:#8aa0b5;
-font-size:14px;
-
-}
-
-
-
-
-.filters{
-
-display:grid;
-
-grid-template-columns:
-repeat(5,1fr);
-
-gap:12px;
-
-margin-bottom:20px;
-
-}
-
-
-
-.filter-box{
-
-background:#0b1d30;
-
-padding:12px;
-
-border-radius:12px;
-
-border:1px solid #1c3850;
-
-}
-
-
-
-.filter-box label{
-
-font-size:12px;
-
-color:#8aa0b5;
-
-display:block;
-
-margin-bottom:5px;
-
-}
-
-
-
-.filter-box select{
-
-width:100%;
-
-background:#061426;
-
-color:white;
-
-border:1px solid #28445d;
-
-padding:8px;
-
-border-radius:6px;
-
-}
-
-
-
-
-
-.kpi-grid{
-
-display:grid;
-
-grid-template-columns:
-repeat(6,1fr);
-
-gap:12px;
-
-margin-bottom:20px;
-
-}
-
-
-
-.kpi-card{
-
-background:#0b1d30;
-
-border:1px solid #203b52;
-
-border-radius:14px;
-
-padding:15px;
-
-}
-
-
-
-.kpi-title{
-
-font-size:12px;
-
-color:#8aa0b5;
-
-}
-
-
-
-.kpi-value{
-
-font-size:25px;
-
-font-weight:700;
-
-color:#35d5ff;
-
-margin-top:8px;
-
-}
-
-
-
-
-
-.chart-grid{
-
-display:grid;
-
-grid-template-columns:
-repeat(2,1fr);
-
-gap:18px;
-
-}
-
-
-
-
-
-.chart-card{
-
-background:#0b1d30;
-
-border:1px solid #203b52;
-
-border-radius:15px;
-
-padding:18px;
-
-}
-
-
-
-.chart-card h3{
-
-font-size:15px;
-
-margin-bottom:15px;
-
-color:#cce8ff;
-
-}
-
-
-
-.chart-box{
-
-height:300px;
-
-}
-
-
-
-
-
-.table-card{
-
-margin-top:20px;
-
-background:#0b1d30;
-
-padding:18px;
-
-border-radius:15px;
-
-border:1px solid #203b52;
-
-overflow:auto;
-
-}
-
-
-
-table{
-
-width:100%;
-
-border-collapse:collapse;
-
-}
-
-
-
-th{
-
-background:#102b42;
-
-color:#9edfff;
-
-padding:10px;
-
-font-size:12px;
-
-}
-
-
-
-td{
-
-padding:9px;
-
-border-bottom:1px solid #203b52;
-
-font-size:12px;
-
-}
-
-
-
-tr:hover{
-
-background:#132b40;
-
-}
-
-
-
-
-
-@media(max-width:1100px){
-
-.filters{
-
-grid-template-columns:1fr 1fr;
-
-}
-
-
-.kpi-grid{
-
-grid-template-columns:repeat(2,1fr);
-
-}
-
-
-.chart-grid{
-
-grid-template-columns:1fr;
-
-}
-
-}
-
-
+  .fl-wrap{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:8px;overflow:hidden;
+    margin-top:-10px;}
+
+  .no-data-banner{
+    display:none;flex:0 0 auto;background:rgba(229,72,77,.15);border:1px solid #E5484D;
+    color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;}
+  .no-data-banner.show{display:block;}
+
+  .filters{flex:0 0 auto;display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+    padding:8px 18px;border-radius:14px;background:rgba(255,255,255,.12);
+    backdrop-filter:blur(20px);box-shadow:0 10px 25px #0007;}
+  .filter-group{display:flex;align-items:center;gap:6px;}
+  .filter-group label{font-size:11px;font-weight:600;opacity:.85;}
+  .filter-group select{
+    padding:6px 10px;border-radius:9px;border:1px solid rgba(0,255,255,.5);
+    background:rgba(255,255,255,.1);color:#fff;font-size:12.5px;outline:none;
+    max-width:170px;}
+  .filter-group select option{color:#000;}
+  .clear-btn{
+    border:1px solid rgba(255,80,80,.6);background:rgba(255,60,60,.15);color:#fff;
+    padding:6px 13px;border-radius:9px;font-size:12px;cursor:pointer;margin-left:auto;
+    display:inline-flex;align-items:center;gap:6px;font-weight:700;transition:.2s;white-space:nowrap;}
+  .clear-btn:hover{background:rgba(255,60,60,.35);box-shadow:0 0 10px rgba(255,80,80,.5);}
+  .clear-btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none;}
+  .tabs{display:flex;gap:6px;background:rgba(255,255,255,.08);padding:4px;border-radius:11px;}
+  .tab-btn{border:none;padding:6px 14px;border-radius:8px;font-size:12.5px;font-weight:600;
+    cursor:pointer;background:transparent;color:#fff;opacity:.7;transition:.25s;white-space:nowrap;}
+  .tab-btn.active{background:linear-gradient(135deg,#0077ff,#00c6ff);opacity:1;box-shadow:0 0 14px cyan;}
+  .tab-btn:hover{opacity:1;}
+
+  .view{display:none;flex:1 1 auto;min-height:0;flex-direction:column;gap:8px;}
+  .view.active{display:flex;}
+
+  .kpi-row{flex:0 0 auto;display:grid;grid-template-columns:repeat(6,1fr);gap:8px;}
+  .kpi{background:rgba(255,255,255,.1);border:1px solid rgba(0,255,255,.35);border-radius:10px;
+    padding:7px 10px;text-align:center;transition:.3s;min-width:0;}
+  .kpi:hover{transform:translateY(-2px);box-shadow:0 0 14px cyan;}
+  .kpi-label{font-size:9.5px;color:#8CA3C4;text-transform:uppercase;letter-spacing:.3px;}
+  .kpi-value{font-size:17px;font-weight:700;text-shadow:0 0 8px cyan;margin-top:2px;}
+  .kpi-sub{font-size:9.5px;color:#8CA3C4;margin-top:1px;}
+
+  .grid2{flex:1.4 1 0;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .panel{background:rgba(255,255,255,.12);border:1px solid rgba(0,255,255,.35);border-radius:12px;
+    padding:8px 12px;display:flex;flex-direction:column;min-height:0;backdrop-filter:blur(20px);}
+  .panel h3{margin:0 0 4px;font-size:11.5px;color:#2DD4BF;text-transform:uppercase;letter-spacing:.4px;text-align:center;}
+  .chart-wrap{flex:1;min-height:0;position:relative;}
+  .trend-row{flex:1 1 0;min-height:0;}
+
+  .chart-scroll-x{width:100%;height:100%;overflow-x:auto;overflow-y:hidden;}
+  .chart-scroll-x::-webkit-scrollbar{height:6px;}
+  .chart-scroll-x::-webkit-scrollbar-thumb{background:rgba(45,212,191,.5);border-radius:4px;}
+  .chart-inner{height:100%;position:relative;}
+
+  .trend-header{flex:0 0 auto;text-align:center;font-size:12.5px;color:#EAF1FB;font-weight:600;
+    background:rgba(255,255,255,.08);border-radius:9px;padding:6px 10px;}
+  .trend-header b{color:#2DD4BF;}
+
+  .month-table-panel{flex:0.9 1 0;min-height:0;display:flex;flex-direction:column;
+    background:rgba(255,255,255,.12);border:1px solid rgba(0,255,255,.35);border-radius:12px;
+    padding:8px 12px;backdrop-filter:blur(20px);}
+  .month-table-panel h3{margin:0 0 4px;font-size:11.5px;color:#2DD4BF;text-transform:uppercase;text-align:center;}
+  .mini-table-scroll{flex:1;overflow-y:auto;overflow-x:auto;border:1px solid rgba(0,255,255,.25);border-radius:8px;}
+
+  .details-panel{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;
+    background:rgba(255,255,255,.12);border:1px solid rgba(0,255,255,.35);border-radius:12px;
+    padding:10px 14px;backdrop-filter:blur(20px);}
+  .details-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;}
+  .details-top h3{margin:0;font-size:14px;}
+  .export-btns{display:flex;gap:8px;flex-wrap:wrap;}
+  .export-btns button{background:rgba(0,255,255,.1);border:1px solid #2DD4BF;color:#2DD4BF;
+    padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600;white-space:nowrap;}
+  .export-btns button:hover{background:#2DD4BF;color:#04211C;}
+  .export-btns button:disabled{opacity:.5;cursor:wait;}
+  .table-scroll{flex:1;overflow-y:auto;overflow-x:auto;border:1px solid rgba(0,255,255,.25);border-radius:8px;
+    -webkit-overflow-scrolling:touch;}
+  table{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed;}
+  thead th{position:sticky;top:0;background:#0C2A54;color:#2DD4BF;padding:7px 6px;text-align:left;
+    cursor:pointer;user-select:none;border-bottom:1px solid rgba(0,255,255,.25);
+    overflow-wrap:break-word;word-break:break-word;}
+  thead th:hover{background:#123a70;}
+  tbody td{padding:6px 6px;border-bottom:1px solid rgba(255,255,255,.1);
+    overflow-wrap:break-word;word-break:break-word;white-space:normal;}
+  tbody tr:nth-child(even){background:rgba(255,255,255,.03);}
+  tbody tr:hover{background:rgba(45,212,191,.1);}
+  .pill{padding:3px 9px;border-radius:12px;font-size:10px;font-weight:700;color:#fff;display:inline-block;}
+  .pill.Working{background:#1E9E63;} .pill.Idle{background:#F2994A;} .pill.NotDefined{background:#6B7A99;}
+
+  @media(max-width:900px){
+    .kpi-row{grid-template-columns:repeat(3,1fr);}
+    .grid2{grid-template-columns:1fr;}
+  }
+
+  @media(max-width:640px){
+    .fl-wrap{overflow:visible;min-height:auto;height:auto;}
+    .view.active{overflow:visible;}
+    .filters{padding:8px 10px;gap:8px;}
+    .filter-group{width:100%;}
+    .filter-group select{flex:1;max-width:none;}
+    .clear-btn{margin-left:0;width:100%;justify-content:center;}
+    .tabs{width:100%;}
+    .tab-btn{flex:1;text-align:center;padding:8px 6px;}
+    .kpi-row{grid-template-columns:repeat(2,1fr);}
+    .kpi-value{font-size:15px;}
+    .grid2{grid-template-columns:1fr;}
+    .panel{min-height:230px;}
+    .details-panel{min-height:60vh;flex:none;}
+    .table-scroll{max-height:60vh;}
+    table{font-size:10px;}
+    thead th, tbody td{padding:6px 5px;}
+    .export-btns{width:100%;}
+    .export-btns button{flex:1;}
+  }
 </style>
 
+<div class="fl-wrap">
 
+  <div class="no-data-banner" id="noDataBanner">
+    ⚠ No records loaded from the live Google Sheet{% if error %}: {{ error }}{% endif %}.
+    Check that the published sheet still contains the "SrNo." header row and that the link in
+    <b>fuel_reader.py</b> is correct and publicly published (File → Share → Publish to web → CSV).
+  </div>
 
+  <div class="filters">
+    <div class="filter-group"><label>Date</label>
+      <select id="fDate"><option value="All">All</option></select>
+    </div>
+    <div class="filter-group"><label>Category</label>
+      <select id="fCategory"><option value="All">All</option></select>
+    </div>
+    <div class="filter-group"><label>Machine No</label>
+      <select id="fMachine"><option value="All">All</option></select>
+    </div>
+    <div class="filter-group"><label>Owner</label>
+      <select id="fOwner"><option value="All">All</option></select>
+    </div>
+    <div class="filter-group"><label>Site</label>
+      <select id="fSite"><option value="All">All</option></select>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" data-view="dashboard">Fuel Analysis Dashboard</button>
+      <button class="tab-btn" data-view="trend">Trend Chart</button>
+      <button class="tab-btn" data-view="details">Fuel Details</button>
+    </div>
+    <button class="clear-btn" id="clearFilters">✕ Clear All Filters</button>
+  </div>
 
+  <!-- ============ FUEL ANALYSIS DASHBOARD ============ -->
+  <div class="view active" id="view-dashboard">
+    <div class="kpi-row">
+      <div class="kpi"><div class="kpi-label">Total Records</div><div class="kpi-value" id="kRecords">0</div></div>
+      <div class="kpi"><div class="kpi-label">Machines</div><div class="kpi-value" id="kMachines">0</div></div>
+      <div class="kpi"><div class="kpi-label">Total Fuel Issued</div><div class="kpi-value" id="kFuel">0</div><div class="kpi-sub">Litres</div></div>
+      <div class="kpi"><div class="kpi-label">Total Hours Used</div><div class="kpi-value" id="kHours">0</div><div class="kpi-sub">Hrs</div></div>
+      <div class="kpi"><div class="kpi-label">Overall Average</div><div class="kpi-value" id="kAvg">0</div><div class="kpi-sub">Ltr/Hr</div></div>
+      <div class="kpi"><div class="kpi-label">Utilization (Working)</div><div class="kpi-value" id="kUtil">0%</div></div>
+    </div>
 
-<div class="fuel-dashboard">
+    <div class="grid2">
+      <div class="panel">
+        <h3>Fuel Issued by Machine Category</h3>
+        <div class="chart-wrap">
+          <div class="chart-scroll-x" id="catChartScroll">
+            <div class="chart-inner" id="catChartInner"><canvas id="categoryChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Fuel Issued by Site</h3>
+        <div class="chart-wrap"><canvas id="siteDonut"></canvas></div>
+      </div>
+    </div>
 
+    <div class="grid2">
+      <div class="panel">
+        <h3>Top 10 Machines by Fuel Issued (click bar to filter)</h3>
+        <div class="chart-wrap">
+          <div class="chart-scroll-x" id="machChartScroll">
+            <div class="chart-inner" id="machChartInner"><canvas id="machineChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Machine Status Split</h3>
+        <div class="chart-wrap"><canvas id="statusDonut"></canvas></div>
+      </div>
+    </div>
 
+    <div class="panel" style="flex:1 1 0;">
+      <h3>Daily Fuel Trend (filtered data)</h3>
+      <div class="chart-wrap"><canvas id="dailyFuelChart"></canvas></div>
+    </div>
+  </div>
 
+  <!-- ============ TREND CHART ============ -->
+  <div class="view" id="view-trend">
+    <div class="trend-header" id="trendHeader">Showing: <b>All Machines (aggregate)</b> — select a Machine No above for Opening/Closing readings of that specific machine</div>
 
+    <div class="kpi-row">
+      <div class="kpi"><div class="kpi-label">Opening Reading</div><div class="kpi-value" id="tOpen">-</div></div>
+      <div class="kpi"><div class="kpi-label">Closing Reading</div><div class="kpi-value" id="tClose">-</div></div>
+      <div class="kpi"><div class="kpi-label">Total Reading</div><div class="kpi-value" id="tRun">0</div></div>
+      <div class="kpi"><div class="kpi-label">Total Fuel Issue</div><div class="kpi-value" id="tFuel">0</div><div class="kpi-sub">Litres</div></div>
+      <div class="kpi"><div class="kpi-label">Total Hours Used</div><div class="kpi-value" id="tHours">0</div><div class="kpi-sub">Hrs</div></div>
+      <div class="kpi"><div class="kpi-label">Average</div><div class="kpi-value" id="tAvg">0</div><div class="kpi-sub">Ltr/Hr</div></div>
+    </div>
 
+    <div class="grid2 trend-row">
+      <div class="panel">
+        <h3>Monthly Trend (Fuel Issued vs Hours Used)</h3>
+        <div class="chart-wrap"><canvas id="monthlyTrendChart"></canvas></div>
+      </div>
+      <div class="panel">
+        <h3>Daily Trend (Fuel Issued)</h3>
+        <div class="chart-wrap"><canvas id="dailyTrendChart"></canvas></div>
+      </div>
+    </div>
 
+    <div class="month-table-panel">
+      <h3>Monthly Summary</h3>
+      <div class="mini-table-scroll">
+        <table id="monthTable">
+          <thead><tr><th>Month</th><th>Total Hours</th><th>Total Fuel (Ltr)</th><th>Average (Ltr/Hr)</th></tr></thead>
+          <tbody id="monthTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-
-
-<!-- ======================
-FILTERS
-====================== -->
-
-
-<div class="filters">
-
-
-
-<div class="filter-box">
-
-<label>
-Working Date
-</label>
-
-<select id="dateFilter">
-
-<option value="ALL">
-All
-</option>
-
-</select>
+  <!-- ============ FUEL DETAILS TABLE ============ -->
+  <div class="view" id="view-details">
+    <div class="details-panel">
+      <div class="details-top">
+        <h3>Fuel Log Details (filtered)</h3>
+        <div class="export-btns">
+          <button id="exportExcel">⬇ Export Excel</button>
+          <button id="exportPdf">⬇ Export PDF</button>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table id="fuelTable">
+          <thead>
+            <tr>
+              <th data-key="srNo">Sr.No.</th>
+              <th data-key="date">Date</th>
+              <th data-key="site">Site</th>
+              <th data-key="category">Category</th>
+              <th data-key="machine">Machine</th>
+              <th data-key="opening">Opening</th>
+              <th data-key="closing">Closing</th>
+              <th data-key="runReading">Run Reading</th>
+              <th data-key="fuel">Fuel (Ltr)</th>
+              <th data-key="hours">Hours</th>
+              <th data-key="avg">Avg (Ltr/Hr)</th>
+              <th data-key="status">Status</th>
+            </tr>
+          </thead>
+          <tbody id="fuelBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
 </div>
 
-
-
-
-
-<div class="filter-box">
-
-<label>
-Log Book No.
-</label>
-
-<select id="siteFilter">
-
-<option value="ALL">
-All
-</option>
-
-</select>
-
-</div>
-
-
-
-
-
-<div class="filter-box">
-
-<label>
-Machine Category
-</label>
-
-<select id="categoryFilter">
-
-<option value="ALL">
-All
-</option>
-
-</select>
-
-</div>
-
-
-
-
-
-<div class="filter-box">
-
-<label>
-Machine
-</label>
-
-<select id="machineFilter">
-
-<option value="ALL">
-All
-</option>
-
-</select>
-
-</div>
-
-
-
-
-
-<div class="filter-box">
-
-<label>
-Machine Status
-</label>
-
-<select id="statusFilter">
-
-<option value="ALL">
-All
-</option>
-
-</select>
-
-</div>
-
-
-
-
-</div>
-
-
-
-
-
-
-
-
-
-<!-- ======================
-KPI
-====================== -->
-
-
-
-<div class="kpi-grid">
-
-
-<div class="kpi-card">
-
-<div class="kpi-title">
-Total Fuel
-</div>
-
-<div class="kpi-value" id="fuelKpi">
--
-</div>
-
-
-</div>
-
-
-
-<div class="kpi-card">
-
-<div class="kpi-title">
-Total Run Hours
-</div>
-
-<div class="kpi-value" id="hourKpi">
--
-</div>
-
-
-</div>
-
-
-
-
-<div class="kpi-card">
-
-<div class="kpi-title">
-Total Machines
-</div>
-
-<div class="kpi-value" id="machineKpi">
--
-</div>
-
-
-</div>
-
-
-
-
-
-<div class="kpi-card">
-
-<div class="kpi-title">
-Average L/Hr
-</div>
-
-<div class="kpi-value" id="avgKpi">
--
-</div>
-
-
-</div>
-
-
-
-
-
-<div class="kpi-card">
-
-<div class="kpi-title">
-Working Days
-</div>
-
-<div class="kpi-value" id="dayKpi">
--
-</div>
-
-
-</div>
-
-
-
-
-
-<div class="kpi-card">
-
-<div class="kpi-title">
-High Consumption
-</div>
-
-<div class="kpi-value" id="highKpi">
--
-</div>
-
-
-</div>
-
-
-
-
-</div>
-
-
-
-
-
-
-
-
-
-<!-- ======================
-CHARTS
-====================== -->
-
-
-<div class="chart-grid">
-
-
-
-
-
-<div class="chart-card">
-
-<h3>
-Daily Fuel Trend
-</h3>
-
-<div class="chart-box">
-
-<canvas id="dailyChart"></canvas>
-
-</div>
-
-
-</div>
-
-
-
-
-
-
-
-
-<div class="chart-card">
-
-<h3>
-Monthly Fuel Trend
-</h3>
-
-<div class="chart-box">
-
-<canvas id="monthChart"></canvas>
-
-</div>
-
-
-</div>
-
-
-
-
-
-
-
-<div class="chart-card">
-
-<h3>
-Log Book Wise Fuel Consumption
-</h3>
-
-
-<div class="chart-box">
-
-<canvas id="siteChart"></canvas>
-
-</div>
-
-
-</div>
-
-
-
-
-
-
-
-<div class="chart-card">
-
-<h3>
-Machine Category Wise Fuel
-
-</h3>
-
-
-<div class="chart-box">
-
-<canvas id="categoryChart"></canvas>
-
-</div>
-
-
-</div>
-
-
-
-
-
-
-
-<div class="chart-card">
-
-<h3>
-Top Fuel Consuming Machines
-
-</h3>
-
-
-<div class="chart-box">
-
-<canvas id="machineChart"></canvas>
-
-</div>
-
-
-</div>
-
-
-
-
-
-<div class="chart-card">
-
-<h3>
-Average Consumption Analysis
-
-</h3>
-
-
-<div class="chart-box">
-
-<canvas id="avgChart"></canvas>
-
-</div>
-
-
-</div>
-
-
-
-
-
-
-
-</div>
-
-
-
-
-
-
-
-
-
-<!-- ======================
-TABLE
-====================== -->
-
-
-<div class="table-card">
-
-
-<h3>
-
-Detailed Fuel Log
-
-</h3>
-
-
-
-<table>
-
-
-<thead>
-
-
-<tr>
-
-<th>
-Sr.No
-</th>
-
-
-<th>
-Month
-</th>
-
-
-<th>
-Working Date
-</th>
-
-
-<th>
-Log Book No.
-</th>
-
-
-<th>
-Machine Category
-</th>
-
-
-<th>
-Machine
-</th>
-
-
-<th>
-RTO Number
-</th>
-
-
-<th>
-Status
-</th>
-
-
-<th>
-Fuel
-</th>
-
-
-<th>
-Run Hours
-</th>
-
-
-<th>
-Average
-</th>
-
-
-</tr>
-
-
-</thead>
-
-
-
-<tbody id="fuelTable">
-
-</tbody>
-
-
-
-</table>
-
-
-
-</div>
-
-
-
-
-
-</div>
-
-
-
-
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-
-<script src="{{ url_for('static', filename='fuel.js') }}"></script>
-
-
-
+<!-- LIVE data from Flask (fetched from the published Google Sheet by fuel_reader.py) -->
+<script id="fuelData" type="application/json">{{ fuel_records|tojson }}</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script>
+const allData = JSON.parse(document.getElementById("fuelData").textContent);
+if(allData.length === 0){ document.getElementById('noDataBanner').classList.add('show'); }
+
+const round2 = v => Math.round((v + Number.EPSILON) * 100) / 100;
+
+// ---------- Filter state (shared across all 3 tabs) ----------
+const filters = {date:"All", category:"All", machine:"All", owner:"All", site:"All"};
+
+function uniqueSorted(arr, key){ return [...new Set(arr.map(d=>d[key]).filter(v=>v!==undefined && v!==""))].sort(); }
+
+const fDate = document.getElementById('fDate');
+const fCategory = document.getElementById('fCategory');
+const fMachine = document.getElementById('fMachine');
+const fOwner = document.getElementById('fOwner');
+const fSite = document.getElementById('fSite');
+
+uniqueSorted(allData,'date').forEach(v=>fDate.innerHTML += `<option value="${v}">${v}</option>`);
+uniqueSorted(allData,'category').forEach(v=>fCategory.innerHTML += `<option value="${v}">${v}</option>`);
+uniqueSorted(allData,'machine').forEach(v=>fMachine.innerHTML += `<option value="${v}">${v}</option>`);
+uniqueSorted(allData,'owner').forEach(v=>fOwner.innerHTML += `<option value="${v}">${v}</option>`);
+uniqueSorted(allData,'site').forEach(v=>fSite.innerHTML += `<option value="${v}">${v}</option>`);
+
+fDate.addEventListener('change', ()=>{ filters.date = fDate.value; renderAll(); });
+fCategory.addEventListener('change', ()=>{ filters.category = fCategory.value; renderAll(); });
+fMachine.addEventListener('change', ()=>{ filters.machine = fMachine.value; renderAll(); });
+fOwner.addEventListener('change', ()=>{ filters.owner = fOwner.value; renderAll(); });
+fSite.addEventListener('change', ()=>{ filters.site = fSite.value; renderAll(); });
+
+document.getElementById('clearFilters').onclick = ()=>{
+  filters.date="All"; filters.category="All"; filters.machine="All"; filters.owner="All"; filters.site="All";
+  fDate.value="All"; fCategory.value="All"; fMachine.value="All"; fOwner.value="All"; fSite.value="All";
+  renderAll();
+};
+
+function toggleFilter(type, value){
+  filters[type] = (filters[type] === value) ? "All" : value;
+  const map = {date:fDate, category:fCategory, machine:fMachine, owner:fOwner, site:fSite};
+  if(map[type]) map[type].value = filters[type];
+  renderAll();
+}
+
+function getFiltered(){
+  return allData.filter(r=>{
+    if(filters.date!=="All" && r.date!==filters.date) return false;
+    if(filters.category!=="All" && r.category!==filters.category) return false;
+    if(filters.machine!=="All" && r.machine!==filters.machine) return false;
+    if(filters.owner!=="All" && r.owner!==filters.owner) return false;
+    if(filters.site!=="All" && r.site!==filters.site) return false;
+    return true;
+  });
+}
+
+function sumBy(arr, groupKey, valKey){
+  const m = {};
+  arr.forEach(r=>{ m[r[groupKey]] = (m[r[groupKey]]||0) + (r[valKey]||0); });
+  return m;
+}
+
+// ---------- Page title swap like breakdown.html ----------
+const TITLES = {dashboard:"⛽ Fuel Analysis Dashboard", trend:"📈 Trend Chart", details:"📋 Fuel Details"};
+function findPageTitleEl(){
+  const candidates = document.querySelectorAll('h1,h2,h3,.page-title,[class*="page-title"]');
+  for(const el of candidates){
+    if(Object.values(TITLES).includes(el.textContent.trim())) return el;
+  }
+  return null;
+}
+const pageTitleEl = findPageTitleEl();
+function setPageTitle(view){ if(pageTitleEl) pageTitleEl.textContent = TITLES[view]; }
+
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-'+btn.dataset.view).classList.add('active');
+    setPageTitle(btn.dataset.view);
+    renderAll();
+  };
+});
+
+// ---------- Chart.js setup ----------
+Chart.register(ChartDataLabels);
+Chart.defaults.set('plugins.datalabels', {display:false});
+Chart.defaults.animation = false;
+const palette = ['#2DD4BF','#4E7FDB','#F2994A','#E5484D','#9B59B6','#27AE60','#F2C94C','#EB5757','#56CCF2','#BB6BD9'];
+
+function wrapLabel(label, maxLen){
+  maxLen = maxLen || 10;
+  label = String(label);
+  if(label.length <= maxLen) return label;
+  const words = label.split(' ');
+  const lines = []; let cur = '';
+  words.forEach(w=>{
+    const test = (cur + ' ' + w).trim();
+    if(test.length > maxLen && cur){ lines.push(cur); cur = w; } else { cur = test; }
+  });
+  if(cur) lines.push(cur);
+  return lines;
+}
+
+let categoryChart, siteDonut, machineChart, statusDonut, dailyFuelChart, monthlyTrendChart, dailyTrendChart;
+
+// ============ DASHBOARD TAB ============
+function renderDashboard(base){
+  const totalFuel = base.reduce((a,r)=>a+r.fuel,0);
+  const totalHours = base.reduce((a,r)=>a+r.hours,0);
+  const machines = new Set(base.map(r=>r.machine));
+  const working = base.filter(r=>r.status==='Working').length;
+
+  document.getElementById('kRecords').textContent = base.length;
+  document.getElementById('kMachines').textContent = machines.size;
+  document.getElementById('kFuel').textContent = round2(totalFuel);
+  document.getElementById('kHours').textContent = round2(totalHours);
+  document.getElementById('kAvg').textContent = totalHours>0 ? round2(totalFuel/totalHours) : 0;
+  document.getElementById('kUtil').textContent = base.length>0 ? round2(working/base.length*100)+'%' : '0%';
+
+  // Category bar
+  const byCat = sumBy(base, 'category', 'fuel');
+  const catLabels = Object.keys(byCat).sort();
+  const scrollWrap = document.getElementById('catChartScroll');
+  const innerWrap = document.getElementById('catChartInner');
+  innerWrap.style.width = Math.max(catLabels.length * 85, scrollWrap.clientWidth) + 'px';
+  if(categoryChart) categoryChart.destroy();
+  categoryChart = new Chart(document.getElementById('categoryChart'), {
+    type:'bar',
+    data:{labels:catLabels, datasets:[{data:catLabels.map(l=>round2(byCat[l])),
+      backgroundColor:catLabels.map((l,i)=> filters.category!=="All" && filters.category!==l ? '#33456b' : palette[i%palette.length]),
+      borderRadius:5, barPercentage:0.6, categoryPercentage:0.8}]},
+    options:{responsive:true, maintainAspectRatio:false, layout:{padding:{top:20}},
+      plugins:{legend:{display:false}, datalabels:{display:true, anchor:'end', align:'top', color:'#EAF1FB', font:{size:10,weight:'bold'}}},
+      onClick:(evt,els)=>{ if(els.length) toggleFilter('category', catLabels[els[0].index]); },
+      scales:{y:{beginAtZero:true, ticks:{color:'#8CA3C4'}, grid:{color:'#1D3E68'}},
+        x:{ticks:{color:'#EAF1FB', font:{size:10}, autoSkip:false, callback:function(v){ return wrapLabel(this.getLabelForValue(v),9); }}, grid:{display:false}}}}
+  });
+
+  // Site donut
+  const bySite = sumBy(base, 'site', 'fuel');
+  const siteLabels = Object.keys(bySite).sort();
+  if(siteDonut) siteDonut.destroy();
+  siteDonut = new Chart(document.getElementById('siteDonut'), {
+    type:'doughnut',
+    data:{labels:siteLabels, datasets:[{data:siteLabels.map(l=>round2(bySite[l])), backgroundColor:palette, borderColor:'#0F2A52', borderWidth:2}]},
+    options:{maintainAspectRatio:false, cutout:'52%',
+      onClick:(evt,els)=>{ if(els.length) toggleFilter('site', siteLabels[els[0].index]); },
+      plugins:{legend:{position:'right', labels:{color:'#EAF1FB', boxWidth:10, font:{size:10}}},
+        datalabels:{display:true, color:'#fff', font:{weight:'bold', size:10}, formatter:v=>round2(v)}}}
+  });
+
+  // Top 10 machines
+  const byMachine = sumBy(base, 'machine', 'fuel');
+  const machLabels = Object.entries(byMachine).sort((a,b)=>b[1]-a[1]).slice(0,10).map(e=>e[0]);
+  const machScroll = document.getElementById('machChartScroll');
+  const machInner = document.getElementById('machChartInner');
+  machInner.style.width = Math.max(machLabels.length * 100, machScroll.clientWidth) + 'px';
+  if(machineChart) machineChart.destroy();
+  machineChart = new Chart(document.getElementById('machineChart'), {
+    type:'bar',
+    data:{labels:machLabels, datasets:[{data:machLabels.map(l=>round2(byMachine[l])),
+      backgroundColor:machLabels.map((l,i)=> filters.machine!=="All" && filters.machine!==l ? '#33456b' : palette[i%palette.length]),
+      borderRadius:5, barPercentage:0.6, categoryPercentage:0.8}]},
+    options:{responsive:true, maintainAspectRatio:false, layout:{padding:{top:20}},
+      plugins:{legend:{display:false}, datalabels:{display:true, anchor:'end', align:'top', color:'#EAF1FB', font:{size:10,weight:'bold'}}},
+      onClick:(evt,els)=>{ if(els.length) toggleFilter('machine', machLabels[els[0].index]); },
+      scales:{y:{beginAtZero:true, ticks:{color:'#8CA3C4'}, grid:{color:'#1D3E68'}},
+        x:{ticks:{color:'#EAF1FB', font:{size:9}, autoSkip:false, callback:function(v){ return wrapLabel(this.getLabelForValue(v),11); }}, grid:{display:false}}}}
+  });
+
+  // Status donut
+  const byStatus = {};
+  base.forEach(r=>{ byStatus[r.status] = (byStatus[r.status]||0) + 1; });
+  const statusLabels = Object.keys(byStatus);
+  if(statusDonut) statusDonut.destroy();
+  statusDonut = new Chart(document.getElementById('statusDonut'), {
+    type:'doughnut',
+    data:{labels:statusLabels, datasets:[{data:statusLabels.map(l=>byStatus[l]), backgroundColor:palette.slice().reverse(), borderColor:'#0F2A52', borderWidth:2}]},
+    options:{maintainAspectRatio:false, cutout:'52%',
+      plugins:{legend:{position:'right', labels:{color:'#EAF1FB', boxWidth:10, font:{size:10}}},
+        datalabels:{display:true, color:'#fff', font:{weight:'bold', size:10}, formatter:v=>v}}}
+  });
+
+  // Daily fuel trend
+  const byDate = {};
+  base.forEach(r=>{ byDate[r.dateIso] = (byDate[r.dateIso]||0) + r.fuel; });
+  const dateLabels = Object.keys(byDate).sort();
+  if(dailyFuelChart) dailyFuelChart.destroy();
+  dailyFuelChart = new Chart(document.getElementById('dailyFuelChart'), {
+    type:'line',
+    data:{labels:dateLabels, datasets:[{data:dateLabels.map(d=>round2(byDate[d])), borderColor:'#2DD4BF',
+      backgroundColor:'rgba(45,212,191,.15)', fill:true, tension:.3, pointRadius:2}]},
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{y:{beginAtZero:true, ticks:{color:'#8CA3C4'}, grid:{color:'#1D3E68'}},
+        x:{ticks:{color:'#EAF1FB', font:{size:9}, maxRotation:60, minRotation:45}, grid:{display:false}}}}
+  });
+
+  const anyFilter = Object.values(filters).some(v=>v!=="All");
+  document.getElementById('clearFilters').disabled = !anyFilter;
+}
+
+// ============ TREND CHART TAB ============
+function renderTrend(base){
+  const isSingleMachine = filters.machine !== "All";
+  const header = document.getElementById('trendHeader');
+  header.innerHTML = isSingleMachine
+    ? `Showing: <b>${filters.machine}</b>`
+    : `Showing: <b>All Machines (aggregate)</b> — select a Machine No above for Opening/Closing readings of that specific machine`;
+
+  const sorted = base.slice().sort((a,b)=> a.dateIso.localeCompare(b.dateIso));
+  const totalFuel = base.reduce((a,r)=>a+r.fuel,0);
+  const totalHours = base.reduce((a,r)=>a+r.hours,0);
+  const totalRun = base.reduce((a,r)=>a+r.runReading,0);
+
+  document.getElementById('tRun').textContent = round2(totalRun);
+  document.getElementById('tFuel').textContent = round2(totalFuel);
+  document.getElementById('tHours').textContent = round2(totalHours);
+  document.getElementById('tAvg').textContent = totalHours>0 ? round2(totalFuel/totalHours) : 0;
+
+  if(isSingleMachine && sorted.length){
+    document.getElementById('tOpen').textContent = round2(sorted[0].opening);
+    document.getElementById('tClose').textContent = round2(sorted[sorted.length-1].closing);
+  } else {
+    document.getElementById('tOpen').textContent = '-';
+    document.getElementById('tClose').textContent = '-';
+  }
+
+  // Monthly aggregation
+  const monthMap = {};
+  base.forEach(r=>{
+    if(!monthMap[r.monthKey]) monthMap[r.monthKey] = {label:r.monthLabel, fuel:0, hours:0};
+    monthMap[r.monthKey].fuel += r.fuel;
+    monthMap[r.monthKey].hours += r.hours;
+  });
+  const monthKeys = Object.keys(monthMap).sort();
+  const monthLabels = monthKeys.map(k=>monthMap[k].label);
+  const monthFuel = monthKeys.map(k=>round2(monthMap[k].fuel));
+  const monthHours = monthKeys.map(k=>round2(monthMap[k].hours));
+
+  if(monthlyTrendChart) monthlyTrendChart.destroy();
+  monthlyTrendChart = new Chart(document.getElementById('monthlyTrendChart'), {
+    data:{labels:monthLabels, datasets:[
+      {type:'bar', label:'Fuel Issued (Ltr)', data:monthFuel, backgroundColor:'#2DD4BF', yAxisID:'y', borderRadius:4},
+      {type:'line', label:'Hours Used', data:monthHours, borderColor:'#F2994A', backgroundColor:'#F2994A', yAxisID:'y1', tension:.3, pointRadius:3}
+    ]},
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom', labels:{color:'#EAF1FB', boxWidth:10, font:{size:10}}}},
+      scales:{
+        y:{beginAtZero:true, position:'left', ticks:{color:'#8CA3C4'}, grid:{color:'#1D3E68'}, title:{display:true, text:'Fuel (Ltr)', color:'#8CA3C4', font:{size:10}}},
+        y1:{beginAtZero:true, position:'right', ticks:{color:'#8CA3C4'}, grid:{display:false}, title:{display:true, text:'Hours', color:'#8CA3C4', font:{size:10}}},
+        x:{ticks:{color:'#EAF1FB', font:{size:10}}, grid:{display:false}}
+      }}
+  });
+
+  // Daily aggregation
+  const dayMap = {};
+  base.forEach(r=>{ dayMap[r.dateIso] = (dayMap[r.dateIso]||0) + r.fuel; });
+  const dayKeys = Object.keys(dayMap).sort();
+  if(dailyTrendChart) dailyTrendChart.destroy();
+  dailyTrendChart = new Chart(document.getElementById('dailyTrendChart'), {
+    type:'line',
+    data:{labels:dayKeys, datasets:[{data:dayKeys.map(d=>round2(dayMap[d])), borderColor:'#4E7FDB',
+      backgroundColor:'rgba(78,127,219,.15)', fill:true, tension:.3, pointRadius:2}]},
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{y:{beginAtZero:true, ticks:{color:'#8CA3C4'}, grid:{color:'#1D3E68'}},
+        x:{ticks:{color:'#EAF1FB', font:{size:9}, maxRotation:60, minRotation:45}, grid:{display:false}}}}
+  });
+
+  // Monthly summary table
+  document.getElementById('monthTableBody').innerHTML = monthKeys.map(k=>{
+    const m = monthMap[k];
+    const avg = m.hours>0 ? round2(m.fuel/m.hours) : 0;
+    return `<tr><td>${m.label}</td><td>${round2(m.hours)}</td><td>${round2(m.fuel)}</td><td>${avg}</td></tr>`;
+  }).join('');
+}
+
+// ============ FUEL DETAILS TAB ============
+let sortKey='date', sortDir=1;
+function sortedRows(base){
+  const rows = base.slice();
+  rows.sort((a,b)=>{
+    let va=a[sortKey], vb=b[sortKey];
+    if(typeof va==='string'){ va=va.toLowerCase(); vb=vb.toLowerCase(); }
+    if(va<vb) return -1*sortDir;
+    if(va>vb) return 1*sortDir;
+    return 0;
+  });
+  return rows;
+}
+
+function renderDetails(base){
+  const rows = sortedRows(base);
+  document.getElementById('fuelBody').innerHTML = rows.map((d,i)=>`<tr>
+    <td>${i+1}</td><td>${d.date}</td><td>${d.site}</td><td>${d.category}</td><td>${d.machine}</td>
+    <td>${round2(d.opening)}</td><td>${round2(d.closing)}</td><td>${round2(d.runReading)}</td>
+    <td>${round2(d.fuel)}</td><td>${round2(d.hours)}</td><td>${round2(d.avg)}</td>
+    <td><span class="pill ${d.status.replace(/\\s+/g,'')}">${d.status}</span></td>
+  </tr>`).join('');
+
+  document.querySelectorAll('#fuelTable thead th').forEach(th=>{
+    const base2 = th.textContent.replace(' ▲','').replace(' ▼','').trim();
+    th.textContent = base2 + (th.dataset.key===sortKey ? (sortDir===1?' ▲':' ▼') : '');
+  });
+}
+document.querySelectorAll('#fuelTable thead th').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const key = th.dataset.key;
+    if(sortKey===key) sortDir*=-1; else { sortKey=key; sortDir=1; }
+    renderDetails(getFiltered());
+  });
+});
+
+// ============ MASTER RENDER ============
+function renderAll(){
+  const base = getFiltered();
+  renderDashboard(base);
+  renderTrend(base);
+  renderDetails(base);
+}
+
+// ============ EXPORT EXCEL ============
+document.getElementById('exportExcel').onclick = async ()=>{
+  const btn = document.getElementById('exportExcel');
+  btn.disabled = true; const oldTxt = btn.textContent; btn.textContent = '⏳ Preparing...';
+  try{
+    const rows = sortedRows(getFiltered());
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'Fuel Analysis Dashboard';
+    workbook.created = new Date();
+    const sheet = workbook.addWorksheet('Fuel Details', {views:[{state:'frozen', ySplit:4}]});
+
+    const headers = ["Sr.No.","Date","Site","Category","Machine","Opening","Closing","Run Reading","Fuel (Ltr)","Hours","Average (Ltr/Hr)","Status"];
+    sheet.columns = [{width:7},{width:12},{width:10},{width:20},{width:32},{width:11},{width:11},{width:12},{width:11},{width:9},{width:14},{width:12}];
+
+    sheet.mergeCells(1,1,1,12);
+    const titleCell = sheet.getCell(1,1);
+    titleCell.value = 'Fuel Log Details Report';
+    titleCell.font = {bold:true, size:16, color:{argb:'FFFFFFFF'}};
+    titleCell.alignment = {vertical:'middle', horizontal:'center'};
+    titleCell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF0C2A54'}};
+    sheet.getRow(1).height = 30;
+
+    sheet.mergeCells(2,1,2,12);
+    const subCell = sheet.getCell(2,1);
+    subCell.value = `Generated: ${new Date().toLocaleString()}   |   Records: ${rows.length}   |   Machine: ${filters.machine}   |   Site: ${filters.site}`;
+    subCell.font = {italic:true, size:10, color:{argb:'FF2DD4BF'}};
+    subCell.alignment = {vertical:'middle', horizontal:'center'};
+    subCell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF13315C'}};
+    sheet.getRow(2).height = 18;
+    sheet.getRow(3).height = 6;
+
+    const headerRow = sheet.getRow(4);
+    headers.forEach((h,idx)=>{ headerRow.getCell(idx+1).value = h; });
+    headerRow.height = 22;
+    headerRow.eachCell(cell=>{
+      cell.font = {bold:true, color:{argb:'FFFFFFFF'}, size:11};
+      cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF123A70'}};
+      cell.alignment = {vertical:'middle', horizontal:'center'};
+      cell.border = {bottom:{style:'medium', color:{argb:'FF2DD4BF'}}};
+    });
+
+    rows.forEach((d,i)=>{
+      const rowNum = 5+i;
+      const row = sheet.getRow(rowNum);
+      const values = [i+1, d.date, d.site, d.category, d.machine, round2(d.opening), round2(d.closing), round2(d.runReading), round2(d.fuel), round2(d.hours), round2(d.avg), d.status];
+      values.forEach((v,idx)=>{ row.getCell(idx+1).value = v; });
+      row.eachCell((cell,colNumber)=>{
+        cell.alignment = {vertical:'middle', horizontal: colNumber===1?'center':'left'};
+        cell.border = {bottom:{style:'thin', color:{argb:'FFDDE3EC'}}};
+        if(i%2===1) cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FFF3F8FB'}};
+      });
+    });
+
+    const lastRow = 4 + rows.length;
+    sheet.autoFilter = {from:'A4', to:`L${lastRow}`};
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {type:'application/octet-stream'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `Fuel_Details_Export_${new Date().toISOString().slice(0,10)}.xlsx`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } finally {
+    btn.disabled = false; btn.textContent = oldTxt;
+  }
+};
+
+// ============ EXPORT PDF ============
+document.getElementById('exportPdf').onclick = ()=>{
+  const rows = sortedRows(getFiltered());
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'landscape'});
+  const body = rows.map((d,i)=>[i+1, d.date, d.site, d.category, d.machine, round2(d.opening), round2(d.closing), round2(d.runReading), round2(d.fuel), round2(d.hours), round2(d.avg), d.status]);
+
+  doc.setFontSize(14);
+  doc.text("Fuel Log Details", 14, 12);
+  doc.autoTable({
+    startY:18,
+    head:[["No","Date","Site","Category","Machine","Opening","Closing","Run Reading","Fuel (Ltr)","Hours","Avg (Ltr/Hr)","Status"]],
+    body:body,
+    styles:{fontSize:7, valign:'middle'},
+    headStyles:{fillColor:[10,31,61]},
+  });
+  doc.save(`Fuel_Details_Export_${new Date().toISOString().slice(0,10)}.pdf`);
+};
+
+window.addEventListener('resize', ()=>{ if(categoryChart) renderDashboard(getFiltered()); });
+
+renderAll();
+</script>
 {% endblock %}
