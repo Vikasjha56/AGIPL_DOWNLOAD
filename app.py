@@ -392,329 +392,54 @@ def breakdown():
 
 @app.route("/fuel")
 def fuel():
+    return render_template("fuel.html")
 
-    return render_template(
-        "fuel.html"
-    )
-
-
-# =====================================================
-# FUEL DATA API
-# =====================================================
-
-@app.route("/fuel_data")
-def fuel_data():
-
+@app.route("/fuel")
+def fuel():
     try:
+        raw = get_fuel_sheet_data()
 
-        print("========== FUEL API START ==========")
+        if raw.empty:
+            return render_template("fuel.html", fuel_records=[], error="No data rows found in the published sheet.")
 
+        df = prepare_fuel_analysis(raw)
 
-        # Read Google Sheet
-
-        df = get_fuel_sheet_data()
-
-
-        print("Rows:",len(df))
-        print("Columns:",df.columns.tolist())
-
-
-        if df.empty:
-
-            return jsonify({
-                "error":"Google Sheet Empty"
-            })
-
-
-
-        # Analysis
-
-        df = prepare_fuel_analysis(df)
-
-
-
-        # Serial Number
-
-        df["Sr.No."] = range(
-            1,
-            len(df)+1
-        )
-
-
-
-        df["Working Date"] = (
-            df["Working Date"]
-            .astype(str)
-        )
-
-
-
-        # ==========================
-        # KPI
-        # ==========================
-
-        kpi = df.attrs.get(
-            "kpi",
-            {}
-        )
-
-
-
-        # ==========================
-        # SLICERS
-        # ==========================
-
-
-        slicers={
-
-
-            "dates":
-            sorted(
-                df["Working Date"]
-                .astype(str)
-                .unique()
-                .tolist()
-            ),
-
-
-
-            "sites":
-            sorted(
-                df["Log Book No."]
-                .astype(str)
-                .unique()
-                .tolist()
-            ),
-
-
-
-            "categories":
-            sorted(
-                df["Machine Category"]
-                .astype(str)
-                .unique()
-                .tolist()
-            ),
-
-
-
-            "machines":
-            sorted(
-                df["Machine"]
-                .astype(str)
-                .unique()
-                .tolist()
-            ),
-
-
-
-            "status":
-            sorted(
-                df["Machine Status"]
-                .astype(str)
-                .unique()
-                .tolist()
-            )
-
-
-        }
-
-
-
-        # ==========================
-        # TABLE
-        # ==========================
-
-
-        table_columns=[
-
-
-            "Sr.No.",
-            "Month",
-            "Working Date",
-            "Log Book No.",
-            "Machine Category",
-            "Machine",
-            "RTO Number",
-            "Machine Status",
-            "Fuel Used",
-            "Run Hours",
-            "Fuel Average"
-
-
+        fuel_records = [
+            {
+                "srNo": i + 1,
+                "date": row["Working Date"],
+                "dateIso": row["Date ISO"],
+                "monthKey": row["Month Key"],
+                "monthLabel": row["Month Label"],
+                "site": row["Site Name"],
+                "category": row["Machine Category"],
+                "machine": row["Machine"],
+                "owner": row["Owner"],
+                "opening": round(float(row["Opening Reading"]), 2),
+                "closing": round(float(row["Closing Reading"]), 2),
+                "readingType": row["Reading Type"],
+                "runReading": round(float(row["Run Reading"]), 2),
+                "fuel": round(float(row["Fuel Used"]), 2),
+                "hours": round(float(row["Run Hours"]), 2),
+                "avg": round(float(row["Fuel Average"]), 2),
+                "status": row["Machine Status"] if row["Machine Status"] else "Not Defined",
+                "work": row["Work Done"],
+            }
+            for i, row in df.iterrows()
         ]
 
-
-
-        for c in table_columns:
-
-            if c not in df.columns:
-
-                df[c]=""
-
-
-
-        table=(
-
-            df[table_columns]
-            .fillna("")
-            .to_dict(
-                orient="records"
-            )
-
-        )
-
-
-
-        # ==========================
-        # CHART DATA
-        # ==========================
-
-
-        daily=(
-
-            df.groupby(
-                "Working Date"
-            )["Fuel Used"]
-            .sum()
-            .reset_index()
-
-        )
-
-
-
-        category=(
-
-            df.groupby(
-                "Machine Category"
-            )["Fuel Used"]
-            .sum()
-            .reset_index()
-
-        )
-
-
-
-        machine=(
-
-            df.groupby(
-                "Machine"
-            )["Fuel Used"]
-            .sum()
-            .sort_values(
-                ascending=False
-            )
-            .head(10)
-            .reset_index()
-
-        )
-
-
-
-        site=(
-
-            df.groupby(
-                "Log Book No."
-            )["Fuel Used"]
-            .sum()
-            .reset_index()
-
-        )
-
-
-
-
-        return jsonify({
-
-
-            "status":"success",
-
-
-            "kpi":kpi,
-
-
-            "slicers":slicers,
-
-
-            "daily":{
-
-
-                "labels":
-                daily["Working Date"].tolist(),
-
-
-                "values":
-                daily["Fuel Used"].tolist()
-
-
-            },
-
-
-            "category":{
-
-
-                "labels":
-                category["Machine Category"].tolist(),
-
-
-                "values":
-                category["Fuel Used"].tolist()
-
-
-            },
-
-
-            "machine":{
-
-
-                "labels":
-                machine["Machine"].tolist(),
-
-
-                "values":
-                machine["Fuel Used"].tolist()
-
-
-            },
-
-
-            "site":{
-
-
-                "labels":
-                site["Log Book No."].tolist(),
-
-
-                "values":
-                site["Fuel Used"].tolist()
-
-
-            },
-
-
-            "table":table
-
-
-        })
-
-
-
+        return render_template("fuel.html", fuel_records=fuel_records, error=None)
 
     except Exception as e:
+        print("FUEL PAGE ERROR:", repr(e))
+        return render_template("fuel.html", fuel_records=[], error=str(e))
 
 
-        print(
-            "FUEL ERROR:",
-            repr(e)
-        )
 
 
-        return jsonify({
 
-            "error":
-            str(e)
 
-        })
+
 @app.route("/hr")
 def hr():
     return render_template("hr.html")
