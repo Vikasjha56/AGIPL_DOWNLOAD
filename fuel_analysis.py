@@ -13,7 +13,7 @@ into an analysis-ready DataFrame with:
   - Fuel Used     = "Fuel Issue" column
   - Fuel Average  = Fuel Used / Run Hours
   - Month / Working Date / Site Name (derived from Log Book No. prefix,
-    e.g. "AMO-723" -> "AMO")
+    e.g. "AMO-723" -> "AMO", "HEAD OFFICE-12" -> "HEAD OFFICE")
   - KPI summary dict attached to df.attrs['kpi']
 
 NOTE ON "Owner" (Self / Hire):
@@ -65,11 +65,21 @@ def _hours_text_to_decimal(value) -> float:
 
 
 def _derive_site(log_book_no) -> str:
+    """
+    Site name = everything BEFORE the first "-" in the Log Book No.,
+    not just the leading alphabet run. So:
+        "AMO-723"        -> "AMO"
+        "HEAD OFFICE-12" -> "HEAD OFFICE"
+        "RJ NAGAUR-04"   -> "RJ NAGAUR"
+    If there's no "-" at all, the whole (trimmed) value is used as-is.
+    """
     s = str(log_book_no).strip()
-    m = re.match(r"^[A-Za-z]+", s)
-    if m:
-        return m.group(0).upper()
-    return s if s else "Not Defined"
+    if not s:
+        return "Not Defined"
+    if "-" in s:
+        prefix = s.split("-", 1)[0].strip()
+        return prefix.upper() if prefix else "Not Defined"
+    return s.upper()
 
 
 def _get(df: pd.DataFrame, name: str, default=""):
