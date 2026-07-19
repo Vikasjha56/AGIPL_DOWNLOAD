@@ -86,7 +86,6 @@ def get_fuel_sheet_data() -> pd.DataFrame:
         keep_default_na=False,
         on_bad_lines="skip",
     )
-
     if raw.empty:
         return pd.DataFrame()
 
