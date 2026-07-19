@@ -61,29 +61,6 @@ def get_cached_master():
 
 
 # ==========================
-# FUEL SHEET CACHE (5-minute, same pattern as get_cached_master())
-# ==========================
-
-FUEL_CACHE = None
-FUEL_CACHE_TIME = 0
-FUEL_CACHE_DURATION = 300
-
-
-def get_cached_fuel_raw():
-    """Loads the raw Fuel sheet with a 5-minute cache, so /fuel opens
-    instantly on repeat visits instead of hitting Google Sheets every time."""
-    global FUEL_CACHE, FUEL_CACHE_TIME
-    current_time = time.time()
-    if FUEL_CACHE is None or current_time - FUEL_CACHE_TIME > FUEL_CACHE_DURATION:
-        print("Loading Fuel Sheet...")
-        FUEL_CACHE = get_fuel_sheet_data()
-        FUEL_CACHE_TIME = current_time
-    else:
-        print("Using Cached Fuel Data...")
-    return FUEL_CACHE.copy()
-
-
-# ==========================
 # ALERT LEVEL LOGIC
 # (Low: 0-15 days, Medium: 16-30 days, High: 31+ days)
 # ==========================
@@ -122,6 +99,7 @@ def build_pending_df(master):
     pending = pending.dropna(subset=["Pending Days"]).copy()
     pending.loc[:, "Pending Days"] = pending["Pending Days"].astype(int)
 
+    # Optional columns — filled defensively in case sheet doesn't have them yet
     if "Owned/Hired" not in pending.columns:
         pending["Owned/Hired"] = "Not Defined"
     if "Date of breakdown" not in pending.columns:
@@ -131,6 +109,7 @@ def build_pending_df(master):
     if "Vehcile No" not in pending.columns:
         pending["Vehcile No"] = ""
 
+    # normalize date -> ISO string (yyyy-mm-dd) for slicer / sorting / export
     pending["Date Parsed"] = pd.to_datetime(
         pending["Date of breakdown"], errors="coerce", dayfirst=True
     )
@@ -146,6 +125,8 @@ def build_pending_df(master):
 
 # ==========================
 # APPLY QUERY-STRING FILTERS
+# (used by the Excel / PDF export routes so downloads match
+#  whatever the user currently has selected/sorted on screen)
 # ==========================
 
 SORT_COLUMN_MAP = {
@@ -183,6 +164,8 @@ def apply_filters_and_sort(pending, args):
 
 
 def build_export_df(df):
+    """Final column set / order that goes into Excel & PDF —
+    matches the BD Details table exactly, Stock Alert Level excluded."""
     export = pd.DataFrame({
         "No": df["No"],
         "Site": df["Site"],
@@ -200,6 +183,7 @@ def build_export_df(df):
 
 # ==========================
 # CRITICAL PENDING TASK
+# (separate published Google Sheet — Work Allotted To / Allotted By tracker)
 # ==========================
 
 CRITICAL_SHEET_CSV = (
@@ -209,10 +193,12 @@ CRITICAL_SHEET_CSV = (
 
 CRITICAL_CACHE = None
 CRITICAL_CACHE_TIME = 0
-CRITICAL_CACHE_DURATION = 300
+CRITICAL_CACHE_DURATION = 300  # 5 minutes, same as the Master Table cache
 
 
 def task_alert_level(days):
+    """Alert tiers for day-to-day pending tasks — tighter than the
+    machine-breakdown SLA above. Adjust the two cutoffs if needed."""
     if days >= 7:
         return "High Alert"
     if days >= 3:
@@ -221,6 +207,8 @@ def task_alert_level(days):
 
 
 def fetch_critical_records():
+    """Fetches + parses the Critical Pending Task sheet.
+    Skips blank/incomplete rows (e.g. a row that only has 'Allotted By' filled in)."""
     resp = requests.get(CRITICAL_SHEET_CSV, timeout=10)
     resp.encoding = "utf-8"
     reader = csv.DictReader(io.StringIO(resp.text))
@@ -251,6 +239,8 @@ def fetch_critical_records():
 
 
 def get_cached_critical_records():
+    """Same 5-minute cache pattern as the Master Table, so the scheduler
+    and the /critical-pending page both read consistent data."""
     global CRITICAL_CACHE, CRITICAL_CACHE_TIME
     current_time = time.time()
     if CRITICAL_CACHE is None or current_time - CRITICAL_CACHE_TIME > CRITICAL_CACHE_DURATION:
@@ -282,7 +272,7 @@ def home():
 
 
 # ==========================
-# EXCEL DOWNLOAD
+# EXCEL DOWNLOAD (filter + sort aware)
 # ==========================
 
 @app.route("/download_excel")
@@ -301,7 +291,7 @@ def download_excel():
 
 
 # ==========================
-# PDF DOWNLOAD
+# PDF DOWNLOAD (filter + sort aware)
 # ==========================
 
 @app.route("/download_pdf")
@@ -335,6 +325,9 @@ def reports():
 
 # ==========================
 # BREAKDOWN DASHBOARD
+# (sends ROW-LEVEL data as JSON so the client can cross-filter
+#  KPIs + all 4 charts + BD Details table together on every
+#  slicer change / chart click / column-header sort)
 # ==========================
 
 @app.route("/breakdown")
@@ -351,6 +344,9 @@ def breakdown():
         resolved_col = master["Resolved"].astype(str).str.strip().str.upper()
         resolved = master[resolved_col == "YES"].copy()
 
+        # ======================
+        # ROW-LEVEL RECORDS FOR CLIENT-SIDE FILTERING
+        # ======================
         pending_records = [
             {
                 "no": int(row["No"]),
@@ -390,13 +386,19 @@ def breakdown():
 
 
 # ==========================
-# FUEL DASHBOARD PAGE
+# OTHER MODULES
 # ==========================
+
+# =====================================================
+# FUEL DASHBOARD PAGE
+# =====================================================
+
+
 
 @app.route("/fuel")
 def fuel():
     try:
-        raw = get_cached_fuel_raw()
+        raw = get_fuel_sheet_data()
 
         if raw.empty:
             return render_template("fuel.html", fuel_records=[], error="No data rows found in the published sheet.")
@@ -434,6 +436,11 @@ def fuel():
         return render_template("fuel.html", fuel_records=[], error=str(e))
 
 
+
+
+
+
+
 @app.route("/hr")
 def hr():
     return render_template("hr.html")
@@ -466,6 +473,10 @@ def it():
 
 # ==========================
 # WHATSAPP REMINDER SCHEDULER
+# Sends a WhatsApp reminder to the assignee (Contact No) and their
+# supervisor (manually maintained list in reminder_scheduler.py) every
+# 24 hours for as long as a task stays pending. See reminder_scheduler.py
+# to plug in your Twilio credentials and supervisor phone numbers.
 # ==========================
 
 if start_scheduler and (not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true"):
