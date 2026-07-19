@@ -9,7 +9,8 @@
 
 {% block content %}
 <style>
-  .fl-wrap, .fl-wrap *{box-sizing:border-box;}
+  html, body { overflow: hidden; }
+
   .fl-wrap{flex:1 1 auto;min-height:0;height:100%;display:flex;flex-direction:column;gap:6px;overflow:hidden;
     margin-top:-10px;}
 
@@ -29,30 +30,26 @@
     max-width:150px;color-scheme:dark;}
   .filter-group select option{color:#000;}
   .date-range-group{display:flex;align-items:center;gap:4px;}
-  .date-range-group input[type="date"]{max-width:128px;}
-  .date-range-group .arrow{opacity:.6;font-size:12px;}
+  .date-range-group input[type="date"]{max-width:130px;}
+  .date-range-group .to-label{font-size:10.5px;opacity:.75;}
   .clear-btn{
     border:1px solid rgba(255,80,80,.6);background:rgba(255,60,60,.15);color:#fff;
     padding:5px 12px;border-radius:9px;font-size:11.5px;cursor:pointer;margin-left:auto;
     display:inline-flex;align-items:center;gap:6px;font-weight:700;transition:.2s;white-space:nowrap;}
   .clear-btn:hover{background:rgba(255,60,60,.35);box-shadow:0 0 10px rgba(255,80,80,.5);}
   .clear-btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none;}
-  .tabs{display:flex;gap:6px;background:rgba(255,255,255,.08);padding:4px;border-radius:11px;}
-  .tab-btn{border:none;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:600;
+  .tabs{display:flex;gap:5px;background:rgba(255,255,255,.08);padding:3px;border-radius:11px;}
+  .tab-btn{border:none;padding:5px 12px;border-radius:8px;font-size:11.5px;font-weight:600;
     cursor:pointer;background:transparent;color:#fff;opacity:.7;transition:.25s;white-space:nowrap;}
   .tab-btn.active{background:linear-gradient(135deg,#0077ff,#00c6ff);opacity:1;box-shadow:0 0 14px cyan;}
   .tab-btn:hover{opacity:1;}
 
-  /* Every tab is a flex column that shares the exact remaining viewport
-     height between its rows (flex:1 + min-height:0 on every level, no
-     ancestor with height:auto) -> nothing needs to scroll, nothing grows
-     unbounded, and nothing overlaps, on any screen size. */
   .view{display:none;flex:1 1 auto;min-height:0;flex-direction:column;gap:6px;overflow:hidden;}
   .view.active{display:flex;}
 
   .kpi-row{flex:0 0 auto;display:grid;grid-template-columns:repeat(6,1fr);gap:6px;}
   .kpi{background:rgba(255,255,255,.1);border:1px solid rgba(0,255,255,.35);border-radius:10px;
-    padding:5px 8px;text-align:center;transition:.3s;min-width:0;}
+    padding:6px 8px;text-align:center;transition:.3s;min-width:0;}
   .kpi:hover{transform:translateY(-2px);box-shadow:0 0 14px cyan;}
   .kpi-label{font-size:9px;color:#8CA3C4;text-transform:uppercase;letter-spacing:.3px;}
   .kpi-value{font-size:15px;font-weight:700;text-shadow:0 0 8px cyan;margin-top:1px;}
@@ -60,57 +57,87 @@
   .kpi-value.up{color:#5CE68A;text-shadow:0 0 8px #5CE68A;}
   .kpi-value.down{color:#FF8A8A;text-shadow:0 0 8px #FF8A8A;}
 
-  .grid2{flex:1 1 0;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+  .grid2{flex:1 1 50%;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:6px;}
   .panel{background:rgba(255,255,255,.12);border:1px solid rgba(0,255,255,.35);border-radius:12px;
-    padding:6px 10px;display:flex;flex-direction:column;min-height:0;min-width:0;overflow:hidden;
-    backdrop-filter:blur(20px);}
+    padding:6px 10px;display:flex;flex-direction:column;min-height:0;backdrop-filter:blur(20px);
+    min-width:0;overflow:hidden;}
   .panel h3{margin:0 0 3px;font-size:10.5px;color:#2DD4BF;text-transform:uppercase;letter-spacing:.4px;text-align:center;}
   .panel-head{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:3px;flex-wrap:wrap;position:relative;flex:0 0 auto;}
   .panel-head h3{margin:0;}
   .panel-head .export-btns{position:absolute;right:0;top:50%;transform:translateY(-50%);}
 
-  .chart-wrap{flex:1 1 0;min-height:0;position:relative;overflow:hidden;width:100%;}
+  /* Charts fill available panel space, never overflow it */
+  .chart-wrap{flex:1 1 auto;min-height:0;position:relative;overflow:hidden;width:100%;}
+  .chart-wrap canvas{max-width:100%;max-height:100%;}
 
   .chart-scroll-x{width:100%;height:100%;overflow-x:auto;overflow-y:hidden;}
   .chart-scroll-x::-webkit-scrollbar{height:5px;}
   .chart-scroll-x::-webkit-scrollbar-thumb{background:rgba(45,212,191,.5);border-radius:4px;}
   .chart-inner{height:100%;position:relative;}
 
+  .full-row{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
+
   .trend-header{flex:0 0 auto;text-align:center;font-size:11.5px;color:#EAF1FB;font-weight:600;
     background:rgba(255,255,255,.08);border-radius:9px;padding:5px 10px;}
   .trend-header b{color:#2DD4BF;}
 
-  .month-table-panel{flex:0.9 1 0;min-height:0;display:flex;flex-direction:column;
+  .month-table-panel{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;
     background:rgba(255,255,255,.12);border:1px solid rgba(0,255,255,.35);border-radius:12px;
     padding:6px 10px;backdrop-filter:blur(20px);overflow:hidden;}
-  .month-table-panel h3{margin:0;font-size:10.5px;color:#2DD4BF;text-transform:uppercase;text-align:center;}
-  .mini-table-scroll{flex:1 1 0;min-height:0;overflow-y:auto;overflow-x:auto;border:1px solid rgba(0,255,255,.25);border-radius:8px;}
+  .month-table-panel h3{margin:0 0 3px;font-size:10.5px;color:#2DD4BF;text-transform:uppercase;text-align:center;}
+  .mini-table-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:auto;border:1px solid rgba(0,255,255,.25);border-radius:8px;}
 
   .details-panel{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;
     background:rgba(255,255,255,.12);border:1px solid rgba(0,255,255,.35);border-radius:12px;
     padding:8px 12px;backdrop-filter:blur(20px);overflow:hidden;}
   .details-top{flex:0 0 auto;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:8px;}
   .details-top h3{margin:0;font-size:13px;}
-  .export-btns{display:flex;gap:8px;flex-wrap:wrap;}
+  .export-btns{display:flex;gap:6px;flex-wrap:wrap;}
   .export-btns button{background:rgba(0,255,255,.1);border:1px solid #2DD4BF;color:#2DD4BF;
-    padding:5px 12px;border-radius:8px;font-size:11.5px;cursor:pointer;font-weight:600;white-space:nowrap;}
+    padding:5px 12px;border-radius:8px;font-size:11px;cursor:pointer;font-weight:600;white-space:nowrap;}
   .export-btns button:hover{background:#2DD4BF;color:#04211C;}
   .export-btns button:disabled{opacity:.5;cursor:wait;}
-  .table-scroll{flex:1 1 0;min-height:0;overflow-y:auto;overflow-x:auto;border:1px solid rgba(0,255,255,.25);border-radius:8px;
+  .table-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:auto;border:1px solid rgba(0,255,255,.25);border-radius:8px;
     -webkit-overflow-scrolling:touch;}
-  table{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed;}
-  thead th{position:sticky;top:0;background:#0C2A54;color:#2DD4BF;padding:6px;text-align:left;
+  table{width:100%;border-collapse:collapse;font-size:10.5px;table-layout:fixed;}
+  thead th{position:sticky;top:0;background:#0C2A54;color:#2DD4BF;padding:6px 5px;text-align:left;
     cursor:pointer;user-select:none;border-bottom:1px solid rgba(0,255,255,.25);
     overflow-wrap:break-word;word-break:break-word;}
   thead th:hover{background:#123a70;}
-  tbody td{padding:5px 6px;border-bottom:1px solid rgba(255,255,255,.1);
+  tbody td{padding:5px 5px;border-bottom:1px solid rgba(255,255,255,.1);
     overflow-wrap:break-word;word-break:break-word;white-space:normal;}
   tbody tr:nth-child(even){background:rgba(255,255,255,.03);}
   tbody tr:hover{background:rgba(45,212,191,.1);}
-  .pill{padding:3px 9px;border-radius:12px;font-size:10px;font-weight:700;color:#fff;display:inline-block;}
+  .pill{padding:2px 8px;border-radius:12px;font-size:9.5px;font-weight:700;color:#fff;display:inline-block;}
   .pill.Working{background:#1E9E63;} .pill.Idle{background:#F2994A;} .pill.NotDefined{background:#6B7A99;}
+  .pill.alertGreen{background:#1E9E63;}
+  .pill.alertOrange{background:#F2994A;}
+  .pill.alertRed{background:#E5484D;box-shadow:0 0 8px rgba(229,72,77,.6);}
 
-  .avg-compare-note{flex:0 0 auto;font-size:10.5px;color:#8CA3C4;text-align:center;margin-top:2px;}
+  .avg-compare-note{flex:0 0 auto;font-size:10px;color:#8CA3C4;text-align:center;margin-top:2px;}
+
+  .avg-toolbar{flex:0 0 auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+    padding:6px 10px;border-radius:11px;background:rgba(255,255,255,.08);margin-bottom:2px;}
+  .avg-toolbar .export-btns{margin-left:auto;}
+
+  .range-slicer{display:flex;align-items:center;gap:8px;padding:5px 10px;border-radius:9px;
+    background:rgba(255,255,255,.1);border:1px solid rgba(0,255,255,.5);}
+  .range-slicer label{font-size:10.5px;font-weight:600;opacity:.85;white-space:nowrap;}
+  .range-slicer .rs-track{position:relative;width:150px;height:26px;display:flex;align-items:center;}
+  .range-slicer input[type="range"]{
+    position:absolute;width:100%;-webkit-appearance:none;background:transparent;pointer-events:none;margin:0;}
+  .range-slicer input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none;pointer-events:auto;width:14px;height:14px;border-radius:50%;
+    background:#2DD4BF;border:2px solid #04211C;cursor:pointer;box-shadow:0 0 6px cyan;margin-top:-6px;}
+  .range-slicer input[type="range"]::-webkit-slider-runnable-track{height:4px;background:transparent;}
+  .range-slicer .rs-rail{position:absolute;left:0;right:0;height:4px;border-radius:2px;background:rgba(255,255,255,.2);}
+  .range-slicer .rs-fill{position:absolute;height:4px;border-radius:2px;background:linear-gradient(90deg,#2DD4BF,#E5484D);}
+  .range-slicer .rs-val{font-size:10.5px;color:#2DD4BF;font-weight:700;min-width:78px;text-align:center;}
+
+  .alert-legend{flex:0 0 auto;display:flex;gap:14px;justify-content:center;flex-wrap:wrap;
+    font-size:10px;color:#8CA3C4;padding:2px 0;}
+  .alert-legend span{display:inline-flex;align-items:center;gap:5px;}
+  .alert-legend i{width:9px;height:9px;border-radius:3px;display:inline-block;}
 
   @media(max-width:900px){
     .kpi-row{grid-template-columns:repeat(3,1fr);}
@@ -118,28 +145,32 @@
   }
 
   @media(max-width:640px){
-    .fl-wrap{gap:4px;}
-    .filters{padding:6px 8px;gap:6px;}
+    html, body { overflow: auto; }
+    .fl-wrap{overflow-y:auto;overflow-x:hidden;min-height:auto;height:auto;}
+    .view.active{overflow:visible;}
+    .filters{padding:8px 10px;gap:8px;}
     .filter-group{width:100%;}
-    .filter-group select{flex:1;max-width:none;}
+    .filter-group select, .filter-group input[type="date"]{flex:1;max-width:none;}
     .date-range-group{width:100%;}
-    .date-range-group input[type="date"]{flex:1;max-width:none;min-width:0;}
     .clear-btn{margin-left:0;width:100%;justify-content:center;}
     .tabs{width:100%;}
-    .tab-btn{flex:1;text-align:center;padding:7px 4px;}
-    .kpi-row{grid-template-columns:repeat(3,1fr);gap:4px;}
-    .kpi{padding:4px 4px;}
-    .kpi-label{font-size:8px;}
-    .kpi-value{font-size:12px;}
-    .kpi-sub{font-size:8px;}
-    .panel{padding:4px 6px;}
-    .panel h3{font-size:9px;}
-    .details-panel{padding:6px 8px;}
-    table{font-size:9.5px;}
-    thead th, tbody td{padding:4px;}
+    .tab-btn{flex:1;text-align:center;padding:8px 6px;}
+    .kpi-row{grid-template-columns:repeat(2,1fr);}
+    .kpi-value{font-size:15px;}
+    .grid2{grid-template-columns:1fr;}
+    .chart-wrap{height:240px;min-height:240px;max-height:240px;flex:none;}
+    .panel-head .export-btns{position:static;transform:none;justify-content:center;margin-top:4px;}
+    .details-panel{min-height:60vh;flex:none;}
+    .table-scroll{max-height:60vh;}
+    .month-table-panel{flex:none;}
+    .mini-table-scroll{max-height:40vh;}
+    table{font-size:10px;}
+    thead th, tbody td{padding:6px 5px;}
     .export-btns{width:100%;}
-    .export-btns button{flex:1;padding:5px 6px;font-size:10.5px;}
-    .panel-head .export-btns{position:static;transform:none;justify-content:center;margin-top:3px;}
+    .export-btns button{flex:1;}
+    .range-slicer{width:100%;}
+    .range-slicer .rs-track{flex:1;}
+    .avg-toolbar .export-btns{width:100%;margin-left:0;}
   }
 </style>
 
@@ -152,9 +183,9 @@
   </div>
 
   <div class="filters">
-    <div class="filter-group date-range-group"><label>Date</label>
+    <div class="filter-group date-range-group"><label>Date Range</label>
       <input type="date" id="fDateFrom">
-      <span class="arrow">→</span>
+      <span class="to-label">to</span>
       <input type="date" id="fDateTo">
     </div>
     <div class="filter-group"><label>Category</label>
@@ -169,10 +200,14 @@
     <div class="filter-group"><label>Site</label>
       <select id="fSite"><option value="All">All</option></select>
     </div>
+    <div class="filter-group"><label>Machine Status</label>
+      <select id="fStatus"><option value="All">All</option></select>
+    </div>
     <div class="tabs">
       <button class="tab-btn active" data-view="dashboard">Fuel Analysis Dashboard</button>
       <button class="tab-btn" data-view="trend">Trend Chart</button>
       <button class="tab-btn" data-view="details">Fuel Details</button>
+      <button class="tab-btn" data-view="avg">Average Analysis</button>
     </div>
     <button class="clear-btn" id="clearFilters">✕ Clear All Filters</button>
   </div>
@@ -190,7 +225,7 @@
 
     <div class="grid2">
       <div class="panel">
-        <h3>Fuel Issued by Machine Category (click bar to filter)</h3>
+        <h3>Fuel Issued by Machine Category</h3>
         <div class="chart-wrap">
           <div class="chart-scroll-x" id="catChartScroll">
             <div class="chart-inner" id="catChartInner"><canvas id="categoryChart"></canvas></div>
@@ -198,14 +233,14 @@
         </div>
       </div>
       <div class="panel">
-        <h3>Fuel Issued by Site (click slice to filter)</h3>
+        <h3>Fuel Issued by Site</h3>
         <div class="chart-wrap"><canvas id="siteDonut"></canvas></div>
       </div>
     </div>
 
     <div class="grid2">
       <div class="panel">
-        <h3>Top 10 Machines by Fuel Issued (click bar to filter)</h3>
+        <h3>Top 10 Machines by Fuel Issued</h3>
         <div class="chart-wrap">
           <div class="chart-scroll-x" id="machChartScroll">
             <div class="chart-inner" id="machChartInner"><canvas id="machineChart"></canvas></div>
@@ -213,15 +248,11 @@
         </div>
       </div>
       <div class="panel">
-        <h3>Machine Status Split (click slice to filter)</h3>
+        <h3>Machine Status Split</h3>
         <div class="chart-wrap"><canvas id="statusDonut"></canvas></div>
       </div>
     </div>
 
-    <div class="panel">
-      <h3>Daily Fuel Trend vs Average (filtered data — click point to filter by date)</h3>
-      <div class="chart-wrap"><canvas id="dailyFuelChart"></canvas></div>
-    </div>
   </div>
 
   <!-- ============ TREND CHART ============ -->
@@ -239,11 +270,11 @@
 
     <div class="grid2">
       <div class="panel">
-        <h3>Monthly Trend (Fuel Issued vs Hours Used) — click bar to filter month</h3>
+        <h3>Monthly Trend (Fuel Issued vs Hours Used)</h3>
         <div class="chart-wrap"><canvas id="monthlyTrendChart"></canvas></div>
       </div>
       <div class="panel">
-        <h3>Daily Trend — Fuel vs Actual Avg vs Expected Avg (click point to filter date)</h3>
+        <h3>Daily Trend — Fuel vs Actual Avg vs Expected Avg</h3>
         <div class="chart-wrap"><canvas id="dailyTrendChart"></canvas></div>
         <div class="avg-compare-note" id="avgCompareNote"></div>
       </div>
@@ -251,7 +282,7 @@
 
     <div class="month-table-panel">
       <div class="panel-head">
-        <h3>Monthly Summary</h3>
+        <h3>Site Summary (Overall)</h3>
         <div class="export-btns">
           <button id="exportMonthExcel">⬇ Excel</button>
           <button id="exportMonthPdf">⬇ PDF</button>
@@ -259,7 +290,7 @@
       </div>
       <div class="mini-table-scroll">
         <table id="monthTable">
-          <thead><tr><th>Site</th><th>Month</th><th>Total Hours</th><th>Total Fuel (Ltr)</th><th>Average (Ltr/Hr)</th></tr></thead>
+          <thead><tr><th>Site</th><th>Total Hours</th><th>Total Fuel (Ltr)</th><th>Average (Ltr/Hr)</th></tr></thead>
           <tbody id="monthTableBody"></tbody>
         </table>
       </div>
@@ -300,6 +331,63 @@
     </div>
   </div>
 
+  <!-- ============ AVERAGE ANALYSIS (Site / Category / Machine) ============ -->
+  <div class="view" id="view-avg">
+    <div class="avg-toolbar">
+      <div class="range-slicer" id="varianceSlicer">
+        <label>Variance Filter (Ltr/Hr)</label>
+        <div class="rs-track">
+          <div class="rs-rail"></div>
+          <div class="rs-fill" id="rsFill"></div>
+          <input type="range" id="rsMin" min="-10" max="10" step="0.1" value="-10">
+          <input type="range" id="rsMax" min="-10" max="10" step="0.1" value="10">
+        </div>
+        <span class="rs-val" id="rsValLabel">All</span>
+      </div>
+      <div class="filter-group">
+        <label>Alert Level</label>
+        <select id="fAlertLevel">
+          <option value="All">All</option>
+          <option value="alertGreen">On Target</option>
+          <option value="alertOrange">Watch</option>
+          <option value="alertRed">Red Alert</option>
+        </select>
+      </div>
+      <div class="export-btns">
+        <button id="exportAvgExcel">⬇ Excel</button>
+        <button id="exportAvgPdf">⬇ PDF</button>
+      </div>
+    </div>
+
+    <div class="alert-legend">
+      <span><i style="background:#1E9E63"></i> On Target (±0.5 Ltr/Hr)</span>
+      <span><i style="background:#F2994A"></i> Watch (±1.5 Ltr/Hr)</span>
+      <span><i style="background:#E5484D"></i> Red Alert (beyond ±1.5 Ltr/Hr)</span>
+    </div>
+
+    <div class="details-panel" style="padding-top:4px;">
+      <div class="table-scroll">
+        <table id="avgTable">
+          <thead>
+            <tr>
+              <th data-key="srNo">Sr.No.</th>
+              <th data-key="site">Site</th>
+              <th data-key="category">Machine Category</th>
+              <th data-key="machine">Machine</th>
+              <th data-key="fuel">Fuel Used (Ltr)</th>
+              <th data-key="hours">Hours Used</th>
+              <th data-key="actualAvg">Actual Avg (Ltr/Hr)</th>
+              <th data-key="expectedAvg">Expected Avg (Ltr/Hr)</th>
+              <th data-key="variance">Variance</th>
+              <th data-key="alertLabel">Alert</th>
+            </tr>
+          </thead>
+          <tbody id="avgBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- LIVE data from Flask (fetched from the published Google Sheet by fuel_reader.py) -->
@@ -316,8 +404,8 @@ if(allData.length === 0){ document.getElementById('noDataBanner').classList.add(
 
 const round2 = v => Math.round((v + Number.EPSILON) * 100) / 100;
 
-// ---------- Filter state (shared across all 3 tabs, so clicking any chart
-// anywhere updates the Dashboard + Trend + Details tabs together) ----------
+// ---------- Filter state (shared across all tabs, so clicking any chart
+// anywhere updates the Dashboard + Trend + Details + Average Analysis tabs together) ----------
 const filters = {dateFrom:"All", dateTo:"All", month:"All", category:"All", machine:"All", owner:"All", site:"All", status:"All"};
 
 function uniqueSorted(arr, key){ return [...new Set(arr.map(d=>d[key]).filter(v=>v!==undefined && v!==""))].sort(); }
@@ -328,8 +416,9 @@ const fCategory = document.getElementById('fCategory');
 const fMachine = document.getElementById('fMachine');
 const fOwner = document.getElementById('fOwner');
 const fSite = document.getElementById('fSite');
+const fStatus = document.getElementById('fStatus');
 
-// Calendar range inputs: constrain to the actual data range so users can't
+// Calendar date inputs: constrain to the actual data range so users can't
 // pick a date that will never match anything.
 const isoDates = uniqueSorted(allData,'dateIso');
 if(isoDates.length){
@@ -341,36 +430,39 @@ uniqueSorted(allData,'category').forEach(v=>fCategory.innerHTML += `<option valu
 uniqueSorted(allData,'machine').forEach(v=>fMachine.innerHTML += `<option value="${v}">${v}</option>`);
 uniqueSorted(allData,'owner').forEach(v=>fOwner.innerHTML += `<option value="${v}">${v}</option>`);
 uniqueSorted(allData,'site').forEach(v=>fSite.innerHTML += `<option value="${v}">${v}</option>`);
+uniqueSorted(allData,'status').forEach(v=>fStatus.innerHTML += `<option value="${v}">${v}</option>`);
 
 fDateFrom.addEventListener('change', ()=>{
   filters.dateFrom = fDateFrom.value || "All";
-  if(fDateTo.value && fDateFrom.value && fDateFrom.value > fDateTo.value){ fDateTo.value = fDateFrom.value; filters.dateTo = fDateFrom.value; }
-  fDateTo.min = fDateFrom.value || (isoDates[0]||'');
-  renderAllTabs();
+  // keep "To" from going before "From"
+  if(filters.dateFrom !== "All" && fDateTo.value && fDateTo.value < filters.dateFrom){
+    fDateTo.value = fDateFrom.value; filters.dateTo = fDateFrom.value;
+  }
+  renderAll();
 });
 fDateTo.addEventListener('change', ()=>{
   filters.dateTo = fDateTo.value || "All";
-  if(fDateFrom.value && fDateTo.value && fDateTo.value < fDateFrom.value){ fDateFrom.value = fDateTo.value; filters.dateFrom = fDateTo.value; }
-  fDateFrom.max = fDateTo.value || (isoDates[isoDates.length-1]||'');
-  renderAllTabs();
+  if(filters.dateTo !== "All" && fDateFrom.value && fDateFrom.value > filters.dateTo){
+    fDateFrom.value = fDateTo.value; filters.dateFrom = fDateTo.value;
+  }
+  renderAll();
 });
-fCategory.addEventListener('change', ()=>{ filters.category = fCategory.value; renderAllTabs(); });
-fMachine.addEventListener('change', ()=>{ filters.machine = fMachine.value; renderAllTabs(); });
-fOwner.addEventListener('change', ()=>{ filters.owner = fOwner.value; renderAllTabs(); });
-fSite.addEventListener('change', ()=>{ filters.site = fSite.value; renderAllTabs(); });
+fCategory.addEventListener('change', ()=>{ filters.category = fCategory.value; renderAll(); });
+fMachine.addEventListener('change', ()=>{ filters.machine = fMachine.value; renderAll(); });
+fOwner.addEventListener('change', ()=>{ filters.owner = fOwner.value; renderAll(); });
+fSite.addEventListener('change', ()=>{ filters.site = fSite.value; renderAll(); });
+fStatus.addEventListener('change', ()=>{ filters.status = fStatus.value; renderAll(); });
 
 document.getElementById('clearFilters').onclick = ()=>{
   filters.dateFrom="All"; filters.dateTo="All"; filters.month="All"; filters.category="All"; filters.machine="All";
   filters.owner="All"; filters.site="All"; filters.status="All";
-  fDateFrom.value=""; fDateTo.value=""; fCategory.value="All"; fMachine.value="All"; fOwner.value="All"; fSite.value="All";
-  if(isoDates.length){ fDateFrom.min=isoDates[0]; fDateFrom.max=isoDates[isoDates.length-1]; fDateTo.min=isoDates[0]; fDateTo.max=isoDates[isoDates.length-1]; }
-  renderAllTabs();
+  fDateFrom.value=""; fDateTo.value=""; fCategory.value="All"; fMachine.value="All"; fOwner.value="All"; fSite.value="All"; fStatus.value="All";
+  renderAll();
 };
 
 function toggleFilter(type, value){
   if(type === 'date'){
-    // Clicking a chart point isolates that single day; clicking the same
-    // point again clears the range back to "All".
+    // clicking a chart point sets both From and To to that single date
     if(filters.dateFrom === value && filters.dateTo === value){
       filters.dateFrom = "All"; filters.dateTo = "All";
     } else {
@@ -378,13 +470,13 @@ function toggleFilter(type, value){
     }
     fDateFrom.value = filters.dateFrom === "All" ? "" : filters.dateFrom;
     fDateTo.value = filters.dateTo === "All" ? "" : filters.dateTo;
-    renderAllTabs();
+    renderAll();
     return;
   }
   filters[type] = (filters[type] === value) ? "All" : value;
-  const map = {category:fCategory, machine:fMachine, owner:fOwner, site:fSite};
+  const map = {category:fCategory, machine:fMachine, owner:fOwner, site:fSite, status:fStatus};
   if(map[type]) map[type].value = filters[type];
-  renderAllTabs();
+  renderAll();
 }
 
 function getFiltered(){
@@ -401,9 +493,9 @@ function getFiltered(){
   });
 }
 
-// Same as getFiltered() but ignores the date-range/month filters — used to
-// work out a machine's normal ("expected") average from its full history,
-// not just the day(s) currently selected.
+// Same as getFiltered() but ignores the date/month filters — used to work out
+// a machine's normal ("expected") average from its full history, not just
+// the day currently selected.
 function getBaselineFiltered(){
   return allData.filter(r=>{
     if(filters.category!=="All" && r.category!==filters.category) return false;
@@ -422,7 +514,7 @@ function sumBy(arr, groupKey, valKey){
 }
 
 // ---------- Page title swap like breakdown.html ----------
-const TITLES = {dashboard:"⛽ Fuel Analysis Dashboard", trend:"📈 Trend Chart", details:"📋 Fuel Details"};
+const TITLES = {dashboard:"⛽ Fuel Analysis Dashboard", trend:"📈 Trend Chart", details:"📋 Fuel Details", avg:"⚖️ Average Analysis"};
 function findPageTitleEl(){
   const candidates = document.querySelectorAll('h1,h2,h3,.page-title,[class*="page-title"]');
   for(const el of candidates){
@@ -433,8 +525,6 @@ function findPageTitleEl(){
 const pageTitleEl = findPageTitleEl();
 function setPageTitle(view){ if(pageTitleEl) pageTitleEl.textContent = TITLES[view]; }
 
-let activeView = 'dashboard';
-
 document.querySelectorAll('.tab-btn').forEach(btn=>{
   btn.onclick = ()=>{
     document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
@@ -442,8 +532,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
     document.getElementById('view-'+btn.dataset.view).classList.add('active');
     setPageTitle(btn.dataset.view);
-    activeView = btn.dataset.view;
-    renderAll(); // switching tabs only re-renders the tab you just opened
+    renderAll();
   };
 });
 
@@ -475,7 +564,7 @@ function wrapLabel(label, maxLen){
   return lines;
 }
 
-let categoryChart, siteDonut, machineChart, statusDonut, dailyFuelChart, monthlyTrendChart, dailyTrendChart;
+let categoryChart, siteDonut, machineChart, statusDonut, monthlyTrendChart, dailyTrendChart;
 
 // ============ DASHBOARD TAB ============
 function renderDashboard(base){
@@ -503,11 +592,11 @@ function renderDashboard(base){
     data:{labels:catLabels, datasets:[{data:catLabels.map(l=>round2(byCat[l])),
       backgroundColor:catLabels.map((l,i)=> filters.category!=="All" && filters.category!==l ? '#33456b' : palette[i%palette.length]),
       borderRadius:5, barPercentage:0.6, categoryPercentage:0.8}]},
-    options:{responsive:true, maintainAspectRatio:false, layout:{padding:{top:18}},
-      plugins:{legend:{display:false}, datalabels:{display:true, anchor:'end', align:'top', color:'#EAF1FB', font:{size:9,weight:'bold'}}},
+    options:{responsive:true, maintainAspectRatio:false, layout:{padding:{top:20}},
+      plugins:{legend:{display:false}, datalabels:{display:true, anchor:'end', align:'top', color:'#EAF1FB', font:{size:10,weight:'bold'}}},
       onClick:(evt,els)=>{ if(els.length) toggleFilter('category', catLabels[els[0].index]); },
-      scales:{y:{beginAtZero:true, ticks:{color:'#8CA3C4', font:{size:9}}, grid:{color:'#1D3E68'}},
-        x:{ticks:{color:'#EAF1FB', font:{size:9}, autoSkip:false, callback:function(v){ return wrapLabel(this.getLabelForValue(v),12); }}, grid:{display:false}}}}
+      scales:{y:{beginAtZero:true, ticks:{color:'#8CA3C4'}, grid:{color:'#1D3E68'}},
+        x:{ticks:{color:'#EAF1FB', font:{size:10}, autoSkip:false, callback:function(v){ return wrapLabel(this.getLabelForValue(v),12); }}, grid:{display:false}}}}
   });
 
   // Site donut
@@ -519,8 +608,8 @@ function renderDashboard(base){
     data:{labels:siteLabels, datasets:[{data:siteLabels.map(l=>round2(bySite[l])), backgroundColor:palette, borderColor:'#0F2A52', borderWidth:2}]},
     options:{maintainAspectRatio:false, cutout:'52%',
       onClick:(evt,els)=>{ if(els.length) toggleFilter('site', siteLabels[els[0].index]); },
-      plugins:{legend:{position:'right', labels:{color:'#EAF1FB', boxWidth:9, font:{size:9}}},
-        datalabels:{display:true, color:'#fff', font:{weight:'bold', size:9}, formatter:v=>round2(v)}}}
+      plugins:{legend:{position:'right', labels:{color:'#EAF1FB', boxWidth:10, font:{size:10}}},
+        datalabels:{display:true, color:'#fff', font:{weight:'bold', size:10}, formatter:v=>round2(v)}}}
   });
 
   // Top 10 machines
@@ -535,10 +624,10 @@ function renderDashboard(base){
     data:{labels:machLabels, datasets:[{data:machLabels.map(l=>round2(byMachine[l])),
       backgroundColor:machLabels.map((l,i)=> filters.machine!=="All" && filters.machine!==l ? '#33456b' : palette[i%palette.length]),
       borderRadius:5, barPercentage:0.6, categoryPercentage:0.8}]},
-    options:{responsive:true, maintainAspectRatio:false, layout:{padding:{top:18}},
-      plugins:{legend:{display:false}, datalabels:{display:true, anchor:'end', align:'top', color:'#EAF1FB', font:{size:9,weight:'bold'}}},
+    options:{responsive:true, maintainAspectRatio:false, layout:{padding:{top:20}},
+      plugins:{legend:{display:false}, datalabels:{display:true, anchor:'end', align:'top', color:'#EAF1FB', font:{size:10,weight:'bold'}}},
       onClick:(evt,els)=>{ if(els.length) toggleFilter('machine', machLabels[els[0].index]); },
-      scales:{y:{beginAtZero:true, ticks:{color:'#8CA3C4', font:{size:9}}, grid:{color:'#1D3E68'}},
+      scales:{y:{beginAtZero:true, ticks:{color:'#8CA3C4'}, grid:{color:'#1D3E68'}},
         x:{ticks:{color:'#EAF1FB', font:{size:9}, autoSkip:false, callback:function(v){ return wrapLabel(this.getLabelForValue(v),14); }}, grid:{display:false}}}}
   });
 
@@ -552,34 +641,8 @@ function renderDashboard(base){
     data:{labels:statusLabels, datasets:[{data:statusLabels.map(l=>byStatus[l]), backgroundColor:palette.slice().reverse(), borderColor:'#0F2A52', borderWidth:2}]},
     options:{maintainAspectRatio:false, cutout:'52%',
       onClick:(evt,els)=>{ if(els.length) toggleFilter('status', statusLabels[els[0].index]); },
-      plugins:{legend:{position:'right', labels:{color:'#EAF1FB', boxWidth:9, font:{size:9}}},
-        datalabels:{display:true, color:'#fff', font:{weight:'bold', size:9}, formatter:v=>v}}}
-  });
-
-  // Daily fuel trend + daily average (dual axis, click a point to filter by date)
-  const byDateFuel = {}, byDateHours = {};
-  base.forEach(r=>{
-    byDateFuel[r.dateIso] = (byDateFuel[r.dateIso]||0) + r.fuel;
-    byDateHours[r.dateIso] = (byDateHours[r.dateIso]||0) + r.hours;
-  });
-  const dateLabels = Object.keys(byDateFuel).sort();
-  const dateAvg = dateLabels.map(d => byDateHours[d]>0 ? round2(byDateFuel[d]/byDateHours[d]) : 0);
-  if(dailyFuelChart) dailyFuelChart.destroy();
-  dailyFuelChart = new Chart(document.getElementById('dailyFuelChart'), {
-    data:{labels:dateLabels, datasets:[
-      {type:'line', label:'Fuel Issued (Ltr)', data:dateLabels.map(d=>round2(byDateFuel[d])), borderColor:'#2DD4BF',
-        backgroundColor:'rgba(45,212,191,.15)', fill:true, tension:.3, pointRadius:2, yAxisID:'y'},
-      {type:'line', label:'Average (Ltr/Hr)', data:dateAvg, borderColor:'#F2994A', backgroundColor:'#F2994A',
-        tension:.3, pointRadius:2, yAxisID:'y1'}
-    ]},
-    options:{responsive:true, maintainAspectRatio:false,
-      onClick:(evt,els)=>{ if(els.length) toggleFilter('date', dateLabels[els[0].index]); },
-      plugins:{legend:{position:'bottom', labels:{color:'#EAF1FB', boxWidth:9, font:{size:9}}}},
-      scales:{
-        y:{beginAtZero:true, position:'left', ticks:{color:'#8CA3C4', font:{size:9}}, grid:{color:'#1D3E68'}, title:{display:true, text:'Fuel (Ltr)', color:'#8CA3C4', font:{size:9}}},
-        y1:{beginAtZero:true, position:'right', ticks:{color:'#8CA3C4', font:{size:9}}, grid:{display:false}, title:{display:true, text:'Avg (Ltr/Hr)', color:'#8CA3C4', font:{size:9}}},
-        x:{ticks:{color:'#EAF1FB', font:{size:8}, maxRotation:60, minRotation:45}, grid:{display:false}}
-      }}
+      plugins:{legend:{position:'right', labels:{color:'#EAF1FB', boxWidth:10, font:{size:10}}},
+        datalabels:{display:true, color:'#fff', font:{weight:'bold', size:10}, formatter:v=>v}}}
   });
 
   const anyFilter = Object.values(filters).some(v=>v!=="All");
@@ -612,8 +675,8 @@ function renderTrend(base){
   }
 
   // ---- Expected ("target") average = this machine's own overall average
-  // across its FULL history (ignores the date-range/month filter), so you
-  // can see what it should normally be giving vs what it's actually giving.
+  // across its FULL history (ignores the date/month filter), so you can see
+  // what it should normally be giving vs what it's actually giving right now.
   const baseline = getBaselineFiltered();
   const baseFuel = baseline.reduce((a,r)=>a+r.fuel,0);
   const baseHours = baseline.reduce((a,r)=>a+r.hours,0);
@@ -634,7 +697,7 @@ function renderTrend(base){
     expSub.textContent = 'Ltr/Hr (target, based on full history)';
   }
 
-  // Monthly aggregation (for the Monthly Trend chart — bar click filters that month everywhere)
+  // Monthly aggregation (bar click filters that month everywhere)
   const monthMap = {};
   base.forEach(r=>{
     if(!monthMap[r.monthKey]) monthMap[r.monthKey] = {label:r.monthLabel, fuel:0, hours:0};
@@ -650,21 +713,21 @@ function renderTrend(base){
   monthlyTrendChart = new Chart(document.getElementById('monthlyTrendChart'), {
     data:{labels:monthLabels, datasets:[
       {type:'bar', label:'Fuel Issued (Ltr)', data:monthFuel, backgroundColor:monthKeys.map(k=> filters.month!=="All" && filters.month!==k ? '#33456b' : '#2DD4BF'), yAxisID:'y', borderRadius:4},
-      {type:'line', label:'Hours Used', data:monthHours, borderColor:'#F2994A', backgroundColor:'#F2994A', yAxisID:'y1', tension:.3, pointRadius:2}
+      {type:'line', label:'Hours Used', data:monthHours, borderColor:'#F2994A', backgroundColor:'#F2994A', yAxisID:'y1', tension:.3, pointRadius:3}
     ]},
     options:{responsive:true, maintainAspectRatio:false,
       onClick:(evt,els)=>{ if(els.length) toggleFilter('month', monthKeys[els[0].index]); },
-      plugins:{legend:{position:'bottom', labels:{color:'#EAF1FB', boxWidth:9, font:{size:9}}}},
+      plugins:{legend:{position:'bottom', labels:{color:'#EAF1FB', boxWidth:10, font:{size:10}}}},
       scales:{
-        y:{beginAtZero:true, position:'left', ticks:{color:'#8CA3C4', font:{size:9}}, grid:{color:'#1D3E68'}, title:{display:true, text:'Fuel (Ltr)', color:'#8CA3C4', font:{size:9}}},
-        y1:{beginAtZero:true, position:'right', ticks:{color:'#8CA3C4', font:{size:9}}, grid:{display:false}, title:{display:true, text:'Hours', color:'#8CA3C4', font:{size:9}}},
-        x:{ticks:{color:'#EAF1FB', font:{size:9}}, grid:{display:false}}
+        y:{beginAtZero:true, position:'left', ticks:{color:'#8CA3C4'}, grid:{color:'#1D3E68'}, title:{display:true, text:'Fuel (Ltr)', color:'#8CA3C4', font:{size:10}}},
+        y1:{beginAtZero:true, position:'right', ticks:{color:'#8CA3C4'}, grid:{display:false}, title:{display:true, text:'Hours', color:'#8CA3C4', font:{size:10}}},
+        x:{ticks:{color:'#EAF1FB', font:{size:10}}, grid:{display:false}}
       }}
   });
 
   // ---- Daily trend: Fuel (bar) + Actual daily average (line) + Expected
-  // average (dashed flat target line) — the actual-vs-should-be average
-  // comparison, day by day.
+  // average (dashed flat target line) — this is the actual-vs-should-be
+  // average comparison, day by day.
   const dayFuelMap = {}, dayHoursMap = {};
   base.forEach(r=>{
     dayFuelMap[r.dateIso] = (dayFuelMap[r.dateIso]||0) + r.fuel;
@@ -678,27 +741,41 @@ function renderTrend(base){
   dailyTrendChart = new Chart(document.getElementById('dailyTrendChart'), {
     data:{labels:dayKeys, datasets:[
       {type:'bar', label:'Fuel Issued (Ltr)', data:dayKeys.map(d=>round2(dayFuelMap[d])), backgroundColor:'rgba(78,127,219,.55)', yAxisID:'y', borderRadius:3},
-      {type:'line', label:'Actual Avg (Ltr/Hr)', data:dayActualAvg, borderColor:'#2DD4BF', backgroundColor:'#2DD4BF', yAxisID:'y1', tension:.3, pointRadius:2},
+      {type:'line', label:'Actual Avg (Ltr/Hr)', data:dayActualAvg, borderColor:'#2DD4BF', backgroundColor:'#2DD4BF', yAxisID:'y1', tension:.3, pointRadius:3},
       {type:'line', label:'Expected Avg (Ltr/Hr)', data:dayExpectedLine, borderColor:'#E5484D', borderDash:[6,4], pointRadius:0, yAxisID:'y1'}
     ]},
     options:{responsive:true, maintainAspectRatio:false,
       onClick:(evt,els)=>{ if(els.length) toggleFilter('date', dayKeys[els[0].index]); },
-      plugins:{legend:{position:'bottom', labels:{color:'#EAF1FB', boxWidth:9, font:{size:9}}}},
+      plugins:{legend:{position:'bottom', labels:{color:'#EAF1FB', boxWidth:10, font:{size:10}}}},
       scales:{
-        y:{beginAtZero:true, position:'left', ticks:{color:'#8CA3C4', font:{size:9}}, grid:{color:'#1D3E68'}, title:{display:true, text:'Fuel (Ltr)', color:'#8CA3C4', font:{size:9}}},
-        y1:{beginAtZero:true, position:'right', ticks:{color:'#8CA3C4', font:{size:9}}, grid:{display:false}, title:{display:true, text:'Avg (Ltr/Hr)', color:'#8CA3C4', font:{size:9}}},
-        x:{ticks:{color:'#EAF1FB', font:{size:8}, maxRotation:60, minRotation:45}, grid:{display:false}}
+        y:{beginAtZero:true, position:'left', ticks:{color:'#8CA3C4'}, grid:{color:'#1D3E68'}, title:{display:true, text:'Fuel (Ltr)', color:'#8CA3C4', font:{size:10}}},
+        y1:{beginAtZero:true, position:'right', ticks:{color:'#8CA3C4'}, grid:{display:false}, title:{display:true, text:'Avg (Ltr/Hr)', color:'#8CA3C4', font:{size:10}}},
+        x:{ticks:{color:'#EAF1FB', font:{size:9}, maxRotation:60, minRotation:45}, grid:{display:false}}
       }}
   });
   document.getElementById('avgCompareNote').textContent = isSingleMachine
     ? `Dashed red line = ${filters.machine}'s normal average (${expectedAvg} Ltr/Hr) from its full history.`
     : `Dashed red line = fleet-wide normal average. Pick a Machine No above to see that machine's own target line.`;
 
-  // Monthly Summary table (on-screen) — grouped by Site + Month.
-  const siteMonthRows = buildSiteMonthMatrix(base);
-  document.getElementById('monthTableBody').innerHTML = siteMonthRows.map(m=>
-    `<tr><td>${m.site}</td><td>${m.monthLabel}</td><td>${round2(m.hours)}</td><td>${round2(m.fuel)}</td><td>${m.avg}</td></tr>`
-  ).join('');
+  // ---- Site Summary table (on-screen): pure Site-wise OVERALL total for
+  // whatever is currently filtered/selected — NOT broken down by month, so
+  // the row count stays small (one row per site) and always fits on one
+  // screen without scrolling. It reacts live to every filter/graph click
+  // because it's built from `base` (the filtered dataset). The full
+  // Site + Machine Category + Machine + Month breakdown is only produced
+  // in the Excel/PDF export (see buildMachineMonthMatrix). ----
+  const siteMap = {};
+  base.forEach(r=>{
+    if(!siteMap[r.site]) siteMap[r.site] = {site:r.site, fuel:0, hours:0};
+    siteMap[r.site].fuel += r.fuel;
+    siteMap[r.site].hours += r.hours;
+  });
+  const siteRows = Object.values(siteMap).sort((a,b)=> a.site.localeCompare(b.site));
+
+  document.getElementById('monthTableBody').innerHTML = siteRows.map(m=>{
+    const avg = m.hours>0 ? round2(m.fuel/m.hours) : 0;
+    return `<tr><td>${m.site}</td><td>${round2(m.hours)}</td><td>${round2(m.fuel)}</td><td>${avg}</td></tr>`;
+  }).join('');
 }
 
 // ============ FUEL DETAILS TAB ============
@@ -737,52 +814,169 @@ document.querySelectorAll('#fuelTable thead th').forEach(th=>{
   });
 });
 
-// ============ MASTER RENDER ============
-// Tab-switch calls this: only the currently visible tab is (re)built, so
-// switching tabs is instant instead of rebuilding all 7+ charts every time.
-function renderAll(){
-  const base = getFiltered();
-  if(activeView === 'dashboard') renderDashboard(base);
-  else if(activeView === 'trend') renderTrend(base);
-  else if(activeView === 'details') renderDetails(base);
+// ============ AVERAGE ANALYSIS TAB ============
+// Site + Machine Category + Machine grouped table: Actual Avg vs Expected
+// Avg (machine's own full-history baseline), Variance, and a color-coded
+// alert. Includes a dual-thumb variance range slicer + alert dropdown, and
+// both are respected in the on-screen table AND the Excel/PDF exports —
+// with Sr.No. always re-numbered 1,2,3... on whatever is currently visible.
+let avgSortKey='variance', avgSortDir=-1;
+let varianceRange = {min:-10, max:10};
+let alertLevelFilter = 'All';
+
+// Tune these two cutoffs (in Ltr/Hr) to match your real tolerance.
+const ALERT_THRESHOLDS = {green:0.5, orange:1.5};
+
+function classifyAlert(diffAbs){
+  if(diffAbs <= ALERT_THRESHOLDS.green) return {cls:'alertGreen', label:'On Target', rgb:[30,158,99]};
+  if(diffAbs <= ALERT_THRESHOLDS.orange) return {cls:'alertOrange', label:'Watch', rgb:[242,153,74]};
+  return {cls:'alertRed', label:'Red Alert', rgb:[229,72,77]};
 }
 
-// Filter/slicer changes (dropdowns, date range, clear button, chart-click
-// cross-filtering) call this instead: all 3 tabs are refreshed so that
-// whichever tab you switch to next is already showing the right data.
-function renderAllTabs(){
+function buildAvgAnalysisRows(base){
+  const map = {};
+  base.forEach(r=>{
+    const key = r.site+'|'+r.category+'|'+r.machine;
+    if(!map[key]) map[key] = {site:r.site, category:r.category, machine:r.machine, fuel:0, hours:0};
+    map[key].fuel += r.fuel;
+    map[key].hours += r.hours;
+  });
+
+  // Expected Avg baseline: this machine's own FULL history (ignores the
+  // date/month filter — same logic as the Trend tab's "target" average),
+  // but still respects Category / Owner / Site / Status filters.
+  const baselineData = allData.filter(r=>{
+    if(filters.category!=="All" && r.category!==filters.category) return false;
+    if(filters.owner!=="All" && r.owner!==filters.owner) return false;
+    if(filters.site!=="All" && r.site!==filters.site) return false;
+    if(filters.status!=="All" && r.status!==filters.status) return false;
+    return true;
+  });
+  const baseMap = {};
+  baselineData.forEach(r=>{
+    const key = r.site+'|'+r.category+'|'+r.machine;
+    if(!baseMap[key]) baseMap[key] = {fuel:0, hours:0};
+    baseMap[key].fuel += r.fuel;
+    baseMap[key].hours += r.hours;
+  });
+
+  let rows = Object.entries(map).map(([key, v])=>{
+    const actualAvg = v.hours>0 ? round2(v.fuel/v.hours) : 0;
+    const b = baseMap[key] || {fuel:0, hours:0};
+    const expectedAvg = b.hours>0 ? round2(b.fuel/b.hours) : 0;
+    const variance = round2(actualAvg - expectedAvg);
+    const alert = classifyAlert(Math.abs(variance));
+    return {
+      site:v.site, category:v.category, machine:v.machine,
+      fuel:round2(v.fuel), hours:round2(v.hours),
+      actualAvg, expectedAvg, variance,
+      alertCls:alert.cls, alertLabel:alert.label, alertRgb:alert.rgb
+    };
+  });
+
+  // Variance range slicer
+  rows = rows.filter(r => r.variance >= varianceRange.min && r.variance <= varianceRange.max);
+  // Alert level dropdown
+  if(alertLevelFilter !== 'All') rows = rows.filter(r => r.alertCls === alertLevelFilter);
+
+  return rows;
+}
+
+function sortedAvgRows(rows){
+  const out = rows.slice();
+  out.sort((a,b)=>{
+    let va=a[avgSortKey], vb=b[avgSortKey];
+    if(typeof va==='string'){ va=va.toLowerCase(); vb=vb.toLowerCase(); }
+    if(va<vb) return -1*avgSortDir;
+    if(va>vb) return 1*avgSortDir;
+    return 0;
+  });
+  return out;
+}
+
+function renderAvgAnalysis(base){
+  const rows = sortedAvgRows(buildAvgAnalysisRows(base));
+  document.getElementById('avgBody').innerHTML = rows.map((r,i)=>`<tr>
+    <td>${i+1}</td><td>${r.site}</td><td>${r.category}</td><td>${r.machine}</td>
+    <td>${r.fuel}</td><td>${r.hours}</td><td>${r.actualAvg}</td><td>${r.expectedAvg}</td>
+    <td>${r.variance>0?'+':''}${r.variance}</td>
+    <td><span class="pill ${r.alertCls}">${r.alertLabel}</span></td>
+  </tr>`).join('');
+
+  document.querySelectorAll('#avgTable thead th').forEach(th=>{
+    const baseTxt = th.textContent.replace(' ▲','').replace(' ▼','').trim();
+    th.textContent = baseTxt + (th.dataset.key===avgSortKey ? (avgSortDir===1?' ▲':' ▼') : '');
+  });
+}
+document.querySelectorAll('#avgTable thead th').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const key = th.dataset.key;
+    if(avgSortKey===key) avgSortDir*=-1; else { avgSortKey=key; avgSortDir=1; }
+    renderAvgAnalysis(getFiltered());
+  });
+});
+
+// Dual-thumb variance range slicer
+const rsMin = document.getElementById('rsMin');
+const rsMax = document.getElementById('rsMax');
+const rsFill = document.getElementById('rsFill');
+const rsValLabel = document.getElementById('rsValLabel');
+
+function updateRangeSlicerUI(){
+  let lo = parseFloat(rsMin.value), hi = parseFloat(rsMax.value);
+  if(lo > hi){ [lo,hi] = [hi,lo]; }
+  varianceRange.min = lo; varianceRange.max = hi;
+  const trackMin = -10, trackMax = 10, span = trackMax-trackMin;
+  const pctLo = ((lo-trackMin)/span)*100;
+  const pctHi = ((hi-trackMin)/span)*100;
+  rsFill.style.left = pctLo+'%';
+  rsFill.style.width = (pctHi-pctLo)+'%';
+  rsValLabel.textContent = (lo<=-10 && hi>=10) ? 'All' : `${lo} to ${hi}`;
+  renderAvgAnalysis(getFiltered());
+}
+rsMin.addEventListener('input', updateRangeSlicerUI);
+rsMax.addEventListener('input', updateRangeSlicerUI);
+updateRangeSlicerUI();
+
+document.getElementById('fAlertLevel').addEventListener('change', (e)=>{
+  alertLevelFilter = e.target.value;
+  renderAvgAnalysis(getFiltered());
+});
+
+// ============ MASTER RENDER ============
+function renderAll(){
   const base = getFiltered();
   renderDashboard(base);
   renderTrend(base);
   renderDetails(base);
+  renderAvgAnalysis(base);
 }
 
-// ============ Site x Month matrix (on-screen Monthly Summary table) ============
-function buildSiteMonthMatrix(base){
-  const map = {};
-  base.forEach(r=>{
-    const key = r.site + '|' + r.monthKey;
-    if(!map[key]) map[key] = {site:r.site, monthKey:r.monthKey, monthLabel:r.monthLabel, hours:0, fuel:0};
-    map[key].hours += r.hours;
-    map[key].fuel += r.fuel;
-  });
-  return Object.values(map)
-    .map(m=>({...m, avg: m.hours>0 ? round2(m.fuel/m.hours) : 0}))
-    .sort((a,b)=> a.site.localeCompare(b.site) || a.monthKey.localeCompare(b.monthKey));
-}
-
-// ============ Machine x Site x Month matrix (used by Monthly Summary export) ============
+// ============ Site x Category x Machine x Month x Status matrix (used by
+// the Monthly Summary Excel/PDF export — this carries the FULL month-wise
+// breakdown for every machine including its Machine Status, even though the
+// on-screen table only shows site-wise overall totals) ============
 function buildMachineMonthMatrix(base){
   const map = {};
   base.forEach(r=>{
-    const key = r.machine + '|' + r.monthKey;
-    if(!map[key]) map[key] = {machine:r.machine, site:r.site, monthKey:r.monthKey, monthLabel:r.monthLabel, hours:0, fuel:0};
+    const key = r.site + '|' + r.category + '|' + r.machine + '|' + r.monthKey + '|' + r.status;
+    if(!map[key]) map[key] = {site:r.site, category:r.category, machine:r.machine, monthKey:r.monthKey, monthLabel:r.monthLabel, status:r.status, hours:0, fuel:0};
     map[key].hours += r.hours;
     map[key].fuel += r.fuel;
   });
   return Object.values(map)
     .map(m=>({...m, avg: m.hours>0 ? round2(m.fuel/m.hours) : 0}))
-    .sort((a,b)=> a.machine.localeCompare(b.machine) || a.monthKey.localeCompare(b.monthKey));
+    .sort((a,b)=> a.site.localeCompare(b.site) || a.machine.localeCompare(b.machine) || a.monthKey.localeCompare(b.monthKey));
+}
+
+// Status -> color mapping used for Excel/PDF, matching the Fuel Details pill colors
+const STATUS_COLORS = {
+  'Working': {argb:'FF1E9E63', rgb:[30,158,99]},
+  'Idle': {argb:'FFF2994A', rgb:[242,153,74]},
+  'Not Defined': {argb:'FF6B7A99', rgb:[107,122,153]}
+};
+function statusColor(status){
+  return STATUS_COLORS[status] || STATUS_COLORS['Not Defined'];
 }
 
 // ============ EXPORT EXCEL (Fuel Details tab) ============
@@ -834,8 +1028,13 @@ document.getElementById('exportExcel').onclick = async ()=>{
       row.eachCell((cell,colNumber)=>{
         cell.alignment = {vertical:'middle', horizontal: colNumber===1?'center':'left'};
         cell.border = {bottom:{style:'thin', color:{argb:'FFDDE3EC'}}};
-        if(i%2===1) cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FFF3F8FB'}};
+        if(i%2===1 && colNumber!==12) cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FFF3F8FB'}};
       });
+      const statusCell = row.getCell(12);
+      const col = statusColor(d.status);
+      statusCell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:col.argb}};
+      statusCell.font = {bold:true, color:{argb:'FFFFFFFF'}};
+      statusCell.alignment = {vertical:'middle', horizontal:'center'};
     });
 
     const lastRow = 4 + rows.length;
@@ -868,11 +1067,21 @@ document.getElementById('exportPdf').onclick = ()=>{
     body:body,
     styles:{fontSize:7, valign:'middle'},
     headStyles:{fillColor:[10,31,61]},
+    didParseCell: function(data){
+      if(data.section === 'body' && data.column.index === 11){
+        const status = data.cell.raw;
+        const col = statusColor(status).rgb;
+        data.cell.styles.fillColor = col;
+        data.cell.styles.textColor = [255,255,255];
+        data.cell.styles.fontStyle = 'bold';
+        data.cell.styles.halign = 'center';
+      }
+    }
   });
   doc.save(`Fuel_Details_Export_${new Date().toISOString().slice(0,10)}.pdf`);
 };
 
-// ============ EXPORT EXCEL (Monthly Summary — per Machine + Site, month-wise) ============
+// ============ EXPORT EXCEL (Monthly Summary — per Site + Machine, month-wise) ============
 document.getElementById('exportMonthExcel').onclick = async ()=>{
   const btn = document.getElementById('exportMonthExcel');
   btn.disabled = true; const oldTxt = btn.textContent; btn.textContent = '⏳ Preparing...';
@@ -883,20 +1092,20 @@ document.getElementById('exportMonthExcel').onclick = async ()=>{
     workbook.created = new Date();
     const sheet = workbook.addWorksheet('Monthly Summary', {views:[{state:'frozen', ySplit:4}]});
 
-    const headers = ["Machine","Site","Month","Total Hours","Total Fuel (Ltr)","Average (Ltr/Hr)"];
-    sheet.columns = [{width:32},{width:14},{width:14},{width:14},{width:16},{width:16}];
+    const headers = ["Site","Machine Category","Machine","Month","Total Hours","Total Fuel (Ltr)","Average (Ltr/Hr)","Machine Status"];
+    sheet.columns = [{width:14},{width:22},{width:32},{width:14},{width:14},{width:16},{width:16},{width:16}];
 
-    sheet.mergeCells(1,1,1,6);
+    sheet.mergeCells(1,1,1,8);
     const titleCell = sheet.getCell(1,1);
-    titleCell.value = 'Monthly Summary — Per Machine';
+    titleCell.value = 'Monthly Summary — Per Site & Machine';
     titleCell.font = {bold:true, size:16, color:{argb:'FFFFFFFF'}};
     titleCell.alignment = {vertical:'middle', horizontal:'center'};
     titleCell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF0C2A54'}};
     sheet.getRow(1).height = 30;
 
-    sheet.mergeCells(2,1,2,6);
+    sheet.mergeCells(2,1,2,8);
     const subCell = sheet.getCell(2,1);
-    subCell.value = `Generated: ${new Date().toLocaleString()}   |   Rows: ${rows.length}   |   Site: ${filters.site}   |   Category: ${filters.category}`;
+    subCell.value = `Generated: ${new Date().toLocaleString()}   |   Rows: ${rows.length}   |   Site: ${filters.site}   |   Category: ${filters.category}   |   Status: ${filters.status}`;
     subCell.font = {italic:true, size:10, color:{argb:'FF2DD4BF'}};
     subCell.alignment = {vertical:'middle', horizontal:'center'};
     subCell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF13315C'}};
@@ -916,23 +1125,27 @@ document.getElementById('exportMonthExcel').onclick = async ()=>{
     rows.forEach((d,i)=>{
       const rowNum = 5+i;
       const row = sheet.getRow(rowNum);
-      const values = [d.machine, d.site, d.monthLabel, round2(d.hours), round2(d.fuel), round2(d.avg)];
+      const values = [d.site, d.category, d.machine, d.monthLabel, round2(d.hours), round2(d.fuel), round2(d.avg), d.status];
       values.forEach((v,idx)=>{ row.getCell(idx+1).value = v; });
       row.eachCell((cell,colNumber)=>{
-        cell.alignment = {vertical:'middle', horizontal: colNumber<=3?'left':'center'};
+        cell.alignment = {vertical:'middle', horizontal: colNumber<=4?'left':'center'};
         cell.border = {bottom:{style:'thin', color:{argb:'FFDDE3EC'}}};
-        if(i%2===1) cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FFF3F8FB'}};
+        if(i%2===1 && colNumber!==8) cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FFF3F8FB'}};
       });
+      const statusCell = row.getCell(8);
+      const col = statusColor(d.status);
+      statusCell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:col.argb}};
+      statusCell.font = {bold:true, color:{argb:'FFFFFFFF'}};
     });
 
     const lastRow = 4 + rows.length;
-    sheet.autoFilter = {from:'A4', to:`F${lastRow}`};
+    sheet.autoFilter = {from:'A4', to:`H${lastRow}`};
 
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], {type:'application/octet-stream'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = `Monthly_Summary_Per_Machine_${new Date().toISOString().slice(0,10)}.xlsx`;
+    a.href = url; a.download = `Monthly_Summary_Per_Site_Machine_${new Date().toISOString().slice(0,10)}.xlsx`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
   } finally {
@@ -940,25 +1153,153 @@ document.getElementById('exportMonthExcel').onclick = async ()=>{
   }
 };
 
-// ============ EXPORT PDF (Monthly Summary — per Machine + Site, month-wise) ============
+// ============ EXPORT PDF (Monthly Summary — per Site + Machine, month-wise) ============
 document.getElementById('exportMonthPdf').onclick = ()=>{
   const rows = buildMachineMonthMatrix(getFiltered());
   const {jsPDF} = window.jspdf;
   const doc = new jsPDF({orientation:'landscape'});
-  const body = rows.map(d=>[d.machine, d.site, d.monthLabel, round2(d.hours), round2(d.fuel), round2(d.avg)]);
+  const body = rows.map(d=>[d.site, d.category, d.machine, d.monthLabel, round2(d.hours), round2(d.fuel), round2(d.avg), d.status]);
 
   doc.setFontSize(14);
-  doc.text("Monthly Summary — Per Machine", 14, 12);
+  doc.text("Monthly Summary — Per Site & Machine", 14, 12);
   doc.autoTable({
     startY:18,
-    head:[["Machine","Site","Month","Total Hours","Total Fuel (Ltr)","Average (Ltr/Hr)"]],
+    head:[["Site","Machine Category","Machine","Month","Total Hours","Total Fuel (Ltr)","Average (Ltr/Hr)","Machine Status"]],
     body:body,
     styles:{fontSize:8, valign:'middle'},
     headStyles:{fillColor:[10,31,61]},
+    didParseCell: function(data){
+      if(data.section === 'body' && data.column.index === 7){
+        const status = data.cell.raw;
+        const col = statusColor(status).rgb;
+        data.cell.styles.fillColor = col;
+        data.cell.styles.textColor = [255,255,255];
+        data.cell.styles.fontStyle = 'bold';
+      }
+    }
   });
-  doc.save(`Monthly_Summary_Per_Machine_${new Date().toISOString().slice(0,10)}.pdf`);
+  doc.save(`Monthly_Summary_Per_Site_Machine_${new Date().toISOString().slice(0,10)}.pdf`);
 };
 
-renderAllTabs();
+// ============ EXPORT EXCEL (Average Analysis) ============
+document.getElementById('exportAvgExcel').onclick = async ()=>{
+  const btn = document.getElementById('exportAvgExcel');
+  btn.disabled = true; const oldTxt = btn.textContent; btn.textContent = '⏳ Preparing...';
+  try{
+    const rows = sortedAvgRows(buildAvgAnalysisRows(getFiltered()));
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'Fuel Analysis Dashboard';
+    workbook.created = new Date();
+    const sheet = workbook.addWorksheet('Average Analysis', {views:[{state:'frozen', ySplit:4}]});
+
+    const headers = ["Sr.No.","Site","Machine Category","Machine","Fuel Used (Ltr)","Hours Used","Actual Avg (Ltr/Hr)","Expected Avg (Ltr/Hr)","Variance (Ltr/Hr)","Alert"];
+    sheet.columns = [{width:8},{width:14},{width:22},{width:32},{width:14},{width:12},{width:16},{width:18},{width:16},{width:14}];
+
+    sheet.mergeCells(1,1,1,10);
+    const titleCell = sheet.getCell(1,1);
+    titleCell.value = 'Average Analysis — Actual vs Expected (Per Machine)';
+    titleCell.font = {bold:true, size:16, color:{argb:'FFFFFFFF'}};
+    titleCell.alignment = {vertical:'middle', horizontal:'center'};
+    titleCell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF0C2A54'}};
+    sheet.getRow(1).height = 30;
+
+    sheet.mergeCells(2,1,2,10);
+    const subCell = sheet.getCell(2,1);
+    subCell.value = `Generated: ${new Date().toLocaleString()}   |   Rows: ${rows.length}   |   Site: ${filters.site}   |   Category: ${filters.category}   |   Variance Range: ${varianceRange.min} to ${varianceRange.max} Ltr/Hr   |   Alert: ${alertLevelFilter}`;
+    subCell.font = {italic:true, size:10, color:{argb:'FF2DD4BF'}};
+    subCell.alignment = {vertical:'middle', horizontal:'center'};
+    subCell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF13315C'}};
+    sheet.getRow(2).height = 18;
+    sheet.getRow(3).height = 6;
+
+    const headerRow = sheet.getRow(4);
+    headers.forEach((h,idx)=>{ headerRow.getCell(idx+1).value = h; });
+    headerRow.height = 22;
+    headerRow.eachCell(cell=>{
+      cell.font = {bold:true, color:{argb:'FFFFFFFF'}, size:11};
+      cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF123A70'}};
+      cell.alignment = {vertical:'middle', horizontal:'center'};
+      cell.border = {bottom:{style:'medium', color:{argb:'FF2DD4BF'}}};
+    });
+
+    const ALERT_ARGB = {alertGreen:'FF1E9E63', alertOrange:'FFF2994A', alertRed:'FFE5484D'};
+
+    rows.forEach((r,i)=>{
+      const rowNum = 5+i;
+      const row = sheet.getRow(rowNum);
+      const values = [i+1, r.site, r.category, r.machine, r.fuel, r.hours, r.actualAvg, r.expectedAvg, (r.variance>0?'+':'')+r.variance, r.alertLabel];
+      values.forEach((v,idx)=>{ row.getCell(idx+1).value = v; });
+      row.eachCell((cell,colNumber)=>{
+        cell.alignment = {vertical:'middle', horizontal: colNumber<=4?'left':'center'};
+        cell.border = {bottom:{style:'thin', color:{argb:'FFDDE3EC'}}};
+        if(i%2===1 && colNumber!==10) cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FFF3F8FB'}};
+      });
+      // Light red row-wash for Red Alert rows so the whole row stands out,
+      // not just the Alert cell.
+      if(r.alertCls === 'alertRed'){
+        for(let c=1;c<=9;c++){
+          row.getCell(c).fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FFFCE9E9'}};
+        }
+      }
+      const alertCell = row.getCell(10);
+      alertCell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:ALERT_ARGB[r.alertCls]}};
+      alertCell.font = {bold:true, color:{argb:'FFFFFFFF'}};
+      alertCell.alignment = {vertical:'middle', horizontal:'center'};
+
+      const varCell = row.getCell(9);
+      varCell.font = {bold:true, color:{argb: r.alertCls==='alertRed' ? 'FFB3261E' : (r.alertCls==='alertOrange'?'FFB05A0F':'FF14532D')}};
+    });
+
+    const lastRow = 4 + rows.length;
+    sheet.autoFilter = {from:'A4', to:`J${lastRow}`};
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {type:'application/octet-stream'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `Average_Analysis_${new Date().toISOString().slice(0,10)}.xlsx`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } finally {
+    btn.disabled = false; btn.textContent = oldTxt;
+  }
+};
+
+// ============ EXPORT PDF (Average Analysis) ============
+document.getElementById('exportAvgPdf').onclick = ()=>{
+  const rows = sortedAvgRows(buildAvgAnalysisRows(getFiltered()));
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'landscape'});
+  const body = rows.map((r,i)=>[i+1, r.site, r.category, r.machine, r.fuel, r.hours, r.actualAvg, r.expectedAvg, (r.variance>0?'+':'')+r.variance, r.alertLabel]);
+
+  const ALERT_RGB = {alertGreen:[30,158,99], alertOrange:[242,153,74], alertRed:[229,72,77]};
+
+  doc.setFontSize(14);
+  doc.text("Average Analysis — Actual vs Expected (Per Machine)", 14, 12);
+  doc.autoTable({
+    startY:18,
+    head:[["No","Site","Machine Category","Machine","Fuel Used (Ltr)","Hours Used","Actual Avg (Ltr/Hr)","Expected Avg (Ltr/Hr)","Variance (Ltr/Hr)","Alert"]],
+    body:body,
+    styles:{fontSize:7.5, valign:'middle'},
+    headStyles:{fillColor:[10,31,61]},
+    didParseCell: function(data){
+      if(data.section === 'body'){
+        const rowIdx = data.row.index;
+        const alertCls = rows[rowIdx].alertCls;
+        if(data.column.index === 9){
+          data.cell.styles.fillColor = ALERT_RGB[alertCls];
+          data.cell.styles.textColor = [255,255,255];
+          data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.halign = 'center';
+        } else if(alertCls === 'alertRed'){
+          data.cell.styles.fillColor = [252,233,233];
+        }
+      }
+    }
+  });
+  doc.save(`Average_Analysis_${new Date().toISOString().slice(0,10)}.pdf`);
+};
+
+renderAll();
 </script>
 {% endblock %}
