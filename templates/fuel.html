@@ -21,7 +21,7 @@
 
   .filters{flex:0 0 auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center;
     padding:6px 14px;border-radius:14px;background:rgba(255,255,255,.12);
-    backdrop-filter:blur(20px);box-shadow:0 10px 25px #0007;}
+    backdrop-filter:blur(20px);box-shadow:0 10px 25px #0007;position:relative;z-index:50;}
   .filter-group{display:flex;align-items:center;gap:5px;}
   .filter-group label{font-size:10.5px;font-weight:600;opacity:.85;white-space:nowrap;}
   .filter-group select, .filter-group input[type="date"]{
@@ -60,7 +60,7 @@
   .grid2{flex:1 1 50%;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:6px;}
   .panel{background:rgba(255,255,255,.12);border:1px solid rgba(0,255,255,.35);border-radius:12px;
     padding:6px 10px;display:flex;flex-direction:column;min-height:0;backdrop-filter:blur(20px);
-    min-width:0;overflow:hidden;}
+    min-width:0;overflow:hidden;position:relative;z-index:1;}
   .panel h3{margin:0 0 3px;font-size:10.5px;color:#2DD4BF;text-transform:uppercase;letter-spacing:.4px;text-align:center;}
   .panel-head{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:3px;flex-wrap:wrap;position:relative;flex:0 0 auto;}
   .panel-head h3{margin:0;}
@@ -85,7 +85,7 @@
 
   .month-table-panel{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;
     background:rgba(255,255,255,.12);border:1px solid rgba(0,255,255,.35);border-radius:12px;
-    padding:6px 10px;backdrop-filter:blur(20px);overflow:hidden;}
+    padding:6px 10px;backdrop-filter:blur(20px);overflow:hidden;position:relative;z-index:1;}
   .month-table-panel h3{margin:0 0 3px;font-size:10.5px;color:#2DD4BF;text-transform:uppercase;text-align:center;}
   .mini-table-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:auto;border:1px solid rgba(0,255,255,.25);border-radius:8px;}
 
@@ -119,8 +119,8 @@
   .avg-compare-note{flex:0 0 auto;font-size:10px;color:#8CA3C4;text-align:center;margin-top:2px;}
 
   .avg-toolbar{flex:0 0 auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center;
-    padding:6px 10px;border-radius:11px;background:rgba(255,255,255,.08);margin-bottom:2px;}
-  .avg-toolbar .export-btns{margin-left:auto;}
+    padding:6px 10px;border-radius:11px;background:rgba(255,255,255,.08);margin-bottom:2px;
+    position:relative;z-index:40;}
 
   .range-slicer{display:flex;align-items:center;gap:8px;padding:5px 10px;border-radius:9px;
     background:rgba(255,255,255,.1);border:1px solid rgba(0,255,255,.5);}
@@ -142,7 +142,7 @@
   .alert-legend i{width:9px;height:9px;border-radius:3px;display:inline-block;}
 
   /* ===== Searchable multi-select slicer ===== */
-  .ms-group{position:relative;}
+  .ms-group{position:relative;z-index:55;}
   .ms-box{position:relative;}
   .ms-trigger{padding:5px 8px;border-radius:9px;border:1px solid rgba(0,255,255,.5);
     background:rgba(255,255,255,.1);color:#fff;font-size:11.5px;cursor:pointer;
@@ -151,7 +151,7 @@
   .ms-trigger .ms-count{background:#2DD4BF;color:#04211C;border-radius:9px;padding:0 6px;
     font-size:9.5px;font-weight:800;margin-left:4px;}
   .ms-trigger .ms-arrow{opacity:.7;font-size:9px;}
-  .ms-panel{display:none;position:absolute;top:calc(100% + 5px);left:0;z-index:60;width:240px;
+  .ms-panel{display:none;position:absolute;top:calc(100% + 5px);left:0;z-index:999;width:240px;
     max-width:60vw;background:#0C2A54;border:1px solid rgba(0,255,255,.5);border-radius:11px;
     box-shadow:0 12px 30px #000a;padding:7px;}
   .ms-panel.open{display:block;}
@@ -172,7 +172,7 @@
   .marquee-link-wrap{flex:0 0 auto;overflow:hidden;border-radius:10px;border:1px dashed rgba(0,255,255,.5);
     background:rgba(0,255,255,.06);padding:6px 0;cursor:pointer;position:relative;}
   .marquee-link-wrap:hover{background:rgba(0,255,255,.12);}
-  .marquee-track{display:inline-block;white-space:nowrap;padding-left:100%;animation:marqueeScroll 14s linear infinite;
+  .marquee-track{display:inline-block;white-space:nowrap;padding-left:100%;animation:marqueeScroll linear infinite;
     font-size:11px;font-weight:700;color:#2DD4BF;letter-spacing:.3px;}
   .marquee-link-wrap:hover .marquee-track{animation-play-state:paused;}
   @keyframes marqueeScroll{0%{transform:translateX(0);}100%{transform:translateX(-100%);}}
@@ -445,7 +445,7 @@
     </div>
 
     <div class="marquee-link-wrap" id="allSiteReportLink">
-      <span class="marquee-track">➤ Click here for all Sites data — Average Analysis Report (all machines, all averages) — click to download Excel or PDF ➤ Click here for all Sites data — Average Analysis Report — click to download Excel or PDF ➤</span>
+      <span class="marquee-track" id="allSiteMarqueeTrack">➤ Click here for all Sites data — Average Analysis Report (all machines, all averages) — click to download Excel or PDF ➤</span>
     </div>
   </div>
 
@@ -1114,9 +1114,8 @@ function renderAvgKpis(base){
 // X-axis = Month, one LINE per Machine, Y-value = that machine's Average
 // (Ltr/Hr) for that month, wrapped labels so nothing overlaps, tooltip on
 // hover. Owner comes straight from the `owner` field on each record (see
-// fuel_analysis.py — currently "Not Defined" until a real Owner column is
-// published; charts show a friendly empty state in that case rather than
-// silently rendering blank).
+// fuel_analysis.py — now reads a real "Owner" column from the sheet, so
+// these charts populate as soon as rows are tagged Hire/Self).
 let hireTrendChart, selfTrendChart;
 
 function buildOwnerTrendDatasets(rows){
@@ -1156,7 +1155,7 @@ function renderOwnerTrendChart(canvasId, emptyElId, existingChart, rows, ownerLa
     if(existingChart) existingChart.destroy();
     canvas.style.display = 'none';
     emptyEl.style.display = 'flex';
-    emptyEl.textContent = `No "${ownerLabel}" machine records found. This report's Owner column is not yet published — see fuel_analysis.py notes.`;
+    emptyEl.textContent = `No "${ownerLabel}" machine records found in the current filter. Make sure the Google Sheet "Owner" column has "${ownerLabel}" values for at least one row.`;
     return null;
   }
   canvas.style.display = '';
@@ -1585,9 +1584,9 @@ function exportAllSitesPdf(){
   doc.save(`All_Sites_Average_Report_${new Date().toISOString().slice(0,10)}.pdf`);
 }
 
+// Excel and PDF are now two SEPARATE buttons/links (no confirm() popup).
 document.getElementById('allSiteReportLink').addEventListener('click', async ()=>{
-  const wantExcel = confirm("Click OK to download Excel, or Cancel to download PDF.");
-  if(wantExcel){ await exportAllSitesExcel(); } else { exportAllSitesPdf(); }
+  await exportAllSitesExcel();
 });
 
 // ============================================================
@@ -1842,9 +1841,10 @@ function renderUtilization(){
     <div class="month-table-panel" style="flex:1 1 45%;">
       <div class="panel-head">
         <h3>Report on Utilization — ${group.label}</h3>
-      </div>
-      <div class="marquee-link-wrap" style="margin-bottom:4px;" id="utilScrollLink1">
-        <span class="marquee-track">➤ Click here to download full Report on Utilization for ${group.label} (Excel / PDF) ➤ Click here to download full Report on Utilization for ${group.label} (Excel / PDF) ➤</span>
+        <div class="export-btns">
+          <button id="utilExcelBtn1">⬇ Excel</button>
+          <button id="utilPdfBtn1">⬇ PDF</button>
+        </div>
       </div>
     </div>
     <div class="month-table-panel" style="flex:1 1 45%;">
@@ -1863,11 +1863,8 @@ function renderUtilization(){
 
   const fname1 = `Utilization_Report_${group.key}_${new Date().toISOString().slice(0,10)}`;
   const fname2 = `Low_Utilization_Report_${group.key}_${new Date().toISOString().slice(0,10)}`;
-  document.getElementById('utilScrollLink1').onclick = async ()=>{
-    const wantExcel = confirm("Click OK to download Excel, or Cancel to download PDF.");
-    if(wantExcel){ exportUtilExcel(utilRows, monthKeys, monthLabels, `Report on Utilization — ${group.label}`, fname1); }
-    else { exportUtilPdf(utilRows, monthKeys, monthLabels, `Report on Utilization — ${group.label}`, fname1); }
-  };
+  document.getElementById('utilExcelBtn1').onclick = ()=> exportUtilExcel(utilRows, monthKeys, monthLabels, `Report on Utilization — ${group.label}`, fname1);
+  document.getElementById('utilPdfBtn1').onclick = ()=> exportUtilPdf(utilRows, monthKeys, monthLabels, `Report on Utilization — ${group.label}`, fname1);
   document.getElementById('utilExcelBtn2').onclick = ()=> exportLowUtilExcel(lowUtilRows, `Report on Low Utilization — ${group.label}`, fname2);
   document.getElementById('utilPdfBtn2').onclick = ()=> exportLowUtilPdf(lowUtilRows, `Report on Low Utilization — ${group.label}`, fname2);
 
@@ -1890,8 +1887,29 @@ function renderUtilization(){
   }
 }
 
+// ============ MARQUEE SPEED — proportional to text length so it never
+// races or crawls regardless of how long the link text is (fixes the
+// "issi neeche scroller ja rha hai uska time thoda km/zyada speed se
+// jata hai" complaint — old code used one fixed 14s for every marquee). ====
+function setMarqueeSpeed(trackEl, pxPerSecond){
+  pxPerSecond = pxPerSecond || 60;
+  // width of the text itself (padding-left:100% means scrollWidth already
+  // includes one wrapper's width of blank space + text width)
+  const textWidth = trackEl.scrollWidth - trackEl.parentElement.clientWidth;
+  const totalTravel = trackEl.parentElement.clientWidth + Math.max(textWidth, 100);
+  const duration = Math.max(6, totalTravel / pxPerSecond);
+  trackEl.style.animationDuration = duration.toFixed(1) + 's';
+}
+function initAllMarquees(){
+  document.querySelectorAll('.marquee-track').forEach(track=>{
+    setMarqueeSpeed(track, 70);
+  });
+}
+window.addEventListener('resize', ()=>{ initAllMarquees(); });
+
 initUtilScroller();
 updateRangeSlicerUI();
 renderAll();
+setTimeout(initAllMarquees, 50);
 </script>
 {% endblock %}
