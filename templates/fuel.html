@@ -247,6 +247,17 @@
       </div>
     </div>
 
+    <div class="grid2">
+      <div class="panel">
+        <h3>Monthly Average (Ltr/Hr) per Machine — Hire</h3>
+        <div class="chart-wrap"><canvas id="hireTrendChart"></canvas></div>
+      </div>
+      <div class="panel">
+        <h3>Monthly Average (Ltr/Hr) per Machine — Self</h3>
+        <div class="chart-wrap"><canvas id="selfTrendChart"></canvas></div>
+      </div>
+    </div>
+
   </div>
 
   <!-- ============ TREND CHART ============ -->
@@ -579,7 +590,7 @@ function wrapLabel(label, maxLen){
   return lines;
 }
 
-let categoryChart, siteDonut, machineChart, statusDonut, monthlyTrendChart, dailyTrendChart;
+let categoryChart, siteDonut, machineChart, statusDonut, monthlyTrendChart, dailyTrendChart, hireTrendChart, selfTrendChart;
 
 // ============ DASHBOARD TAB ============
 function renderDashboard(base){
@@ -673,6 +684,86 @@ function renderDashboard(base){
 
   const anyFilter = Object.values(filters).some(v=>v!=="All");
   document.getElementById('clearFilters').disabled = !anyFilter;
+
+  renderHireSelfTrends(base);
+}
+
+// ---- Hire vs Self: one line per Machine, X = Month, Y = Actual Average
+// (Ltr/Hr) for that machine in that month. Two separate charts so Hire
+// fleet and Self (owned) fleet don't visually mix — same underlying
+// `base` (all currently active filters), just split further by Owner.
+function buildMachineMonthAvgDatasets(rows){
+  // machine -> monthKey -> {fuel, hours}
+  const byMachine = {};
+  const monthSet = new Set();
+  rows.forEach(r=>{
+    monthSet.add(r.monthKey);
+    if(!byMachine[r.machine]) byMachine[r.machine] = {};
+    if(!byMachine[r.machine][r.monthKey]) byMachine[r.machine][r.monthKey] = {fuel:0, hours:0, label:r.monthLabel};
+    byMachine[r.machine][r.monthKey].fuel += r.fuel;
+    byMachine[r.machine][r.monthKey].hours += r.hours;
+  });
+
+  const monthKeys = [...monthSet].sort();
+  const monthLabels = monthKeys.map(k=>{
+    const anyMachine = Object.values(byMachine)[0];
+    return (anyMachine && anyMachine[k]) ? anyMachine[k].label : k;
+  });
+
+  const machineNames = Object.keys(byMachine).sort();
+  const datasets = machineNames.map((m,i)=>{
+    const data = monthKeys.map(k=>{
+      const cell = byMachine[m][k];
+      return cell && cell.hours>0 ? round2(cell.fuel/cell.hours) : null; // null = no data that month, keeps the line from dipping to 0
+    });
+    const color = palette[i % palette.length];
+    return {
+      label: m,
+      data,
+      borderColor: color,
+      backgroundColor: color,
+      spanGaps: true,
+      tension: 0.3,
+      pointRadius: 3,
+      pointHoverRadius: 5
+    };
+  });
+
+  return {labels: monthLabels, datasets};
+}
+
+function renderHireSelfTrends(base){
+  const hireRows = base.filter(r => r.owner === 'Hire');
+  const selfRows = base.filter(r => r.owner === 'Self');
+
+  const hireData = buildMachineMonthAvgDatasets(hireRows);
+  const selfData = buildMachineMonthAvgDatasets(selfRows);
+
+  const commonOptions = {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{position:'bottom', labels:{color:'#EAF1FB', boxWidth:10, font:{size:9}}},
+      tooltip:{callbacks:{label:(ctx)=> `${ctx.dataset.label}: ${ctx.formattedValue} Ltr/Hr`}}
+    },
+    scales:{
+      y:{beginAtZero:true, ticks:{color:'#8CA3C4'}, grid:{color:'#1D3E68'}, title:{display:true, text:'Avg (Ltr/Hr)', color:'#8CA3C4', font:{size:10}}},
+      x:{ticks:{color:'#EAF1FB', font:{size:10}, autoSkip:false, callback:function(v){ return wrapLabel(this.getLabelForValue(v),10); }}, grid:{display:false}}
+    }
+  };
+
+  if(hireTrendChart) hireTrendChart.destroy();
+  hireTrendChart = new Chart(document.getElementById('hireTrendChart'), {
+    type:'line',
+    data: hireData,
+    options: commonOptions
+  });
+
+  if(selfTrendChart) selfTrendChart.destroy();
+  selfTrendChart = new Chart(document.getElementById('selfTrendChart'), {
+    type:'line',
+    data: selfData,
+    options: commonOptions
+  });
 }
 
 // ============ TREND CHART TAB ============
