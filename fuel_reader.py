@@ -37,9 +37,26 @@ import requests
 # Replace this if the sheet is ever re-published with a new link.
 # ---------------------------------------------------------------------------
 GOOGLE_SHEET_CSV_URL = (
-    "https://docs.google.com/spreadsheets/d/e/2PACX-1vQKygsnSF9wt3eBxzrJAvwG-gKbUrTEEuxDFT6BsRckeF8SW6k1pJdAsmfld_k1FnWXUBVMeMhZ0jgW"
-    "/pub?output=csv"
+    "https://docs.google.com/spreadsheets/d/e/2PACX-1vQKygsnSF9wt3eBxzrJAvwG-gKbUrTEEuxDFT6BsRckeF8SW6k1pJdAsmfld_k1FnWXUBVMeMhZ0jgW/pub?output=csv"
 )
+
+
+def get_owner_data():
+    resp = requests.get(OWNER_SHEET_URL, timeout=20)
+    resp.raise_for_status()
+
+    owner_df = pd.read_csv(
+        StringIO(resp.text),
+        dtype=str,
+        keep_default_na=False
+    )
+
+    owner_df.columns = owner_df.columns.str.strip()
+
+    owner_df["Machine"] = owner_df["Machine"].astype(str).str.strip().str.upper()
+    owner_df["Owner"] = owner_df["Owner"].astype(str).str.strip()
+
+    return owner_df[["Machine","Owner"]]
 
 # The real header row always starts with this text
 HEADER_ANCHOR = "SrNo."
