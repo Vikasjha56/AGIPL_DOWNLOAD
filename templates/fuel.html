@@ -139,6 +139,56 @@
   .alert-legend span{display:inline-flex;align-items:center;gap:5px;}
   .alert-legend i{width:9px;height:9px;border-radius:3px;display:inline-block;}
 
+  /* ===== Searchable multi-select slicer ===== */
+  .ms-group{position:relative;}
+  .ms-box{position:relative;}
+  .ms-trigger{padding:5px 8px;border-radius:9px;border:1px solid rgba(0,255,255,.5);
+    background:rgba(255,255,255,.1);color:#fff;font-size:11.5px;cursor:pointer;
+    min-width:110px;max-width:170px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    display:inline-flex;align-items:center;justify-content:space-between;gap:6px;}
+  .ms-trigger .ms-count{background:#2DD4BF;color:#04211C;border-radius:9px;padding:0 6px;
+    font-size:9.5px;font-weight:800;margin-left:4px;}
+  .ms-trigger .ms-arrow{opacity:.7;font-size:9px;}
+  .ms-panel{display:none;position:absolute;top:calc(100% + 5px);left:0;z-index:60;width:240px;
+    max-width:60vw;background:#0C2A54;border:1px solid rgba(0,255,255,.5);border-radius:11px;
+    box-shadow:0 12px 30px #000a;padding:7px;}
+  .ms-panel.open{display:block;}
+  .ms-search{width:100%;box-sizing:border-box;padding:6px 8px;border-radius:8px;border:1px solid rgba(0,255,255,.35);
+    background:rgba(255,255,255,.08);color:#fff;font-size:11.5px;outline:none;margin-bottom:6px;}
+  .ms-search::placeholder{color:#8CA3C4;}
+  .ms-actions{display:flex;justify-content:space-between;font-size:9.5px;margin-bottom:5px;}
+  .ms-actions button{background:none;border:none;color:#2DD4BF;cursor:pointer;font-size:9.5px;font-weight:700;padding:2px 4px;}
+  .ms-actions button:hover{text-decoration:underline;}
+  .ms-list{max-height:190px;overflow-y:auto;}
+  .ms-item{display:flex;align-items:center;gap:7px;padding:4px 5px;border-radius:6px;cursor:pointer;font-size:11.5px;color:#EAF1FB;}
+  .ms-item:hover{background:rgba(45,212,191,.15);}
+  .ms-item input{accent-color:#2DD4BF;cursor:pointer;flex:0 0 auto;}
+  .ms-item span{overflow-wrap:anywhere;}
+  .ms-empty{font-size:10.5px;color:#8CA3C4;text-align:center;padding:8px 0;}
+
+  /* ===== Marquee export scroller link ===== */
+  .marquee-link-wrap{flex:0 0 auto;overflow:hidden;border-radius:10px;border:1px dashed rgba(0,255,255,.5);
+    background:rgba(0,255,255,.06);padding:6px 0;cursor:pointer;position:relative;}
+  .marquee-link-wrap:hover{background:rgba(0,255,255,.12);}
+  .marquee-track{display:inline-block;white-space:nowrap;padding-left:100%;animation:marqueeScroll 14s linear infinite;
+    font-size:11px;font-weight:700;color:#2DD4BF;letter-spacing:.3px;}
+  .marquee-link-wrap:hover .marquee-track{animation-play-state:paused;}
+  @keyframes marqueeScroll{0%{transform:translateX(0);}100%{transform:translateX(-100%);}}
+
+  /* ===== Utilization tab ===== */
+  .util-scroller{flex:0 0 auto;display:flex;gap:6px;overflow-x:auto;padding:4px 2px;}
+  .util-scroller::-webkit-scrollbar{height:5px;}
+  .util-scroller::-webkit-scrollbar-thumb{background:rgba(45,212,191,.5);border-radius:4px;}
+  .util-chip{flex:0 0 auto;padding:7px 16px;border-radius:20px;font-size:11.5px;font-weight:700;
+    background:rgba(255,255,255,.08);border:1px solid rgba(0,255,255,.35);color:#EAF1FB;cursor:pointer;
+    white-space:nowrap;transition:.2s;}
+  .util-chip:hover{background:rgba(45,212,191,.15);}
+  .util-chip.active{background:linear-gradient(135deg,#0077ff,#00c6ff);border-color:transparent;box-shadow:0 0 12px cyan;}
+  .util-section-title{flex:0 0 auto;font-size:12px;font-weight:700;color:#2DD4BF;text-align:center;
+    text-transform:uppercase;letter-spacing:.4px;padding:2px 0;}
+  .util-body{flex:1 1 auto;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px;}
+  .util-kpi-pie-row{flex:0 0 auto;display:grid;grid-template-columns:1fr 2fr;gap:6px;min-height:220px;}
+
   @media(max-width:900px){
     .kpi-row{grid-template-columns:repeat(3,1fr);}
     .grid2{grid-template-columns:1fr;}
@@ -188,26 +238,21 @@
       <span class="to-label">to</span>
       <input type="date" id="fDateTo">
     </div>
-    <div class="filter-group"><label>Category</label>
-      <select id="fCategory"><option value="All">All</option></select>
+    <div class="filter-group ms-group" id="msCategoryGroup"><label>Category</label>
+      <div class="ms-box" id="msCategory" data-key="category"></div>
     </div>
-    <div class="filter-group"><label>Machine No</label>
-      <select id="fMachine"><option value="All">All</option></select>
+    <div class="filter-group ms-group" id="msMachineGroup"><label>Machine No</label>
+      <div class="ms-box" id="msMachine" data-key="machine"></div>
     </div>
-    <div class="filter-group"><label>Owner</label>
-      <select id="fOwner"><option value="All">All</option></select>
-    </div>
-    <div class="filter-group"><label>Site</label>
-      <select id="fSite"><option value="All">All</option></select>
-    </div>
-    <div class="filter-group"><label>Machine Status</label>
-      <select id="fStatus"><option value="All">All</option></select>
+    <div class="filter-group ms-group" id="msSiteGroup"><label>Site</label>
+      <div class="ms-box" id="msSite" data-key="site"></div>
     </div>
     <div class="tabs">
-      <button class="tab-btn active" data-view="dashboard">Fuel Analysis Dashboard</button>
+      <button class="tab-btn active" data-view="avg">Average Analysis</button>
+      <button class="tab-btn" data-view="dashboard">Fuel Analysis Dashboard</button>
       <button class="tab-btn" data-view="trend">Trend Chart</button>
       <button class="tab-btn" data-view="details">Fuel Details</button>
-      <button class="tab-btn" data-view="avg">Average Analysis</button>
+      <button class="tab-btn" data-view="utilization">Utilization</button>
     </div>
     <button class="clear-btn" id="clearFilters">✕ Clear All Filters</button>
   </div>
@@ -331,8 +376,28 @@
     </div>
   </div>
 
-  <!-- ============ AVERAGE ANALYSIS (Site / Category / Machine) ============ -->
-  <div class="view" id="view-avg">
+  <!-- ============ AVERAGE ANALYSIS (now the first / default tab) ============ -->
+  <div class="view active" id="view-avg">
+    <div class="kpi-row" id="avgKpiRow">
+      <div class="kpi"><div class="kpi-label">Last Working Date</div><div class="kpi-value" id="kLastDate" style="font-size:13px;">-</div><div class="kpi-sub" id="kLastDateSub">Select a Machine</div></div>
+      <div class="kpi"><div class="kpi-label">Total Fuel Issued</div><div class="kpi-value" id="aFuel">0</div><div class="kpi-sub">Litres</div></div>
+      <div class="kpi"><div class="kpi-label">Total Hours Used</div><div class="kpi-value" id="aHours">0</div><div class="kpi-sub">Hrs</div></div>
+      <div class="kpi"><div class="kpi-label">Actual Average</div><div class="kpi-value" id="aAvg">0</div><div class="kpi-sub">Ltr/Hr</div></div>
+      <div class="kpi"><div class="kpi-label">Expected Average</div><div class="kpi-value" id="aExpAvg">0</div><div class="kpi-sub">Ltr/Hr (target)</div></div>
+      <div class="kpi"><div class="kpi-label">Machines</div><div class="kpi-value" id="aMachines">0</div></div>
+    </div>
+
+    <div class="grid2">
+      <div class="panel">
+        <h3>Hire Machines — Average Trend (Month × Machine)</h3>
+        <div class="chart-wrap"><canvas id="hireTrendChart"></canvas></div>
+      </div>
+      <div class="panel">
+        <h3>Self Machines — Average Trend (Month × Machine)</h3>
+        <div class="chart-wrap"><canvas id="selfTrendChart"></canvas></div>
+      </div>
+    </div>
+
     <div class="avg-toolbar">
       <div class="range-slicer" id="varianceSlicer">
         <label>Variance Filter (Ltr/Hr)</label>
@@ -353,10 +418,6 @@
           <option value="alertRed">Red Alert</option>
         </select>
       </div>
-      <div class="export-btns">
-        <button id="exportAvgExcel">⬇ Excel</button>
-        <button id="exportAvgPdf">⬇ PDF</button>
-      </div>
     </div>
 
     <div class="alert-legend">
@@ -365,27 +426,31 @@
       <span><i style="background:#E5484D"></i> Red Alert (beyond ±1.5 Ltr/Hr)</span>
     </div>
 
-    <div class="details-panel" style="padding-top:4px;">
-      <div class="table-scroll">
-        <table id="avgTable">
-          <thead>
-            <tr>
-              <th data-key="srNo">Sr.No.</th>
-              <th data-key="site">Site</th>
-              <th data-key="category">Machine Category</th>
-              <th data-key="machine">Machine</th>
-              <th data-key="fuel">Fuel Used (Ltr)</th>
-              <th data-key="hours">Hours Used</th>
-              <th data-key="actualAvg">Actual Avg (Ltr/Hr)</th>
-              <th data-key="expectedAvg">Expected Avg (Ltr/Hr)</th>
-              <th data-key="variance">Variance</th>
-              <th data-key="alertLabel">Alert</th>
-            </tr>
-          </thead>
-          <tbody id="avgBody"></tbody>
+    <div class="month-table-panel" style="flex:1 1 40%;">
+      <div class="panel-head">
+        <h3>High Average Machines (Avg &gt; 4.5 Ltr/Hr) — Month-wise</h3>
+        <div class="export-btns">
+          <button id="exportHighAvgExcel">⬇ Excel</button>
+          <button id="exportHighAvgPdf">⬇ PDF</button>
+        </div>
+      </div>
+      <div class="mini-table-scroll">
+        <table id="highAvgTable">
+          <thead><tr><th>Sr.No.</th><th>Site</th><th>Machine</th><th>Month</th><th>Average (Ltr/Hr)</th></tr></thead>
+          <tbody id="highAvgTableBody"></tbody>
         </table>
       </div>
     </div>
+
+    <div class="marquee-link-wrap" id="allSiteReportLink">
+      <span class="marquee-track">➤ Click here for all Sites data — Average Analysis Report (all machines, all averages) — click to download Excel or PDF ➤ Click here for all Sites data — Average Analysis Report — click to download Excel or PDF ➤</span>
+    </div>
+  </div>
+
+  <!-- ============ UTILIZATION TAB ============ -->
+  <div class="view" id="view-utilization">
+    <div class="util-scroller" id="utilScroller"></div>
+    <div class="util-body" id="utilBody"></div>
   </div>
 
 </div>
@@ -404,19 +469,16 @@ if(allData.length === 0){ document.getElementById('noDataBanner').classList.add(
 
 const round2 = v => Math.round((v + Number.EPSILON) * 100) / 100;
 
-// ---------- Filter state (shared across all tabs, so clicking any chart
-// anywhere updates the Dashboard + Trend + Details + Average Analysis tabs together) ----------
-const filters = {dateFrom:"All", dateTo:"All", month:"All", category:"All", machine:"All", owner:"All", site:"All", status:"All"};
+// ---------- Filter state (shared across all tabs). category/machine/site are
+// now MULTI-select — "All" (empty array) means no restriction on that field.
+// owner/status are kept internally (used by Hire/Self charts + Utilization
+// tab machine-status logic) but have no top-bar UI anymore. ----------
+const filters = {dateFrom:"All", dateTo:"All", month:"All", category:[], machine:[], owner:"All", site:[], status:"All"};
 
 function uniqueSorted(arr, key){ return [...new Set(arr.map(d=>d[key]).filter(v=>v!==undefined && v!==""))].sort(); }
 
 const fDateFrom = document.getElementById('fDateFrom');
 const fDateTo = document.getElementById('fDateTo');
-const fCategory = document.getElementById('fCategory');
-const fMachine = document.getElementById('fMachine');
-const fOwner = document.getElementById('fOwner');
-const fSite = document.getElementById('fSite');
-const fStatus = document.getElementById('fStatus');
 
 // Calendar date inputs: constrain to the actual data range so users can't
 // pick a date that will never match anything.
@@ -426,15 +488,8 @@ if(isoDates.length){
   fDateTo.min = isoDates[0]; fDateTo.max = isoDates[isoDates.length-1];
 }
 
-uniqueSorted(allData,'category').forEach(v=>fCategory.innerHTML += `<option value="${v}">${v}</option>`);
-uniqueSorted(allData,'machine').forEach(v=>fMachine.innerHTML += `<option value="${v}">${v}</option>`);
-uniqueSorted(allData,'owner').forEach(v=>fOwner.innerHTML += `<option value="${v}">${v}</option>`);
-uniqueSorted(allData,'site').forEach(v=>fSite.innerHTML += `<option value="${v}">${v}</option>`);
-uniqueSorted(allData,'status').forEach(v=>fStatus.innerHTML += `<option value="${v}">${v}</option>`);
-
 fDateFrom.addEventListener('change', ()=>{
   filters.dateFrom = fDateFrom.value || "All";
-  // keep "To" from going before "From"
   if(filters.dateFrom !== "All" && fDateTo.value && fDateTo.value < filters.dateFrom){
     fDateTo.value = fDateFrom.value; filters.dateTo = fDateFrom.value;
   }
@@ -447,16 +502,126 @@ fDateTo.addEventListener('change', ()=>{
   }
   renderAll();
 });
-fCategory.addEventListener('change', ()=>{ filters.category = fCategory.value; renderAll(); });
-fMachine.addEventListener('change', ()=>{ filters.machine = fMachine.value; renderAll(); });
-fOwner.addEventListener('change', ()=>{ filters.owner = fOwner.value; renderAll(); });
-fSite.addEventListener('change', ()=>{ filters.site = fSite.value; renderAll(); });
-fStatus.addEventListener('change', ()=>{ filters.status = fStatus.value; renderAll(); });
+
+// ============ SEARCHABLE MULTI-SELECT SLICER COMPONENT ============
+// Renders a trigger button + dropdown panel with a search box and checkbox
+// list. `getOptions()` is re-evaluated every time the panel opens/refreshes,
+// which is what makes the Category -> Machine interlock possible: Machine's
+// option list is filtered live by whatever Categories are currently checked.
+function createMultiSelect(containerId, filterKey, label, getOptions, onChange){
+  const container = document.getElementById(containerId);
+  const state = { search:'' };
+
+  function renderTrigger(){
+    const selected = filters[filterKey];
+    const trigger = container.querySelector('.ms-trigger');
+    if(!trigger) return;
+    const countEl = trigger.querySelector('.ms-count');
+    if(selected.length === 0){
+      trigger.childNodes[0].textContent = 'All';
+      if(countEl) countEl.remove();
+    } else {
+      trigger.childNodes[0].textContent = selected.length===1 ? selected[0] : `${selected.length} selected`;
+      if(!countEl){
+        const c = document.createElement('span'); c.className='ms-count'; c.textContent = selected.length;
+        trigger.insertBefore(c, trigger.querySelector('.ms-arrow'));
+      } else {
+        countEl.textContent = selected.length;
+      }
+    }
+  }
+
+  function renderList(){
+    const panel = container.querySelector('.ms-panel');
+    const listEl = panel.querySelector('.ms-list');
+    const opts = getOptions().filter(o => o.toLowerCase().includes(state.search.toLowerCase()));
+    if(opts.length === 0){
+      listEl.innerHTML = `<div class="ms-empty">No matches</div>`;
+      return;
+    }
+    listEl.innerHTML = opts.map(o=>{
+      const checked = filters[filterKey].includes(o) ? 'checked' : '';
+      const safe = o.replace(/"/g,'&quot;');
+      return `<label class="ms-item"><input type="checkbox" value="${safe}" ${checked}><span>${o}</span></label>`;
+    }).join('');
+    listEl.querySelectorAll('input[type="checkbox"]').forEach(cb=>{
+      cb.addEventListener('change', ()=>{
+        const v = cb.value;
+        if(cb.checked){ if(!filters[filterKey].includes(v)) filters[filterKey].push(v); }
+        else { filters[filterKey] = filters[filterKey].filter(x=>x!==v); }
+        renderTrigger();
+        onChange();
+      });
+    });
+  }
+
+  container.innerHTML = `
+    <div class="ms-trigger" tabindex="0">All<span class="ms-arrow">▾</span></div>
+    <div class="ms-panel">
+      <input type="text" class="ms-search" placeholder="Search ${label}...">
+      <div class="ms-actions"><button type="button" class="ms-all">Select All</button><button type="button" class="ms-clear">Clear</button></div>
+      <div class="ms-list"></div>
+    </div>`;
+
+  const trigger = container.querySelector('.ms-trigger');
+  const panel = container.querySelector('.ms-panel');
+  const searchInput = container.querySelector('.ms-search');
+
+  trigger.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    document.querySelectorAll('.ms-panel.open').forEach(p=>{ if(p!==panel) p.classList.remove('open'); });
+    panel.classList.toggle('open');
+    if(panel.classList.contains('open')){ state.search=''; searchInput.value=''; renderList(); searchInput.focus(); }
+  });
+  searchInput.addEventListener('input', ()=>{ state.search = searchInput.value; renderList(); });
+  searchInput.addEventListener('click', e=>e.stopPropagation());
+  panel.querySelector('.ms-all').addEventListener('click', (e)=>{
+    e.stopPropagation();
+    const opts = getOptions().filter(o => o.toLowerCase().includes(state.search.toLowerCase()));
+    opts.forEach(o=>{ if(!filters[filterKey].includes(o)) filters[filterKey].push(o); });
+    renderTrigger(); renderList(); onChange();
+  });
+  panel.querySelector('.ms-clear').addEventListener('click', (e)=>{
+    e.stopPropagation();
+    filters[filterKey] = [];
+    renderTrigger(); renderList(); onChange();
+  });
+
+  document.addEventListener('click', ()=>{ panel.classList.remove('open'); });
+
+  renderTrigger();
+  return { refresh(){ renderTrigger(); if(panel.classList.contains('open')) renderList(); } };
+}
+
+// Category options = all categories present. Machine options = INTERLOCKED:
+// if any Category is selected, only machines belonging to those categories
+// are offered (and any previously-selected machine outside that set is
+// dropped automatically). Site options are independent.
+function categoryOptions(){ return uniqueSorted(allData,'category'); }
+function machineOptions(){
+  const pool = filters.category.length
+    ? allData.filter(r=>filters.category.includes(r.category))
+    : allData;
+  return uniqueSorted(pool,'machine');
+}
+function siteOptions(){ return uniqueSorted(allData,'site'); }
+
+let msMachineHandle;
+const msCategoryHandle = createMultiSelect('msCategory','category','Category', categoryOptions, ()=>{
+  // interlock: drop any selected machine that's no longer valid for the new category set
+  const valid = new Set(machineOptions());
+  filters.machine = filters.machine.filter(m=>valid.has(m));
+  msMachineHandle.refresh();
+  renderAll();
+});
+msMachineHandle = createMultiSelect('msMachine','machine','Machine No', machineOptions, ()=>{ renderAll(); });
+const msSiteHandle = createMultiSelect('msSite','site','Site', siteOptions, ()=>{ renderAll(); });
 
 document.getElementById('clearFilters').onclick = ()=>{
-  filters.dateFrom="All"; filters.dateTo="All"; filters.month="All"; filters.category="All"; filters.machine="All";
-  filters.owner="All"; filters.site="All"; filters.status="All";
-  fDateFrom.value=""; fDateTo.value=""; fCategory.value="All"; fMachine.value="All"; fOwner.value="All"; fSite.value="All"; fStatus.value="All";
+  filters.dateFrom="All"; filters.dateTo="All"; filters.month="All";
+  filters.category=[]; filters.machine=[]; filters.owner="All"; filters.site=[]; filters.status="All";
+  fDateFrom.value=""; fDateTo.value="";
+  msCategoryHandle.refresh(); msMachineHandle.refresh(); msSiteHandle.refresh();
   renderAll();
 };
 
@@ -473,9 +638,17 @@ function toggleFilter(type, value){
     renderAll();
     return;
   }
+  if(type === 'category' || type === 'machine' || type === 'site'){
+    // toggle single value within the multi-select array (used by chart clicks)
+    const arr = filters[type];
+    const idx = arr.indexOf(value);
+    if(idx === -1){ filters[type] = [value]; } else { filters[type] = []; }
+    if(type==='category') msMachineHandle.refresh();
+    msCategoryHandle.refresh(); msMachineHandle.refresh(); msSiteHandle.refresh();
+    renderAll();
+    return;
+  }
   filters[type] = (filters[type] === value) ? "All" : value;
-  const map = {category:fCategory, machine:fMachine, owner:fOwner, site:fSite, status:fStatus};
-  if(map[type]) map[type].value = filters[type];
   renderAll();
 }
 
@@ -484,10 +657,10 @@ function getFiltered(){
     if(filters.dateFrom!=="All" && r.dateIso < filters.dateFrom) return false;
     if(filters.dateTo!=="All" && r.dateIso > filters.dateTo) return false;
     if(filters.month!=="All" && r.monthKey!==filters.month) return false;
-    if(filters.category!=="All" && r.category!==filters.category) return false;
-    if(filters.machine!=="All" && r.machine!==filters.machine) return false;
+    if(filters.category.length && !filters.category.includes(r.category)) return false;
+    if(filters.machine.length && !filters.machine.includes(r.machine)) return false;
     if(filters.owner!=="All" && r.owner!==filters.owner) return false;
-    if(filters.site!=="All" && r.site!==filters.site) return false;
+    if(filters.site.length && !filters.site.includes(r.site)) return false;
     if(filters.status!=="All" && r.status!==filters.status) return false;
     return true;
   });
@@ -498,13 +671,19 @@ function getFiltered(){
 // the day currently selected.
 function getBaselineFiltered(){
   return allData.filter(r=>{
-    if(filters.category!=="All" && r.category!==filters.category) return false;
-    if(filters.machine!=="All" && r.machine!==filters.machine) return false;
+    if(filters.category.length && !filters.category.includes(r.category)) return false;
+    if(filters.machine.length && !filters.machine.includes(r.machine)) return false;
     if(filters.owner!=="All" && r.owner!==filters.owner) return false;
-    if(filters.site!=="All" && r.site!==filters.site) return false;
+    if(filters.site.length && !filters.site.includes(r.site)) return false;
     if(filters.status!=="All" && r.status!==filters.status) return false;
     return true;
   });
+}
+
+function fmtFilterList(arr){
+  if(!arr || arr.length===0) return 'All';
+  if(arr.length<=2) return arr.join(', ');
+  return `${arr.length} selected`;
 }
 
 function sumBy(arr, groupKey, valKey){
@@ -514,7 +693,7 @@ function sumBy(arr, groupKey, valKey){
 }
 
 // ---------- Page title swap like breakdown.html ----------
-const TITLES = {dashboard:"⛽ Fuel Analysis Dashboard", trend:"📈 Trend Chart", details:"📋 Fuel Details", avg:"⚖️ Average Analysis"};
+const TITLES = {avg:"⚖️ Average Analysis", dashboard:"⛽ Fuel Analysis Dashboard", trend:"📈 Trend Chart", details:"📋 Fuel Details", utilization:"📊 Utilization"};
 function findPageTitleEl(){
   const candidates = document.querySelectorAll('h1,h2,h3,.page-title,[class*="page-title"]');
   for(const el of candidates){
@@ -590,7 +769,7 @@ function renderDashboard(base){
   categoryChart = new Chart(document.getElementById('categoryChart'), {
     type:'bar',
     data:{labels:catLabels, datasets:[{data:catLabels.map(l=>round2(byCat[l])),
-      backgroundColor:catLabels.map((l,i)=> filters.category!=="All" && filters.category!==l ? '#33456b' : palette[i%palette.length]),
+      backgroundColor:catLabels.map((l,i)=> (filters.category.length && !filters.category.includes(l)) ? '#33456b' : palette[i%palette.length]),
       borderRadius:5, barPercentage:0.6, categoryPercentage:0.8}]},
     options:{responsive:true, maintainAspectRatio:false, layout:{padding:{top:20}},
       plugins:{legend:{display:false}, datalabels:{display:true, anchor:'end', align:'top', color:'#EAF1FB', font:{size:10,weight:'bold'}}},
@@ -622,7 +801,7 @@ function renderDashboard(base){
   machineChart = new Chart(document.getElementById('machineChart'), {
     type:'bar',
     data:{labels:machLabels, datasets:[{data:machLabels.map(l=>round2(byMachine[l])),
-      backgroundColor:machLabels.map((l,i)=> filters.machine!=="All" && filters.machine!==l ? '#33456b' : palette[i%palette.length]),
+      backgroundColor:machLabels.map((l,i)=> (filters.machine.length && !filters.machine.includes(l)) ? '#33456b' : palette[i%palette.length]),
       borderRadius:5, barPercentage:0.6, categoryPercentage:0.8}]},
     options:{responsive:true, maintainAspectRatio:false, layout:{padding:{top:20}},
       plugins:{legend:{display:false}, datalabels:{display:true, anchor:'end', align:'top', color:'#EAF1FB', font:{size:10,weight:'bold'}}},
@@ -651,11 +830,11 @@ function renderDashboard(base){
 
 // ============ TREND CHART TAB ============
 function renderTrend(base){
-  const isSingleMachine = filters.machine !== "All";
+  const isSingleMachine = filters.machine.length === 1;
   const header = document.getElementById('trendHeader');
   header.innerHTML = isSingleMachine
-    ? `Showing: <b>${filters.machine}</b>`
-    : `Showing: <b>All Machines (aggregate)</b> — select a Machine No above for Opening/Closing readings of that specific machine`;
+    ? `Showing: <b>${filters.machine[0]}</b>`
+    : `Showing: <b>All Machines (aggregate)</b> — select a single Machine No above for Opening/Closing readings of that specific machine`;
 
   const sorted = base.slice().sort((a,b)=> a.dateIso.localeCompare(b.dateIso));
   const totalFuel = base.reduce((a,r)=>a+r.fuel,0);
@@ -754,7 +933,7 @@ function renderTrend(base){
       }}
   });
   document.getElementById('avgCompareNote').textContent = isSingleMachine
-    ? `Dashed red line = ${filters.machine}'s normal average (${expectedAvg} Ltr/Hr) from its full history.`
+    ? `Dashed red line = ${filters.machine[0]}'s normal average (${expectedAvg} Ltr/Hr) from its full history.`
     : `Dashed red line = fleet-wide normal average. Pick a Machine No above to see that machine's own target line.`;
 
   // ---- Site Summary table (on-screen): pure Site-wise OVERALL total for
@@ -846,9 +1025,9 @@ function buildAvgAnalysisRows(base){
   // date/month filter — same logic as the Trend tab's "target" average),
   // but still respects Category / Owner / Site / Status filters.
   const baselineData = allData.filter(r=>{
-    if(filters.category!=="All" && r.category!==filters.category) return false;
+    if(filters.category.length && !filters.category.includes(r.category)) return false;
     if(filters.owner!=="All" && r.owner!==filters.owner) return false;
-    if(filters.site!=="All" && r.site!==filters.site) return false;
+    if(filters.site.length && !filters.site.includes(r.site)) return false;
     if(filters.status!=="All" && r.status!==filters.status) return false;
     return true;
   });
@@ -943,6 +1122,189 @@ document.getElementById('fAlertLevel').addEventListener('change', (e)=>{
   renderAvgAnalysis(getFiltered());
 });
 
+// ============ AVERAGE ANALYSIS TAB — KPI ROW ============
+// "Last Working Date" needs to know, PER MACHINE, whether its readings live
+// in readingType 'KM (From/To Reading)' (-> closing field is really the
+// "To Reading" column) or 'Hour-Meter (Time Op./Cls. Reading)' (-> closing
+// field is really "Time Cls. Reading"). fuel_analysis.py already merges both
+// pairs into a single `closing` value per row (see Opening/Closing auto pair
+// -detect in fuel_analysis.py), so for KPI purposes we just need the latest
+// dated row for the machine(s) currently selected — the system finds it
+// automatically without needing to ask which column pair applies.
+function renderAvgKpis(base){
+  const selMachines = filters.machine;
+  const kLastDate = document.getElementById('kLastDate');
+  const kLastDateSub = document.getElementById('kLastDateSub');
+
+  if(selMachines.length === 0){
+    kLastDate.textContent = '-';
+    kLastDateSub.textContent = 'Select a Machine to see its last entry date';
+  } else {
+    // For each selected machine, find its latest dated record (from the
+    // FULL dataset filtered only by Category/Site/Owner/Status — not by the
+    // date range — so "last working date" always reflects true latest entry).
+    const perMachineLatest = selMachines.map(m=>{
+      const rows = getBaselineFiltered().filter(r=>r.machine===m).sort((a,b)=>a.dateIso.localeCompare(b.dateIso));
+      return rows.length ? rows[rows.length-1] : null;
+    }).filter(Boolean);
+
+    if(perMachineLatest.length === 0){
+      kLastDate.textContent = '-';
+      kLastDateSub.textContent = 'No entries found';
+    } else if(selMachines.length === 1){
+      const r = perMachineLatest[0];
+      kLastDate.textContent = r.date;
+      kLastDate.title = r.readingType;
+      kLastDateSub.textContent = `${r.readingType.startsWith('KM') ? 'To Reading' : 'Time Cls. Reading'}: ${round2(r.closing)}`;
+    } else {
+      // multiple machines selected -> show the most recent among them
+      perMachineLatest.sort((a,b)=> a.dateIso.localeCompare(b.dateIso));
+      const r = perMachineLatest[perMachineLatest.length-1];
+      kLastDate.textContent = r.date;
+      kLastDateSub.textContent = `Most recent of ${perMachineLatest.length} machines — ${r.machine}`;
+    }
+  }
+
+  const totalFuel = base.reduce((a,r)=>a+r.fuel,0);
+  const totalHours = base.reduce((a,r)=>a+r.hours,0);
+  const actualAvg = totalHours>0 ? round2(totalFuel/totalHours) : 0;
+  const baseline = getBaselineFiltered();
+  const bFuel = baseline.reduce((a,r)=>a+r.fuel,0);
+  const bHours = baseline.reduce((a,r)=>a+r.hours,0);
+  const expectedAvg = bHours>0 ? round2(bFuel/bHours) : 0;
+
+  document.getElementById('aFuel').textContent = round2(totalFuel);
+  document.getElementById('aHours').textContent = round2(totalHours);
+  document.getElementById('aAvg').textContent = actualAvg;
+  document.getElementById('aExpAvg').textContent = expectedAvg;
+  document.getElementById('aMachines').textContent = new Set(base.map(r=>r.machine)).size;
+}
+
+// ============ HIRE vs SELF TREND CHARTS ============
+// X-axis = Month, one line per Machine, Y-value = that machine's Average
+// (Ltr/Hr) for that month. Two separate charts filtered by Owner ("Hire" /
+// "Self") built from the same base filtered dataset (Category/Machine/Site
+// interlock + date range all apply to both).
+let hireTrendChart, selfTrendChart;
+
+function buildOwnerTrendDatasets(rows){
+  // rows -> { machine -> { monthKey -> {fuel,hours} } }
+  const byMachine = {};
+  const monthSet = new Set();
+  rows.forEach(r=>{
+    monthSet.add(r.monthKey);
+    if(!byMachine[r.machine]) byMachine[r.machine] = {};
+    if(!byMachine[r.machine][r.monthKey]) byMachine[r.machine][r.monthKey] = {fuel:0, hours:0, label:r.monthLabel};
+    byMachine[r.machine][r.monthKey].fuel += r.fuel;
+    byMachine[r.machine][r.monthKey].hours += r.hours;
+  });
+  const months = [...monthSet].sort();
+  const monthLabels = months.map(mk=>{
+    const anyRow = rows.find(r=>r.monthKey===mk);
+    return anyRow ? anyRow.monthLabel : mk;
+  });
+  const machines = Object.keys(byMachine).sort();
+  const datasets = machines.map((m,i)=>{
+    const data = months.map(mk=>{
+      const cell = byMachine[m][mk];
+      if(!cell || cell.hours<=0) return null;
+      return round2(cell.fuel/cell.hours);
+    });
+    return {
+      label: m, data, borderColor: palette[i%palette.length], backgroundColor: palette[i%palette.length],
+      tension:.3, pointRadius:3, spanGaps:true
+    };
+  });
+  return { monthLabels, datasets, machines };
+}
+
+function renderOwnerTrendChart(canvasId, chartVarSetter, existingChart, rows, titleOwner){
+  const {monthLabels, datasets} = buildOwnerTrendDatasets(rows);
+  if(existingChart) existingChart.destroy();
+  const chart = new Chart(document.getElementById(canvasId), {
+    type:'line',
+    data:{labels:monthLabels, datasets},
+    options:{responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'nearest', axis:'x', intersect:false},
+      plugins:{
+        legend:{position:'bottom', labels:{color:'#EAF1FB', boxWidth:9, font:{size:9}}},
+        tooltip:{callbacks:{label:(ctx)=> `${ctx.dataset.label}: ${ctx.formattedValue} Ltr/Hr`}},
+        datalabels:{display:false}
+      },
+      scales:{
+        y:{beginAtZero:true, ticks:{color:'#8CA3C4'}, grid:{color:'#1D3E68'}, title:{display:true, text:'Average (Ltr/Hr)', color:'#8CA3C4', font:{size:10}}},
+        x:{ticks:{color:'#EAF1FB', font:{size:9}, autoSkip:false, maxRotation:0, callback:function(v){ return wrapLabel(this.getLabelForValue(v),10); }}, grid:{display:false},
+           title:{display:true, text:'Month', color:'#8CA3C4', font:{size:10}}}
+      }}
+  });
+  return chart;
+}
+
+function renderOwnerTrends(base){
+  const hireRows = base.filter(r=>r.owner==='Hire');
+  const selfRows = base.filter(r=>r.owner==='Self');
+  hireTrendChart = renderOwnerTrendChart('hireTrendChart', null, hireTrendChart, hireRows, 'Hire');
+  selfTrendChart = renderOwnerTrendChart('selfTrendChart', null, selfTrendChart, selfRows, 'Self');
+}
+
+// ============ AVERAGE ANALYSIS — HIGH AVERAGE TABLE (Avg > 4.5, month-wise) ============
+function buildHighAvgMonthlyRows(base){
+  const map = {};
+  base.forEach(r=>{
+    const key = r.site+'|'+r.machine+'|'+r.monthKey;
+    if(!map[key]) map[key] = {site:r.site, machine:r.machine, monthKey:r.monthKey, monthLabel:r.monthLabel, fuel:0, hours:0};
+    map[key].fuel += r.fuel;
+    map[key].hours += r.hours;
+  });
+  return Object.values(map)
+    .map(m=>({...m, avg: m.hours>0 ? round2(m.fuel/m.hours) : 0}))
+    .filter(m=>m.avg > 4.5)
+    .sort((a,b)=> a.site.localeCompare(b.site) || a.machine.localeCompare(b.machine) || a.monthKey.localeCompare(b.monthKey));
+}
+
+function renderHighAvgTable(base){
+  const rows = buildHighAvgMonthlyRows(base);
+  document.getElementById('highAvgTableBody').innerHTML = rows.map((r,i)=>`<tr>
+    <td>${i+1}</td><td>${r.site}</td><td>${r.machine}</td><td>${r.monthLabel}</td><td>${r.avg}</td>
+  </tr>`).join('') || `<tr><td colspan="5" style="text-align:center;color:#8CA3C4;">No machines above 4.5 Ltr/Hr in current filter</td></tr>`;
+}
+
+// ============ AVERAGE ANALYSIS — ALL-SITES REPORT (no on-screen display,
+// export only) ============ — every Site/Category/Machine/Month combo,
+// Actual + Expected average, no >4.5 filtering.
+function buildAllSitesReportRows(){
+  const base = getFiltered();
+  const map = {};
+  base.forEach(r=>{
+    const key = r.site+'|'+r.category+'|'+r.machine+'|'+r.monthKey;
+    if(!map[key]) map[key] = {site:r.site, category:r.category, machine:r.machine, monthKey:r.monthKey, monthLabel:r.monthLabel, fuel:0, hours:0};
+    map[key].fuel += r.fuel;
+    map[key].hours += r.hours;
+  });
+  // expected avg = machine's full-history baseline (category/site/owner/status filters respected, ignoring date/month/machine selection)
+  const baselineData = allData.filter(r=>{
+    if(filters.category.length && !filters.category.includes(r.category)) return false;
+    if(filters.owner!=="All" && r.owner!==filters.owner) return false;
+    if(filters.site.length && !filters.site.includes(r.site)) return false;
+    if(filters.status!=="All" && r.status!==filters.status) return false;
+    return true;
+  });
+  const baseMap = {};
+  baselineData.forEach(r=>{
+    const key = r.site+'|'+r.category+'|'+r.machine;
+    if(!baseMap[key]) baseMap[key] = {fuel:0, hours:0};
+    baseMap[key].fuel += r.fuel;
+    baseMap[key].hours += r.hours;
+  });
+  return Object.values(map).map(m=>{
+    const actualAvg = m.hours>0 ? round2(m.fuel/m.hours) : 0;
+    const bKey = m.site+'|'+m.category+'|'+m.machine;
+    const b = baseMap[bKey] || {fuel:0, hours:0};
+    const expectedAvg = b.hours>0 ? round2(b.fuel/b.hours) : 0;
+    return {site:m.site, category:m.category, machine:m.machine, monthLabel:m.monthLabel, monthKey:m.monthKey, actualAvg, expectedAvg};
+  }).sort((a,b)=> a.site.localeCompare(b.site) || a.category.localeCompare(b.category) || a.machine.localeCompare(b.machine) || a.monthKey.localeCompare(b.monthKey));
+}
+
 // ============ MASTER RENDER ============
 function renderAll(){
   const base = getFiltered();
@@ -950,6 +1312,10 @@ function renderAll(){
   renderTrend(base);
   renderDetails(base);
   renderAvgAnalysis(base);
+  renderAvgKpis(base);
+  renderOwnerTrends(base);
+  renderHighAvgTable(base);
+  if(document.getElementById('view-utilization').classList.contains('active')) renderUtilization();
 }
 
 // ============ Site x Category x Machine x Month x Status matrix (used by
@@ -1003,7 +1369,7 @@ document.getElementById('exportExcel').onclick = async ()=>{
 
     sheet.mergeCells(2,1,2,12);
     const subCell = sheet.getCell(2,1);
-    subCell.value = `Generated: ${new Date().toLocaleString()}   |   Records: ${rows.length}   |   Machine: ${filters.machine}   |   Site: ${filters.site}`;
+    subCell.value = `Generated: ${new Date().toLocaleString()}   |   Records: ${rows.length}   |   Machine: ${fmtFilterList(filters.machine)}   |   Site: ${fmtFilterList(filters.site)}`;
     subCell.font = {italic:true, size:10, color:{argb:'FF2DD4BF'}};
     subCell.alignment = {vertical:'middle', horizontal:'center'};
     subCell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF13315C'}};
@@ -1105,7 +1471,7 @@ document.getElementById('exportMonthExcel').onclick = async ()=>{
 
     sheet.mergeCells(2,1,2,8);
     const subCell = sheet.getCell(2,1);
-    subCell.value = `Generated: ${new Date().toLocaleString()}   |   Rows: ${rows.length}   |   Site: ${filters.site}   |   Category: ${filters.category}   |   Status: ${filters.status}`;
+    subCell.value = `Generated: ${new Date().toLocaleString()}   |   Rows: ${rows.length}   |   Site: ${fmtFilterList(filters.site)}   |   Category: ${fmtFilterList(filters.category)}   |   Status: ${filters.status}`;
     subCell.font = {italic:true, size:10, color:{argb:'FF2DD4BF'}};
     subCell.alignment = {vertical:'middle', horizontal:'center'};
     subCell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF13315C'}};
@@ -1205,7 +1571,7 @@ document.getElementById('exportAvgExcel').onclick = async ()=>{
 
     sheet.mergeCells(2,1,2,10);
     const subCell = sheet.getCell(2,1);
-    subCell.value = `Generated: ${new Date().toLocaleString()}   |   Rows: ${rows.length}   |   Site: ${filters.site}   |   Category: ${filters.category}   |   Variance Range: ${varianceRange.min} to ${varianceRange.max} Ltr/Hr   |   Alert: ${alertLevelFilter}`;
+    subCell.value = `Generated: ${new Date().toLocaleString()}   |   Rows: ${rows.length}   |   Site: ${fmtFilterList(filters.site)}   |   Category: ${fmtFilterList(filters.category)}   |   Variance Range: ${varianceRange.min} to ${varianceRange.max} Ltr/Hr   |   Alert: ${alertLevelFilter}`;
     subCell.font = {italic:true, size:10, color:{argb:'FF2DD4BF'}};
     subCell.alignment = {vertical:'middle', horizontal:'center'};
     subCell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF13315C'}};
@@ -1299,6 +1665,420 @@ document.getElementById('exportAvgPdf').onclick = ()=>{
   });
   doc.save(`Average_Analysis_${new Date().toISOString().slice(0,10)}.pdf`);
 };
+
+// ============ EXPORT EXCEL (High Average Machines >4.5, month-wise) ============
+document.getElementById('exportHighAvgExcel').onclick = async ()=>{
+  const btn = document.getElementById('exportHighAvgExcel');
+  btn.disabled = true; const oldTxt = btn.textContent; btn.textContent = '⏳...';
+  try{
+    const rows = buildHighAvgMonthlyRows(getFiltered());
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'Fuel Analysis Dashboard'; workbook.created = new Date();
+    const sheet = workbook.addWorksheet('High Average (>4.5)', {views:[{state:'frozen', ySplit:4}]});
+    const headers = ["Sr.No.","Site","Machine","Month","Average (Ltr/Hr)"];
+    sheet.columns = [{width:8},{width:14},{width:34},{width:14},{width:16}];
+    sheet.mergeCells(1,1,1,5);
+    const t = sheet.getCell(1,1); t.value='High Average Machines Report (>4.5 Ltr/Hr)';
+    t.font={bold:true,size:16,color:{argb:'FFFFFFFF'}}; t.alignment={vertical:'middle',horizontal:'center'};
+    t.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0C2A54'}}; sheet.getRow(1).height=30;
+    sheet.mergeCells(2,1,2,5);
+    const s = sheet.getCell(2,1); s.value=`Generated: ${new Date().toLocaleString()}   |   Rows: ${rows.length}`;
+    s.font={italic:true,size:10,color:{argb:'FF2DD4BF'}}; s.alignment={vertical:'middle',horizontal:'center'};
+    s.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF13315C'}}; sheet.getRow(2).height=18; sheet.getRow(3).height=6;
+    const hr = sheet.getRow(4); headers.forEach((h,idx)=>hr.getCell(idx+1).value=h); hr.height=22;
+    hr.eachCell(c=>{c.font={bold:true,color:{argb:'FFFFFFFF'},size:11};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF123A70'}};c.alignment={vertical:'middle',horizontal:'center'};});
+    rows.forEach((r,i)=>{
+      const row = sheet.getRow(5+i);
+      [i+1, r.site, r.machine, r.monthLabel, r.avg].forEach((v,idx)=>row.getCell(idx+1).value=v);
+      row.eachCell((c,cn)=>{c.alignment={vertical:'middle',horizontal:cn<=1?'center':'left'};c.border={bottom:{style:'thin',color:{argb:'FFDDE3EC'}}};if(i%2===1)c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF3F8FB'}};});
+    });
+    sheet.autoFilter = {from:'A4', to:`E${4+rows.length}`};
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {type:'application/octet-stream'});
+    const url = URL.createObjectURL(blob); const a=document.createElement('a');
+    a.href=url; a.download=`High_Average_Machines_${new Date().toISOString().slice(0,10)}.xlsx`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  } finally { btn.disabled=false; btn.textContent=oldTxt; }
+};
+
+document.getElementById('exportHighAvgPdf').onclick = ()=>{
+  const rows = buildHighAvgMonthlyRows(getFiltered());
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'landscape'});
+  doc.setFontSize(14); doc.text("High Average Machines Report (>4.5 Ltr/Hr)", 14, 12);
+  doc.autoTable({
+    startY:18,
+    head:[["No","Site","Machine","Month","Average (Ltr/Hr)"]],
+    body: rows.map((r,i)=>[i+1, r.site, r.machine, r.monthLabel, r.avg]),
+    styles:{fontSize:8, valign:'middle'}, headStyles:{fillColor:[10,31,61]}
+  });
+  doc.save(`High_Average_Machines_${new Date().toISOString().slice(0,10)}.pdf`);
+};
+
+// ============ ALL-SITES REPORT (export-only, triggered by the marquee link) ============
+async function exportAllSitesExcel(){
+  const rows = buildAllSitesReportRows();
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'Fuel Analysis Dashboard'; workbook.created = new Date();
+  const sheet = workbook.addWorksheet('All Sites Report', {views:[{state:'frozen', ySplit:4}]});
+  const headers = ["Sr.No.","Site","Category","Machine Number","Month","Actual Average (Ltr/Hr)","Expected Average (Ltr/Hr)"];
+  sheet.columns = [{width:8},{width:14},{width:22},{width:34},{width:14},{width:18},{width:20}];
+  sheet.mergeCells(1,1,1,7);
+  const t = sheet.getCell(1,1); t.value='All Sites — Average Analysis Report';
+  t.font={bold:true,size:16,color:{argb:'FFFFFFFF'}}; t.alignment={vertical:'middle',horizontal:'center'};
+  t.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0C2A54'}}; sheet.getRow(1).height=30;
+  sheet.mergeCells(2,1,2,7);
+  const s = sheet.getCell(2,1); s.value=`Generated: ${new Date().toLocaleString()}   |   Rows: ${rows.length}   |   All Sites, All Averages`;
+  s.font={italic:true,size:10,color:{argb:'FF2DD4BF'}}; s.alignment={vertical:'middle',horizontal:'center'};
+  s.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF13315C'}}; sheet.getRow(2).height=18; sheet.getRow(3).height=6;
+  const hr = sheet.getRow(4); headers.forEach((h,idx)=>hr.getCell(idx+1).value=h); hr.height=22;
+  hr.eachCell(c=>{c.font={bold:true,color:{argb:'FFFFFFFF'},size:11};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF123A70'}};c.alignment={vertical:'middle',horizontal:'center'};});
+  rows.forEach((r,i)=>{
+    const row = sheet.getRow(5+i);
+    [i+1, r.site, r.category, r.machine, r.monthLabel, r.actualAvg, r.expectedAvg].forEach((v,idx)=>row.getCell(idx+1).value=v);
+    row.eachCell((c,cn)=>{c.alignment={vertical:'middle',horizontal:cn<=1?'center':'left'};c.border={bottom:{style:'thin',color:{argb:'FFDDE3EC'}}};if(i%2===1)c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF3F8FB'}};});
+  });
+  sheet.autoFilter = {from:'A4', to:`G${4+rows.length}`};
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {type:'application/octet-stream'});
+  const url = URL.createObjectURL(blob); const a=document.createElement('a');
+  a.href=url; a.download=`All_Sites_Average_Report_${new Date().toISOString().slice(0,10)}.xlsx`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+function exportAllSitesPdf(){
+  const rows = buildAllSitesReportRows();
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'landscape'});
+  doc.setFontSize(14); doc.text("All Sites — Average Analysis Report", 14, 12);
+  doc.autoTable({
+    startY:18,
+    head:[["No","Site","Category","Machine Number","Month","Actual Avg (Ltr/Hr)","Expected Avg (Ltr/Hr)"]],
+    body: rows.map((r,i)=>[i+1, r.site, r.category, r.machine, r.monthLabel, r.actualAvg, r.expectedAvg]),
+    styles:{fontSize:7, valign:'middle'}, headStyles:{fillColor:[10,31,61]}
+  });
+  doc.save(`All_Sites_Average_Report_${new Date().toISOString().slice(0,10)}.pdf`);
+}
+
+// Marquee link click -> ask which format via a lightweight confirm, then export
+document.getElementById('allSiteReportLink').addEventListener('click', async ()=>{
+  const wantExcel = confirm("Click OK to download Excel, or Cancel to download PDF.");
+  if(wantExcel){ await exportAllSitesExcel(); } else { exportAllSitesPdf(); }
+});
+
+// ============================================================
+// ============ UTILIZATION TAB ============
+// ============================================================
+// Named groups match on Machine Category (case-insensitive substring), so
+// "BACKHOE LOADER - 9213" matches group "BACKHOE LOADER". Any category that
+// doesn't match a named group falls into "Other (All Machines)". Tipper is
+// its own named group (matches "TIPPER" anywhere in the category, e.g.
+// "HMV TIPPER - 9248"), and gets the extra KPI + Pie chart per the brief.
+const UTIL_GROUPS = [
+  {key:'backhoe', label:'Backhoe Loader', match:['BACKHOE LOADER']},
+  {key:'excavator', label:'Excavator', match:['EXCAVATOR']},
+  {key:'transitmixer', label:'Transit Mixer', match:['TRANSIT MIXER']},
+  {key:'motorgrader', label:'Motor Grader', match:['MOTOR GRADER']},
+  {key:'hydracrane', label:'Hydra Crane', match:['HYDRA CRANE']},
+  {key:'tractor', label:'Tractor', match:['TRACTOR']},
+  {key:'tipper', label:'Tipper', match:['TIPPER']},
+  {key:'other', label:'Other (All Machines)', match:[]}
+];
+const EXPECTED_HOURS_PER_MONTH = 200; // tune this to your real monthly expected-utilization target (hours)
+let currentUtilGroup = 'backhoe';
+let utilPieChart;
+
+function groupForCategory(category){
+  const upper = String(category).toUpperCase();
+  for(const g of UTIL_GROUPS){
+    if(g.key==='other') continue;
+    if(g.match.some(m=>upper.includes(m))) return g.key;
+  }
+  return 'other';
+}
+
+function initUtilScroller(){
+  const scroller = document.getElementById('utilScroller');
+  scroller.innerHTML = UTIL_GROUPS.map(g=>`<button class="util-chip ${g.key===currentUtilGroup?'active':''}" data-group="${g.key}">${g.label}</button>`).join('');
+  scroller.querySelectorAll('.util-chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      currentUtilGroup = chip.dataset.group;
+      scroller.querySelectorAll('.util-chip').forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active');
+      renderUtilization();
+    });
+  });
+}
+
+function utilRowsForGroup(base, groupKey){
+  if(groupKey==='other'){
+    return base.filter(r=> groupForCategory(r.category)==='other');
+  }
+  return base.filter(r=> groupForCategory(r.category)===groupKey);
+}
+
+// Actual Utilization Hours per Site/Category/Machine/Month = sum of Run Hours.
+// Percentage = Actual / Expected * 100 (expected = fixed monthly target hours,
+// adjust EXPECTED_HOURS_PER_MONTH above to match your real SLA).
+function buildUtilMonthly(rows){
+  const map = {};
+  const monthSet = new Set();
+  rows.forEach(r=>{
+    monthSet.add(r.monthKey);
+    const key = r.site+'|'+r.category+'|'+r.machine;
+    if(!map[key]) map[key] = {site:r.site, category:r.category, machine:r.machine, months:{}};
+    if(!map[key].months[r.monthKey]) map[key].months[r.monthKey] = {hours:0, label:r.monthLabel};
+    map[key].months[r.monthKey].hours += r.hours;
+  });
+  const monthKeys = [...monthSet].sort();
+  const monthLabels = monthKeys.map(mk=>{
+    const any = rows.find(r=>r.monthKey===mk);
+    return any ? any.monthLabel : mk;
+  });
+  return { rows: Object.values(map), monthKeys, monthLabels };
+}
+
+function renderUtilReportTable(rows, monthKeys, monthLabels, groupLabel){
+  const thead = `<tr><th>Sr.No.</th><th>Site</th><th>Category</th><th>Machine Name</th>${monthLabels.map(l=>`<th>${l}</th>`).join('')}</tr>`;
+  const tbody = rows.map((r,i)=>{
+    const cells = monthKeys.map(mk=>{
+      const cell = r.months[mk];
+      const hrs = cell ? round2(cell.hours) : 0;
+      const pct = round2((hrs/EXPECTED_HOURS_PER_MONTH)*100);
+      return `<td>${hrs} hrs<br><span style="color:#2DD4BF;font-weight:700;">${pct}%</span></td>`;
+    }).join('');
+    return `<tr><td>${i+1}</td><td>${r.site}</td><td>${r.category}</td><td>${r.machine}</td>${cells}</tr>`;
+  }).join('') || `<tr><td colspan="${4+monthKeys.length}" style="text-align:center;color:#8CA3C4;">No data for ${groupLabel}</td></tr>`;
+  return `<thead>${thead}</thead><tbody>${tbody}</tbody>`;
+}
+
+function buildLowUtilRows(rows, monthKeys){
+  const out = [];
+  rows.forEach(r=>{
+    monthKeys.forEach(mk=>{
+      const cell = r.months[mk];
+      const actualHrs = cell ? round2(cell.hours) : 0;
+      if(actualHrs < EXPECTED_HOURS_PER_MONTH){
+        out.push({
+          site:r.site, category:r.category, machine:r.machine,
+          monthLabel: cell ? cell.label : mk,
+          actualHrs, expectedHrs: EXPECTED_HOURS_PER_MONTH,
+          alertCls: actualHrs < EXPECTED_HOURS_PER_MONTH*0.5 ? 'alertRed' : 'alertOrange',
+          alertLabel: actualHrs < EXPECTED_HOURS_PER_MONTH*0.5 ? 'Red Alert' : 'Watch'
+        });
+      }
+    });
+  });
+  return out.sort((a,b)=> a.site.localeCompare(b.site) || a.machine.localeCompare(b.machine));
+}
+
+function renderLowUtilTable(rows){
+  const thead = `<tr><th>Sr.No.</th><th>Site</th><th>Category</th><th>Machine Name</th><th>Month</th><th>Actual Utilization Hours</th><th>Expected Utilization Hours</th><th>Alert</th></tr>`;
+  const tbody = rows.map((r,i)=>`<tr>
+    <td>${i+1}</td><td>${r.site}</td><td>${r.category}</td><td>${r.machine}</td><td>${r.monthLabel}</td>
+    <td>${r.actualHrs}</td><td>${r.expectedHrs}</td>
+    <td><span class="pill ${r.alertCls}">${r.alertLabel}</span></td>
+  </tr>`).join('') || `<tr><td colspan="8" style="text-align:center;color:#8CA3C4;">No low-utilization entries</td></tr>`;
+  return `<thead>${thead}</thead><tbody>${tbody}</tbody>`;
+}
+
+function exportUtilExcel(rows, monthKeys, monthLabels, title, filename){
+  (async()=>{
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator='Fuel Analysis Dashboard'; workbook.created=new Date();
+    const sheet = workbook.addWorksheet(title.slice(0,28), {views:[{state:'frozen', ySplit:4}]});
+    const headers = ["Sr.No.","Site","Category","Machine Name", ...monthLabels];
+    sheet.columns = [{width:8},{width:14},{width:22},{width:34}, ...monthLabels.map(()=>({width:16}))];
+    const lastCol = headers.length;
+    sheet.mergeCells(1,1,1,lastCol);
+    const t = sheet.getCell(1,1); t.value=title;
+    t.font={bold:true,size:16,color:{argb:'FFFFFFFF'}}; t.alignment={vertical:'middle',horizontal:'center'};
+    t.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0C2A54'}}; sheet.getRow(1).height=30;
+    sheet.mergeCells(2,1,2,lastCol);
+    const s = sheet.getCell(2,1); s.value=`Generated: ${new Date().toLocaleString()}   |   Rows: ${rows.length}`;
+    s.font={italic:true,size:10,color:{argb:'FF2DD4BF'}}; s.alignment={vertical:'middle',horizontal:'center'};
+    s.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF13315C'}}; sheet.getRow(2).height=18; sheet.getRow(3).height=6;
+    const hr = sheet.getRow(4); headers.forEach((h,idx)=>hr.getCell(idx+1).value=h); hr.height=22;
+    hr.eachCell(c=>{c.font={bold:true,color:{argb:'FFFFFFFF'},size:11};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF123A70'}};c.alignment={vertical:'middle',horizontal:'center'};});
+    rows.forEach((r,i)=>{
+      const row = sheet.getRow(5+i);
+      const monthCells = monthKeys.map(mk=>{
+        const cell = r.months[mk];
+        return cell ? round2(cell.hours) : 0;
+      });
+      [i+1, r.site, r.category, r.machine, ...monthCells].forEach((v,idx)=>row.getCell(idx+1).value=v);
+      row.eachCell((c,cn)=>{c.alignment={vertical:'middle',horizontal:cn<=1?'center':'left'};c.border={bottom:{style:'thin',color:{argb:'FFDDE3EC'}}};if(i%2===1)c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF3F8FB'}};});
+    });
+    sheet.autoFilter = {from:'A4', to:`${String.fromCharCode(64+lastCol)}${4+rows.length}`};
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {type:'application/octet-stream'});
+    const url = URL.createObjectURL(blob); const a=document.createElement('a');
+    a.href=url; a.download=filename+'.xlsx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  })();
+}
+
+function exportUtilPdf(rows, monthKeys, monthLabels, title, filename){
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'landscape'});
+  doc.setFontSize(13); doc.text(title, 14, 12);
+  doc.autoTable({
+    startY:18,
+    head:[["No","Site","Category","Machine Name", ...monthLabels]],
+    body: rows.map((r,i)=>[i+1, r.site, r.category, r.machine, ...monthKeys.map(mk=>{
+      const cell = r.months[mk]; return cell ? round2(cell.hours) : 0;
+    })]),
+    styles:{fontSize:6.5, valign:'middle'}, headStyles:{fillColor:[10,31,61]}
+  });
+  doc.save(filename+'.pdf');
+}
+
+function exportLowUtilExcel(rows, title, filename){
+  (async()=>{
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator='Fuel Analysis Dashboard'; workbook.created=new Date();
+    const sheet = workbook.addWorksheet('Low Utilization', {views:[{state:'frozen', ySplit:4}]});
+    const headers = ["Sr.No.","Site","Category","Machine Name","Month","Actual Utilization Hours","Expected Utilization Hours","Alert"];
+    sheet.columns = [{width:8},{width:14},{width:22},{width:34},{width:12},{width:20},{width:20},{width:14}];
+    sheet.mergeCells(1,1,1,8);
+    const t = sheet.getCell(1,1); t.value=title;
+    t.font={bold:true,size:16,color:{argb:'FFFFFFFF'}}; t.alignment={vertical:'middle',horizontal:'center'};
+    t.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0C2A54'}}; sheet.getRow(1).height=30;
+    sheet.mergeCells(2,1,2,8);
+    const s = sheet.getCell(2,1); s.value=`Generated: ${new Date().toLocaleString()}   |   Rows: ${rows.length}`;
+    s.font={italic:true,size:10,color:{argb:'FF2DD4BF'}}; s.alignment={vertical:'middle',horizontal:'center'};
+    s.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF13315C'}}; sheet.getRow(2).height=18; sheet.getRow(3).height=6;
+    const hr = sheet.getRow(4); headers.forEach((h,idx)=>hr.getCell(idx+1).value=h); hr.height=22;
+    hr.eachCell(c=>{c.font={bold:true,color:{argb:'FFFFFFFF'},size:11};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF123A70'}};c.alignment={vertical:'middle',horizontal:'center'};});
+    const ALERT_ARGB = {alertGreen:'FF1E9E63', alertOrange:'FFF2994A', alertRed:'FFE5484D'};
+    rows.forEach((r,i)=>{
+      const row = sheet.getRow(5+i);
+      [i+1, r.site, r.category, r.machine, r.monthLabel, r.actualHrs, r.expectedHrs, r.alertLabel].forEach((v,idx)=>row.getCell(idx+1).value=v);
+      row.eachCell((c,cn)=>{c.alignment={vertical:'middle',horizontal:cn<=1?'center':'left'};c.border={bottom:{style:'thin',color:{argb:'FFDDE3EC'}}};if(i%2===1 && cn!==8)c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF3F8FB'}};});
+      const ac = row.getCell(8); ac.fill={type:'pattern',pattern:'solid',fgColor:{argb:ALERT_ARGB[r.alertCls]}}; ac.font={bold:true,color:{argb:'FFFFFFFF'}}; ac.alignment={vertical:'middle',horizontal:'center'};
+    });
+    sheet.autoFilter = {from:'A4', to:`H${4+rows.length}`};
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {type:'application/octet-stream'});
+    const url = URL.createObjectURL(blob); const a=document.createElement('a');
+    a.href=url; a.download=filename+'.xlsx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  })();
+}
+
+function exportLowUtilPdf(rows, title, filename){
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'landscape'});
+  const ALERT_RGB = {alertGreen:[30,158,99], alertOrange:[242,153,74], alertRed:[229,72,77]};
+  doc.setFontSize(13); doc.text(title, 14, 12);
+  doc.autoTable({
+    startY:18,
+    head:[["No","Site","Category","Machine Name","Month","Actual Hrs","Expected Hrs","Alert"]],
+    body: rows.map((r,i)=>[i+1, r.site, r.category, r.machine, r.monthLabel, r.actualHrs, r.expectedHrs, r.alertLabel]),
+    styles:{fontSize:7.5, valign:'middle'}, headStyles:{fillColor:[10,31,61]},
+    didParseCell:function(data){
+      if(data.section==='body' && data.column.index===7){
+        const cls = rows[data.row.index].alertCls;
+        data.cell.styles.fillColor = ALERT_RGB[cls];
+        data.cell.styles.textColor = [255,255,255];
+        data.cell.styles.fontStyle = 'bold';
+        data.cell.styles.halign = 'center';
+      }
+    }
+  });
+  doc.save(filename+'.pdf');
+}
+
+function renderUtilization(){
+  const base = getFiltered();
+  const group = UTIL_GROUPS.find(g=>g.key===currentUtilGroup);
+  const groupRows = utilRowsForGroup(base, currentUtilGroup);
+  const {rows: utilRows, monthKeys, monthLabels} = buildUtilMonthly(groupRows);
+  const lowUtilRows = buildLowUtilRows(utilRows, monthKeys);
+
+  const isSpecial = currentUtilGroup==='tipper' || currentUtilGroup==='other';
+
+  let kpiPieHtml = '';
+  if(isSpecial){
+    const machineCount = new Set(groupRows.map(r=>r.machine)).size;
+    const bySite = {};
+    groupRows.forEach(r=>{ bySite[r.site] = bySite[r.site] || new Set(); bySite[r.site].add(r.machine); });
+    kpiPieHtml = `
+      <div class="util-kpi-pie-row">
+        <div class="kpi" style="display:flex;flex-direction:column;justify-content:center;">
+          <div class="kpi-label">Number of Vehicles under Utilization</div>
+          <div class="kpi-value" style="font-size:26px;">${machineCount}</div>
+          <div class="kpi-sub">${group.label}</div>
+        </div>
+        <div class="panel" style="min-height:200px;">
+          <h3>Machines by Site — ${group.label}</h3>
+          <div class="chart-wrap"><canvas id="utilPieCanvas"></canvas></div>
+        </div>
+      </div>`;
+  }
+
+  document.getElementById('utilBody').innerHTML = `
+    ${kpiPieHtml}
+    <div class="month-table-panel" style="flex:1 1 45%;">
+      <div class="panel-head">
+        <h3>Report on Utilization — ${group.label}</h3>
+        <div class="export-btns">
+          <button id="utilExcelBtn1">⬇ Excel</button>
+          <button id="utilPdfBtn1">⬇ PDF</button>
+        </div>
+      </div>
+      <div class="marquee-link-wrap" style="margin-bottom:4px;" id="utilScrollLink1">
+        <span class="marquee-track">➤ Click here to download full Report on Utilization for ${group.label} ➤ Click here to download full Report on Utilization for ${group.label} ➤</span>
+      </div>
+      <div class="mini-table-scroll"><table id="utilTable1"></table></div>
+    </div>
+    <div class="month-table-panel" style="flex:1 1 45%;">
+      <div class="panel-head">
+        <h3>Report on Low Utilization — ${group.label}</h3>
+        <div class="export-btns">
+          <button id="utilExcelBtn2">⬇ Excel</button>
+          <button id="utilPdfBtn2">⬇ PDF</button>
+        </div>
+      </div>
+      <div class="mini-table-scroll"><table id="utilTable2"></table></div>
+    </div>
+  `;
+
+  document.getElementById('utilTable1').innerHTML = renderUtilReportTable(utilRows, monthKeys, monthLabels, group.label);
+  document.getElementById('utilTable2').innerHTML = renderLowUtilTable(lowUtilRows);
+
+  const fname1 = `Utilization_Report_${group.key}_${new Date().toISOString().slice(0,10)}`;
+  const fname2 = `Low_Utilization_Report_${group.key}_${new Date().toISOString().slice(0,10)}`;
+  document.getElementById('utilExcelBtn1').onclick = ()=> exportUtilExcel(utilRows, monthKeys, monthLabels, `Report on Utilization — ${group.label}`, fname1);
+  document.getElementById('utilPdfBtn1').onclick = ()=> exportUtilPdf(utilRows, monthKeys, monthLabels, `Report on Utilization — ${group.label}`, fname1);
+  document.getElementById('utilScrollLink1').onclick = async ()=>{
+    const wantExcel = confirm("Click OK to download Excel, or Cancel to download PDF.");
+    if(wantExcel){ exportUtilExcel(utilRows, monthKeys, monthLabels, `Report on Utilization — ${group.label}`, fname1); }
+    else { exportUtilPdf(utilRows, monthKeys, monthLabels, `Report on Utilization — ${group.label}`, fname1); }
+  };
+  document.getElementById('utilExcelBtn2').onclick = ()=> exportLowUtilExcel(lowUtilRows, `Report on Low Utilization — ${group.label}`, fname2);
+  document.getElementById('utilPdfBtn2').onclick = ()=> exportLowUtilPdf(lowUtilRows, `Report on Low Utilization — ${group.label}`, fname2);
+
+  if(isSpecial){
+    const bySite = {};
+    groupRows.forEach(r=>{ bySite[r.site] = bySite[r.site] || new Set(); bySite[r.site].add(r.machine); });
+    const siteLabels = Object.keys(bySite).sort();
+    const siteCounts = siteLabels.map(s=>bySite[s].size);
+    if(utilPieChart) utilPieChart.destroy();
+    const canvas = document.getElementById('utilPieCanvas');
+    if(canvas){
+      utilPieChart = new Chart(canvas, {
+        type:'doughnut',
+        data:{labels:siteLabels, datasets:[{data:siteCounts, backgroundColor:palette, borderColor:'#0F2A52', borderWidth:2, hoverOffset:12}]},
+        options:{maintainAspectRatio:false, cutout:'45%',
+          plugins:{legend:{position:'right', labels:{color:'#EAF1FB', boxWidth:10, font:{size:10}}},
+            datalabels:{display:true, color:'#fff', font:{weight:'bold', size:11}, formatter:v=>v}}}
+      });
+    }
+  }
+}
+
+initUtilScroller();
 
 renderAll();
 </script>
