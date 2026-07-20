@@ -69,6 +69,8 @@
   /* Charts fill available panel space, never overflow it */
   .chart-wrap{flex:1 1 auto;min-height:0;position:relative;overflow:hidden;width:100%;}
   .chart-wrap canvas{max-width:100%;max-height:100%;}
+  .chart-empty{flex:1 1 auto;display:flex;align-items:center;justify-content:center;
+    color:#8CA3C4;font-size:11.5px;text-align:center;padding:10px;}
 
   .chart-scroll-x{width:100%;height:100%;overflow-x:auto;overflow-y:hidden;}
   .chart-scroll-x::-webkit-scrollbar{height:5px;}
@@ -258,7 +260,7 @@
   </div>
 
   <!-- ============ FUEL ANALYSIS DASHBOARD ============ -->
-  <div class="view active" id="view-dashboard">
+  <div class="view" id="view-dashboard">
     <div class="kpi-row">
       <div class="kpi"><div class="kpi-label">Total Records</div><div class="kpi-value" id="kRecords">0</div></div>
       <div class="kpi"><div class="kpi-label">Machines</div><div class="kpi-value" id="kMachines">0</div></div>
@@ -376,7 +378,7 @@
     </div>
   </div>
 
-  <!-- ============ AVERAGE ANALYSIS (now the first / default tab) ============ -->
+  <!-- ============ AVERAGE ANALYSIS (default tab) ============ -->
   <div class="view active" id="view-avg">
     <div class="kpi-row" id="avgKpiRow">
       <div class="kpi"><div class="kpi-label">Last Working Date</div><div class="kpi-value" id="kLastDate" style="font-size:13px;">-</div><div class="kpi-sub" id="kLastDateSub">Select a Machine</div></div>
@@ -390,11 +392,11 @@
     <div class="grid2">
       <div class="panel">
         <h3>Hire Machines — Average Trend (Month × Machine)</h3>
-        <div class="chart-wrap"><canvas id="hireTrendChart"></canvas></div>
+        <div class="chart-wrap"><canvas id="hireTrendChart"></canvas><div class="chart-empty" id="hireTrendEmpty" style="display:none;"></div></div>
       </div>
       <div class="panel">
         <h3>Self Machines — Average Trend (Month × Machine)</h3>
-        <div class="chart-wrap"><canvas id="selfTrendChart"></canvas></div>
+        <div class="chart-wrap"><canvas id="selfTrendChart"></canvas><div class="chart-empty" id="selfTrendEmpty" style="display:none;"></div></div>
       </div>
     </div>
 
@@ -470,9 +472,9 @@ if(allData.length === 0){ document.getElementById('noDataBanner').classList.add(
 const round2 = v => Math.round((v + Number.EPSILON) * 100) / 100;
 
 // ---------- Filter state (shared across all tabs). category/machine/site are
-// now MULTI-select — "All" (empty array) means no restriction on that field.
-// owner/status are kept internally (used by Hire/Self charts + Utilization
-// tab machine-status logic) but have no top-bar UI anymore. ----------
+// MULTI-select — empty array means no restriction on that field. owner/status
+// are kept internally (used by Hire/Self charts + Utilization tab machine-
+// status logic) but have no top-bar UI, as requested. ----------
 const filters = {dateFrom:"All", dateTo:"All", month:"All", category:[], machine:[], owner:"All", site:[], status:"All"};
 
 function uniqueSorted(arr, key){ return [...new Set(arr.map(d=>d[key]).filter(v=>v!==undefined && v!==""))].sort(); }
@@ -480,8 +482,6 @@ function uniqueSorted(arr, key){ return [...new Set(arr.map(d=>d[key]).filter(v=
 const fDateFrom = document.getElementById('fDateFrom');
 const fDateTo = document.getElementById('fDateTo');
 
-// Calendar date inputs: constrain to the actual data range so users can't
-// pick a date that will never match anything.
 const isoDates = uniqueSorted(allData,'dateIso');
 if(isoDates.length){
   fDateFrom.min = isoDates[0]; fDateFrom.max = isoDates[isoDates.length-1];
@@ -504,10 +504,6 @@ fDateTo.addEventListener('change', ()=>{
 });
 
 // ============ SEARCHABLE MULTI-SELECT SLICER COMPONENT ============
-// Renders a trigger button + dropdown panel with a search box and checkbox
-// list. `getOptions()` is re-evaluated every time the panel opens/refreshes,
-// which is what makes the Category -> Machine interlock possible: Machine's
-// option list is filtered live by whatever Categories are currently checked.
 function createMultiSelect(containerId, filterKey, label, getOptions, onChange){
   const container = document.getElementById(containerId);
   const state = { search:'' };
@@ -575,6 +571,7 @@ function createMultiSelect(containerId, filterKey, label, getOptions, onChange){
   });
   searchInput.addEventListener('input', ()=>{ state.search = searchInput.value; renderList(); });
   searchInput.addEventListener('click', e=>e.stopPropagation());
+  panel.addEventListener('click', e=>e.stopPropagation());
   panel.querySelector('.ms-all').addEventListener('click', (e)=>{
     e.stopPropagation();
     const opts = getOptions().filter(o => o.toLowerCase().includes(state.search.toLowerCase()));
@@ -627,7 +624,6 @@ document.getElementById('clearFilters').onclick = ()=>{
 
 function toggleFilter(type, value){
   if(type === 'date'){
-    // clicking a chart point sets both From and To to that single date
     if(filters.dateFrom === value && filters.dateTo === value){
       filters.dateFrom = "All"; filters.dateTo = "All";
     } else {
@@ -639,11 +635,13 @@ function toggleFilter(type, value){
     return;
   }
   if(type === 'category' || type === 'machine' || type === 'site'){
-    // toggle single value within the multi-select array (used by chart clicks)
     const arr = filters[type];
     const idx = arr.indexOf(value);
     if(idx === -1){ filters[type] = [value]; } else { filters[type] = []; }
-    if(type==='category') msMachineHandle.refresh();
+    if(type==='category'){
+      const valid = new Set(machineOptions());
+      filters.machine = filters.machine.filter(m=>valid.has(m));
+    }
     msCategoryHandle.refresh(); msMachineHandle.refresh(); msSiteHandle.refresh();
     renderAll();
     return;
@@ -667,8 +665,7 @@ function getFiltered(){
 }
 
 // Same as getFiltered() but ignores the date/month filters — used to work out
-// a machine's normal ("expected") average from its full history, not just
-// the day currently selected.
+// a machine's normal ("expected") average from its full history.
 function getBaselineFiltered(){
   return allData.filter(r=>{
     if(filters.category.length && !filters.category.includes(r.category)) return false;
@@ -721,9 +718,6 @@ Chart.defaults.set('plugins.datalabels', {display:false});
 Chart.defaults.animation = false;
 const palette = ['#2DD4BF','#4E7FDB','#F2994A','#E5484D','#9B59B6','#27AE60','#F2C94C','#EB5757','#56CCF2','#BB6BD9'];
 
-// Wraps a label to multiple lines instead of truncating it — also breaks a
-// single very long word (no spaces) into chunks so nothing ever overflows
-// or gets cut off, and machine names always show in full.
 function wrapLabel(label, maxLen){
   maxLen = maxLen || 12;
   label = String(label);
@@ -759,7 +753,6 @@ function renderDashboard(base){
   document.getElementById('kAvg').textContent = totalHours>0 ? round2(totalFuel/totalHours) : 0;
   document.getElementById('kUtil').textContent = base.length>0 ? round2(working/base.length*100)+'%' : '0%';
 
-  // Category bar
   const byCat = sumBy(base, 'category', 'fuel');
   const catLabels = Object.keys(byCat).sort();
   const scrollWrap = document.getElementById('catChartScroll');
@@ -778,7 +771,6 @@ function renderDashboard(base){
         x:{ticks:{color:'#EAF1FB', font:{size:10}, autoSkip:false, callback:function(v){ return wrapLabel(this.getLabelForValue(v),12); }}, grid:{display:false}}}}
   });
 
-  // Site donut
   const bySite = sumBy(base, 'site', 'fuel');
   const siteLabels = Object.keys(bySite).sort();
   if(siteDonut) siteDonut.destroy();
@@ -791,7 +783,6 @@ function renderDashboard(base){
         datalabels:{display:true, color:'#fff', font:{weight:'bold', size:10}, formatter:v=>round2(v)}}}
   });
 
-  // Top 10 machines
   const byMachine = sumBy(base, 'machine', 'fuel');
   const machLabels = Object.entries(byMachine).sort((a,b)=>b[1]-a[1]).slice(0,10).map(e=>e[0]);
   const machScroll = document.getElementById('machChartScroll');
@@ -810,7 +801,6 @@ function renderDashboard(base){
         x:{ticks:{color:'#EAF1FB', font:{size:9}, autoSkip:false, callback:function(v){ return wrapLabel(this.getLabelForValue(v),14); }}, grid:{display:false}}}}
   });
 
-  // Status donut
   const byStatus = {};
   base.forEach(r=>{ byStatus[r.status] = (byStatus[r.status]||0) + 1; });
   const statusLabels = Object.keys(byStatus);
@@ -824,7 +814,8 @@ function renderDashboard(base){
         datalabels:{display:true, color:'#fff', font:{weight:'bold', size:10}, formatter:v=>v}}}
   });
 
-  const anyFilter = Object.values(filters).some(v=>v!=="All");
+  const anyFilter = filters.dateFrom!=="All" || filters.dateTo!=="All" || filters.month!=="All" ||
+    filters.category.length || filters.machine.length || filters.owner!=="All" || filters.site.length || filters.status!=="All";
   document.getElementById('clearFilters').disabled = !anyFilter;
 }
 
@@ -853,9 +844,6 @@ function renderTrend(base){
     document.getElementById('tClose').textContent = '-';
   }
 
-  // ---- Expected ("target") average = this machine's own overall average
-  // across its FULL history (ignores the date/month filter), so you can see
-  // what it should normally be giving vs what it's actually giving right now.
   const baseline = getBaselineFiltered();
   const baseFuel = baseline.reduce((a,r)=>a+r.fuel,0);
   const baseHours = baseline.reduce((a,r)=>a+r.hours,0);
@@ -876,7 +864,6 @@ function renderTrend(base){
     expSub.textContent = 'Ltr/Hr (target, based on full history)';
   }
 
-  // Monthly aggregation (bar click filters that month everywhere)
   const monthMap = {};
   base.forEach(r=>{
     if(!monthMap[r.monthKey]) monthMap[r.monthKey] = {label:r.monthLabel, fuel:0, hours:0};
@@ -904,9 +891,6 @@ function renderTrend(base){
       }}
   });
 
-  // ---- Daily trend: Fuel (bar) + Actual daily average (line) + Expected
-  // average (dashed flat target line) — this is the actual-vs-should-be
-  // average comparison, day by day.
   const dayFuelMap = {}, dayHoursMap = {};
   base.forEach(r=>{
     dayFuelMap[r.dateIso] = (dayFuelMap[r.dateIso]||0) + r.fuel;
@@ -936,13 +920,6 @@ function renderTrend(base){
     ? `Dashed red line = ${filters.machine[0]}'s normal average (${expectedAvg} Ltr/Hr) from its full history.`
     : `Dashed red line = fleet-wide normal average. Pick a Machine No above to see that machine's own target line.`;
 
-  // ---- Site Summary table (on-screen): pure Site-wise OVERALL total for
-  // whatever is currently filtered/selected — NOT broken down by month, so
-  // the row count stays small (one row per site) and always fits on one
-  // screen without scrolling. It reacts live to every filter/graph click
-  // because it's built from `base` (the filtered dataset). The full
-  // Site + Machine Category + Machine + Month breakdown is only produced
-  // in the Excel/PDF export (see buildMachineMonthMatrix). ----
   const siteMap = {};
   base.forEach(r=>{
     if(!siteMap[r.site]) siteMap[r.site] = {site:r.site, fuel:0, hours:0};
@@ -993,17 +970,15 @@ document.querySelectorAll('#fuelTable thead th').forEach(th=>{
   });
 });
 
-// ============ AVERAGE ANALYSIS TAB ============
-// Site + Machine Category + Machine grouped table: Actual Avg vs Expected
-// Avg (machine's own full-history baseline), Variance, and a color-coded
-// alert. Includes a dual-thumb variance range slicer + alert dropdown, and
-// both are respected in the on-screen table AND the Excel/PDF exports —
-// with Sr.No. always re-numbered 1,2,3... on whatever is currently visible.
-let avgSortKey='variance', avgSortDir=-1;
+// ============ AVERAGE ANALYSIS TAB (data engine) ============
+// NOTE: the on-screen table for this tab was requested to be REMOVED — only
+// KPIs + Hire/Self trend charts + Variance/Alert slicer (which now filters
+// the High-Average table below) + High-Average table + All-Sites export
+// link are shown. buildAvgAnalysisRows() still powers the Variance/Alert
+// slicer, the High-Average table, and both Excel/PDF exports.
 let varianceRange = {min:-10, max:10};
 let alertLevelFilter = 'All';
 
-// Tune these two cutoffs (in Ltr/Hr) to match your real tolerance.
 const ALERT_THRESHOLDS = {green:0.5, orange:1.5};
 
 function classifyAlert(diffAbs){
@@ -1021,9 +996,6 @@ function buildAvgAnalysisRows(base){
     map[key].hours += r.hours;
   });
 
-  // Expected Avg baseline: this machine's own FULL history (ignores the
-  // date/month filter — same logic as the Trend tab's "target" average),
-  // but still respects Category / Owner / Site / Status filters.
   const baselineData = allData.filter(r=>{
     if(filters.category.length && !filters.category.includes(r.category)) return false;
     if(filters.owner!=="All" && r.owner!==filters.owner) return false;
@@ -1053,47 +1025,11 @@ function buildAvgAnalysisRows(base){
     };
   });
 
-  // Variance range slicer
   rows = rows.filter(r => r.variance >= varianceRange.min && r.variance <= varianceRange.max);
-  // Alert level dropdown
   if(alertLevelFilter !== 'All') rows = rows.filter(r => r.alertCls === alertLevelFilter);
 
   return rows;
 }
-
-function sortedAvgRows(rows){
-  const out = rows.slice();
-  out.sort((a,b)=>{
-    let va=a[avgSortKey], vb=b[avgSortKey];
-    if(typeof va==='string'){ va=va.toLowerCase(); vb=vb.toLowerCase(); }
-    if(va<vb) return -1*avgSortDir;
-    if(va>vb) return 1*avgSortDir;
-    return 0;
-  });
-  return out;
-}
-
-function renderAvgAnalysis(base){
-  const rows = sortedAvgRows(buildAvgAnalysisRows(base));
-  document.getElementById('avgBody').innerHTML = rows.map((r,i)=>`<tr>
-    <td>${i+1}</td><td>${r.site}</td><td>${r.category}</td><td>${r.machine}</td>
-    <td>${r.fuel}</td><td>${r.hours}</td><td>${r.actualAvg}</td><td>${r.expectedAvg}</td>
-    <td>${r.variance>0?'+':''}${r.variance}</td>
-    <td><span class="pill ${r.alertCls}">${r.alertLabel}</span></td>
-  </tr>`).join('');
-
-  document.querySelectorAll('#avgTable thead th').forEach(th=>{
-    const baseTxt = th.textContent.replace(' ▲','').replace(' ▼','').trim();
-    th.textContent = baseTxt + (th.dataset.key===avgSortKey ? (avgSortDir===1?' ▲':' ▼') : '');
-  });
-}
-document.querySelectorAll('#avgTable thead th').forEach(th=>{
-  th.addEventListener('click', ()=>{
-    const key = th.dataset.key;
-    if(avgSortKey===key) avgSortDir*=-1; else { avgSortKey=key; avgSortDir=1; }
-    renderAvgAnalysis(getFiltered());
-  });
-});
 
 // Dual-thumb variance range slicer
 const rsMin = document.getElementById('rsMin');
@@ -1111,26 +1047,23 @@ function updateRangeSlicerUI(){
   rsFill.style.left = pctLo+'%';
   rsFill.style.width = (pctHi-pctLo)+'%';
   rsValLabel.textContent = (lo<=-10 && hi>=10) ? 'All' : `${lo} to ${hi}`;
-  renderAvgAnalysis(getFiltered());
+  renderHighAvgTable(getFiltered());
 }
 rsMin.addEventListener('input', updateRangeSlicerUI);
 rsMax.addEventListener('input', updateRangeSlicerUI);
-updateRangeSlicerUI();
 
 document.getElementById('fAlertLevel').addEventListener('change', (e)=>{
   alertLevelFilter = e.target.value;
-  renderAvgAnalysis(getFiltered());
+  renderHighAvgTable(getFiltered());
 });
 
 // ============ AVERAGE ANALYSIS TAB — KPI ROW ============
 // "Last Working Date" needs to know, PER MACHINE, whether its readings live
-// in readingType 'KM (From/To Reading)' (-> closing field is really the
-// "To Reading" column) or 'Hour-Meter (Time Op./Cls. Reading)' (-> closing
-// field is really "Time Cls. Reading"). fuel_analysis.py already merges both
-// pairs into a single `closing` value per row (see Opening/Closing auto pair
-// -detect in fuel_analysis.py), so for KPI purposes we just need the latest
-// dated row for the machine(s) currently selected — the system finds it
-// automatically without needing to ask which column pair applies.
+// in readingType 'KM (From/To Reading)' (-> closing field = "To Reading")
+// or 'Hour-Meter (Time Op./Cls. Reading)' (-> closing field = "Time Cls.
+// Reading"). fuel_analysis.py already merges both pairs into a single
+// `closing` value per row and stamps `readingType`, so we read that flag to
+// label the KPI correctly per-machine, automatically — no manual mapping.
 function renderAvgKpis(base){
   const selMachines = filters.machine;
   const kLastDate = document.getElementById('kLastDate');
@@ -1140,9 +1073,6 @@ function renderAvgKpis(base){
     kLastDate.textContent = '-';
     kLastDateSub.textContent = 'Select a Machine to see its last entry date';
   } else {
-    // For each selected machine, find its latest dated record (from the
-    // FULL dataset filtered only by Category/Site/Owner/Status — not by the
-    // date range — so "last working date" always reflects true latest entry).
     const perMachineLatest = selMachines.map(m=>{
       const rows = getBaselineFiltered().filter(r=>r.machine===m).sort((a,b)=>a.dateIso.localeCompare(b.dateIso));
       return rows.length ? rows[rows.length-1] : null;
@@ -1155,9 +1085,9 @@ function renderAvgKpis(base){
       const r = perMachineLatest[0];
       kLastDate.textContent = r.date;
       kLastDate.title = r.readingType;
-      kLastDateSub.textContent = `${r.readingType.startsWith('KM') ? 'To Reading' : 'Time Cls. Reading'}: ${round2(r.closing)}`;
+      const readingLabel = r.readingType && r.readingType.startsWith('KM') ? 'To Reading' : 'Time Cls. Reading';
+      kLastDateSub.textContent = `${readingLabel}: ${round2(r.closing)}`;
     } else {
-      // multiple machines selected -> show the most recent among them
       perMachineLatest.sort((a,b)=> a.dateIso.localeCompare(b.dateIso));
       const r = perMachineLatest[perMachineLatest.length-1];
       kLastDate.textContent = r.date;
@@ -1181,14 +1111,15 @@ function renderAvgKpis(base){
 }
 
 // ============ HIRE vs SELF TREND CHARTS ============
-// X-axis = Month, one line per Machine, Y-value = that machine's Average
-// (Ltr/Hr) for that month. Two separate charts filtered by Owner ("Hire" /
-// "Self") built from the same base filtered dataset (Category/Machine/Site
-// interlock + date range all apply to both).
+// X-axis = Month, one LINE per Machine, Y-value = that machine's Average
+// (Ltr/Hr) for that month, wrapped labels so nothing overlaps, tooltip on
+// hover. Owner comes straight from the `owner` field on each record (see
+// fuel_analysis.py — currently "Not Defined" until a real Owner column is
+// published; charts show a friendly empty state in that case rather than
+// silently rendering blank).
 let hireTrendChart, selfTrendChart;
 
 function buildOwnerTrendDatasets(rows){
-  // rows -> { machine -> { monthKey -> {fuel,hours} } }
   const byMachine = {};
   const monthSet = new Set();
   rows.forEach(r=>{
@@ -1218,10 +1149,21 @@ function buildOwnerTrendDatasets(rows){
   return { monthLabels, datasets, machines };
 }
 
-function renderOwnerTrendChart(canvasId, chartVarSetter, existingChart, rows, titleOwner){
+function renderOwnerTrendChart(canvasId, emptyElId, existingChart, rows, ownerLabel){
+  const canvas = document.getElementById(canvasId);
+  const emptyEl = document.getElementById(emptyElId);
+  if(rows.length === 0){
+    if(existingChart) existingChart.destroy();
+    canvas.style.display = 'none';
+    emptyEl.style.display = 'flex';
+    emptyEl.textContent = `No "${ownerLabel}" machine records found. This report's Owner column is not yet published — see fuel_analysis.py notes.`;
+    return null;
+  }
+  canvas.style.display = '';
+  emptyEl.style.display = 'none';
   const {monthLabels, datasets} = buildOwnerTrendDatasets(rows);
   if(existingChart) existingChart.destroy();
-  const chart = new Chart(document.getElementById(canvasId), {
+  const chart = new Chart(canvas, {
     type:'line',
     data:{labels:monthLabels, datasets},
     options:{responsive:true, maintainAspectRatio:false,
@@ -1243,14 +1185,20 @@ function renderOwnerTrendChart(canvasId, chartVarSetter, existingChart, rows, ti
 function renderOwnerTrends(base){
   const hireRows = base.filter(r=>r.owner==='Hire');
   const selfRows = base.filter(r=>r.owner==='Self');
-  hireTrendChart = renderOwnerTrendChart('hireTrendChart', null, hireTrendChart, hireRows, 'Hire');
-  selfTrendChart = renderOwnerTrendChart('selfTrendChart', null, selfTrendChart, selfRows, 'Self');
+  hireTrendChart = renderOwnerTrendChart('hireTrendChart', 'hireTrendEmpty', hireTrendChart, hireRows, 'Hire');
+  selfTrendChart = renderOwnerTrendChart('selfTrendChart', 'selfTrendEmpty', selfTrendChart, selfRows, 'Self');
 }
 
 // ============ AVERAGE ANALYSIS — HIGH AVERAGE TABLE (Avg > 4.5, month-wise) ============
+// Also respects the Variance Filter + Alert Level slicer above it, per spec.
 function buildHighAvgMonthlyRows(base){
+  const avgRows = buildAvgAnalysisRows(base); // already variance/alert filtered, keyed by site|category|machine
+  const allowedKeys = new Set(avgRows.map(r=> r.site+'|'+r.category+'|'+r.machine));
+
   const map = {};
   base.forEach(r=>{
+    const groupKey = r.site+'|'+r.category+'|'+r.machine;
+    if(!allowedKeys.has(groupKey)) return;
     const key = r.site+'|'+r.machine+'|'+r.monthKey;
     if(!map[key]) map[key] = {site:r.site, machine:r.machine, monthKey:r.monthKey, monthLabel:r.monthLabel, fuel:0, hours:0};
     map[key].fuel += r.fuel;
@@ -1269,9 +1217,10 @@ function renderHighAvgTable(base){
   </tr>`).join('') || `<tr><td colspan="5" style="text-align:center;color:#8CA3C4;">No machines above 4.5 Ltr/Hr in current filter</td></tr>`;
 }
 
-// ============ AVERAGE ANALYSIS — ALL-SITES REPORT (no on-screen display,
-// export only) ============ — every Site/Category/Machine/Month combo,
-// Actual + Expected average, no >4.5 filtering.
+// ============ AVERAGE ANALYSIS — ALL-SITES REPORT (export only) ============
+// Every Site/Category/Machine/Month combo, Actual + Expected average, no
+// >4.5 filtering — never displayed on screen, download-only via the
+// marquee link.
 function buildAllSitesReportRows(){
   const base = getFiltered();
   const map = {};
@@ -1281,7 +1230,6 @@ function buildAllSitesReportRows(){
     map[key].fuel += r.fuel;
     map[key].hours += r.hours;
   });
-  // expected avg = machine's full-history baseline (category/site/owner/status filters respected, ignoring date/month/machine selection)
   const baselineData = allData.filter(r=>{
     if(filters.category.length && !filters.category.includes(r.category)) return false;
     if(filters.owner!=="All" && r.owner!==filters.owner) return false;
@@ -1311,7 +1259,6 @@ function renderAll(){
   renderDashboard(base);
   renderTrend(base);
   renderDetails(base);
-  renderAvgAnalysis(base);
   renderAvgKpis(base);
   renderOwnerTrends(base);
   renderHighAvgTable(base);
@@ -1319,9 +1266,7 @@ function renderAll(){
 }
 
 // ============ Site x Category x Machine x Month x Status matrix (used by
-// the Monthly Summary Excel/PDF export — this carries the FULL month-wise
-// breakdown for every machine including its Machine Status, even though the
-// on-screen table only shows site-wise overall totals) ============
+// the Monthly Summary Excel/PDF export) ============
 function buildMachineMonthMatrix(base){
   const map = {};
   base.forEach(r=>{
@@ -1335,7 +1280,6 @@ function buildMachineMonthMatrix(base){
     .sort((a,b)=> a.site.localeCompare(b.site) || a.machine.localeCompare(b.machine) || a.monthKey.localeCompare(b.monthKey));
 }
 
-// Status -> color mapping used for Excel/PDF, matching the Fuel Details pill colors
 const STATUS_COLORS = {
   'Working': {argb:'FF1E9E63', rgb:[30,158,99]},
   'Idle': {argb:'FFF2994A', rgb:[242,153,74]},
@@ -1547,125 +1491,6 @@ document.getElementById('exportMonthPdf').onclick = ()=>{
   doc.save(`Monthly_Summary_Per_Site_Machine_${new Date().toISOString().slice(0,10)}.pdf`);
 };
 
-// ============ EXPORT EXCEL (Average Analysis) ============
-document.getElementById('exportAvgExcel').onclick = async ()=>{
-  const btn = document.getElementById('exportAvgExcel');
-  btn.disabled = true; const oldTxt = btn.textContent; btn.textContent = '⏳ Preparing...';
-  try{
-    const rows = sortedAvgRows(buildAvgAnalysisRows(getFiltered()));
-    const workbook = new ExcelJS.Workbook();
-    workbook.creator = 'Fuel Analysis Dashboard';
-    workbook.created = new Date();
-    const sheet = workbook.addWorksheet('Average Analysis', {views:[{state:'frozen', ySplit:4}]});
-
-    const headers = ["Sr.No.","Site","Machine Category","Machine","Fuel Used (Ltr)","Hours Used","Actual Avg (Ltr/Hr)","Expected Avg (Ltr/Hr)","Variance (Ltr/Hr)","Alert"];
-    sheet.columns = [{width:8},{width:14},{width:22},{width:32},{width:14},{width:12},{width:16},{width:18},{width:16},{width:14}];
-
-    sheet.mergeCells(1,1,1,10);
-    const titleCell = sheet.getCell(1,1);
-    titleCell.value = 'Average Analysis — Actual vs Expected (Per Machine)';
-    titleCell.font = {bold:true, size:16, color:{argb:'FFFFFFFF'}};
-    titleCell.alignment = {vertical:'middle', horizontal:'center'};
-    titleCell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF0C2A54'}};
-    sheet.getRow(1).height = 30;
-
-    sheet.mergeCells(2,1,2,10);
-    const subCell = sheet.getCell(2,1);
-    subCell.value = `Generated: ${new Date().toLocaleString()}   |   Rows: ${rows.length}   |   Site: ${fmtFilterList(filters.site)}   |   Category: ${fmtFilterList(filters.category)}   |   Variance Range: ${varianceRange.min} to ${varianceRange.max} Ltr/Hr   |   Alert: ${alertLevelFilter}`;
-    subCell.font = {italic:true, size:10, color:{argb:'FF2DD4BF'}};
-    subCell.alignment = {vertical:'middle', horizontal:'center'};
-    subCell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF13315C'}};
-    sheet.getRow(2).height = 18;
-    sheet.getRow(3).height = 6;
-
-    const headerRow = sheet.getRow(4);
-    headers.forEach((h,idx)=>{ headerRow.getCell(idx+1).value = h; });
-    headerRow.height = 22;
-    headerRow.eachCell(cell=>{
-      cell.font = {bold:true, color:{argb:'FFFFFFFF'}, size:11};
-      cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF123A70'}};
-      cell.alignment = {vertical:'middle', horizontal:'center'};
-      cell.border = {bottom:{style:'medium', color:{argb:'FF2DD4BF'}}};
-    });
-
-    const ALERT_ARGB = {alertGreen:'FF1E9E63', alertOrange:'FFF2994A', alertRed:'FFE5484D'};
-
-    rows.forEach((r,i)=>{
-      const rowNum = 5+i;
-      const row = sheet.getRow(rowNum);
-      const values = [i+1, r.site, r.category, r.machine, r.fuel, r.hours, r.actualAvg, r.expectedAvg, (r.variance>0?'+':'')+r.variance, r.alertLabel];
-      values.forEach((v,idx)=>{ row.getCell(idx+1).value = v; });
-      row.eachCell((cell,colNumber)=>{
-        cell.alignment = {vertical:'middle', horizontal: colNumber<=4?'left':'center'};
-        cell.border = {bottom:{style:'thin', color:{argb:'FFDDE3EC'}}};
-        if(i%2===1 && colNumber!==10) cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FFF3F8FB'}};
-      });
-      // Light red row-wash for Red Alert rows so the whole row stands out,
-      // not just the Alert cell.
-      if(r.alertCls === 'alertRed'){
-        for(let c=1;c<=9;c++){
-          row.getCell(c).fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FFFCE9E9'}};
-        }
-      }
-      const alertCell = row.getCell(10);
-      alertCell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:ALERT_ARGB[r.alertCls]}};
-      alertCell.font = {bold:true, color:{argb:'FFFFFFFF'}};
-      alertCell.alignment = {vertical:'middle', horizontal:'center'};
-
-      const varCell = row.getCell(9);
-      varCell.font = {bold:true, color:{argb: r.alertCls==='alertRed' ? 'FFB3261E' : (r.alertCls==='alertOrange'?'FFB05A0F':'FF14532D')}};
-    });
-
-    const lastRow = 4 + rows.length;
-    sheet.autoFilter = {from:'A4', to:`J${lastRow}`};
-
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], {type:'application/octet-stream'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `Average_Analysis_${new Date().toISOString().slice(0,10)}.xlsx`;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  } finally {
-    btn.disabled = false; btn.textContent = oldTxt;
-  }
-};
-
-// ============ EXPORT PDF (Average Analysis) ============
-document.getElementById('exportAvgPdf').onclick = ()=>{
-  const rows = sortedAvgRows(buildAvgAnalysisRows(getFiltered()));
-  const {jsPDF} = window.jspdf;
-  const doc = new jsPDF({orientation:'landscape'});
-  const body = rows.map((r,i)=>[i+1, r.site, r.category, r.machine, r.fuel, r.hours, r.actualAvg, r.expectedAvg, (r.variance>0?'+':'')+r.variance, r.alertLabel]);
-
-  const ALERT_RGB = {alertGreen:[30,158,99], alertOrange:[242,153,74], alertRed:[229,72,77]};
-
-  doc.setFontSize(14);
-  doc.text("Average Analysis — Actual vs Expected (Per Machine)", 14, 12);
-  doc.autoTable({
-    startY:18,
-    head:[["No","Site","Machine Category","Machine","Fuel Used (Ltr)","Hours Used","Actual Avg (Ltr/Hr)","Expected Avg (Ltr/Hr)","Variance (Ltr/Hr)","Alert"]],
-    body:body,
-    styles:{fontSize:7.5, valign:'middle'},
-    headStyles:{fillColor:[10,31,61]},
-    didParseCell: function(data){
-      if(data.section === 'body'){
-        const rowIdx = data.row.index;
-        const alertCls = rows[rowIdx].alertCls;
-        if(data.column.index === 9){
-          data.cell.styles.fillColor = ALERT_RGB[alertCls];
-          data.cell.styles.textColor = [255,255,255];
-          data.cell.styles.fontStyle = 'bold';
-          data.cell.styles.halign = 'center';
-        } else if(alertCls === 'alertRed'){
-          data.cell.styles.fillColor = [252,233,233];
-        }
-      }
-    }
-  });
-  doc.save(`Average_Analysis_${new Date().toISOString().slice(0,10)}.pdf`);
-};
-
 // ============ EXPORT EXCEL (High Average Machines >4.5, month-wise) ============
 document.getElementById('exportHighAvgExcel').onclick = async ()=>{
   const btn = document.getElementById('exportHighAvgExcel');
@@ -1760,7 +1585,6 @@ function exportAllSitesPdf(){
   doc.save(`All_Sites_Average_Report_${new Date().toISOString().slice(0,10)}.pdf`);
 }
 
-// Marquee link click -> ask which format via a lightweight confirm, then export
 document.getElementById('allSiteReportLink').addEventListener('click', async ()=>{
   const wantExcel = confirm("Click OK to download Excel, or Cancel to download PDF.");
   if(wantExcel){ await exportAllSitesExcel(); } else { exportAllSitesPdf(); }
@@ -1773,7 +1597,8 @@ document.getElementById('allSiteReportLink').addEventListener('click', async ()=
 // "BACKHOE LOADER - 9213" matches group "BACKHOE LOADER". Any category that
 // doesn't match a named group falls into "Other (All Machines)". Tipper is
 // its own named group (matches "TIPPER" anywhere in the category, e.g.
-// "HMV TIPPER - 9248"), and gets the extra KPI + Pie chart per the brief.
+// "HMV TIPPER - 9248"), and — same as "Other" — gets the extra KPI + Pie
+// chart per the brief.
 const UTIL_GROUPS = [
   {key:'backhoe', label:'Backhoe Loader', match:['BACKHOE LOADER']},
   {key:'excavator', label:'Excavator', match:['EXCAVATOR']},
@@ -1817,9 +1642,6 @@ function utilRowsForGroup(base, groupKey){
   return base.filter(r=> groupForCategory(r.category)===groupKey);
 }
 
-// Actual Utilization Hours per Site/Category/Machine/Month = sum of Run Hours.
-// Percentage = Actual / Expected * 100 (expected = fixed monthly target hours,
-// adjust EXPECTED_HOURS_PER_MONTH above to match your real SLA).
 function buildUtilMonthly(rows){
   const map = {};
   const monthSet = new Set();
@@ -2001,8 +1823,6 @@ function renderUtilization(){
   let kpiPieHtml = '';
   if(isSpecial){
     const machineCount = new Set(groupRows.map(r=>r.machine)).size;
-    const bySite = {};
-    groupRows.forEach(r=>{ bySite[r.site] = bySite[r.site] || new Set(); bySite[r.site].add(r.machine); });
     kpiPieHtml = `
       <div class="util-kpi-pie-row">
         <div class="kpi" style="display:flex;flex-direction:column;justify-content:center;">
@@ -2022,15 +1842,10 @@ function renderUtilization(){
     <div class="month-table-panel" style="flex:1 1 45%;">
       <div class="panel-head">
         <h3>Report on Utilization — ${group.label}</h3>
-        <div class="export-btns">
-          <button id="utilExcelBtn1">⬇ Excel</button>
-          <button id="utilPdfBtn1">⬇ PDF</button>
-        </div>
       </div>
       <div class="marquee-link-wrap" style="margin-bottom:4px;" id="utilScrollLink1">
-        <span class="marquee-track">➤ Click here to download full Report on Utilization for ${group.label} ➤ Click here to download full Report on Utilization for ${group.label} ➤</span>
+        <span class="marquee-track">➤ Click here to download full Report on Utilization for ${group.label} (Excel / PDF) ➤ Click here to download full Report on Utilization for ${group.label} (Excel / PDF) ➤</span>
       </div>
-      <div class="mini-table-scroll"><table id="utilTable1"></table></div>
     </div>
     <div class="month-table-panel" style="flex:1 1 45%;">
       <div class="panel-head">
@@ -2044,13 +1859,10 @@ function renderUtilization(){
     </div>
   `;
 
-  document.getElementById('utilTable1').innerHTML = renderUtilReportTable(utilRows, monthKeys, monthLabels, group.label);
   document.getElementById('utilTable2').innerHTML = renderLowUtilTable(lowUtilRows);
 
   const fname1 = `Utilization_Report_${group.key}_${new Date().toISOString().slice(0,10)}`;
   const fname2 = `Low_Utilization_Report_${group.key}_${new Date().toISOString().slice(0,10)}`;
-  document.getElementById('utilExcelBtn1').onclick = ()=> exportUtilExcel(utilRows, monthKeys, monthLabels, `Report on Utilization — ${group.label}`, fname1);
-  document.getElementById('utilPdfBtn1').onclick = ()=> exportUtilPdf(utilRows, monthKeys, monthLabels, `Report on Utilization — ${group.label}`, fname1);
   document.getElementById('utilScrollLink1').onclick = async ()=>{
     const wantExcel = confirm("Click OK to download Excel, or Cancel to download PDF.");
     if(wantExcel){ exportUtilExcel(utilRows, monthKeys, monthLabels, `Report on Utilization — ${group.label}`, fname1); }
@@ -2079,7 +1891,7 @@ function renderUtilization(){
 }
 
 initUtilScroller();
-
+updateRangeSlicerUI();
 renderAll();
 </script>
 {% endblock %}
