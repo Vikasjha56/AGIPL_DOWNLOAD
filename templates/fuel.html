@@ -29,6 +29,29 @@
     background:rgba(255,255,255,.1);color:#fff;font-size:12px;outline:none;
     max-width:150px;color-scheme:dark;}
   .filter-group select option{color:#000;}
+
+  /* ---- Searchable multi-select ---- */
+  .ms-group{position:relative;}
+  .ms-box{position:relative;}
+  .ms-input{
+    padding:5px 8px;border-radius:9px;border:1px solid rgba(0,255,255,.5);
+    background:rgba(255,255,255,.1);color:#fff;font-size:12px;outline:none;
+    width:150px;cursor:pointer;}
+  .ms-panel{
+    display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:50;
+    width:220px;max-height:260px;background:#0C2A54;border:1px solid rgba(0,255,255,.5);
+    border-radius:10px;box-shadow:0 12px 28px #000a;overflow:hidden;flex-direction:column;}
+  .ms-panel.open{display:flex;}
+  .ms-search{
+    margin:6px;padding:6px 8px;border-radius:7px;border:1px solid rgba(0,255,255,.35);
+    background:rgba(255,255,255,.08);color:#fff;font-size:12px;outline:none;}
+  .ms-options{overflow-y:auto;max-height:200px;padding:0 4px 6px;}
+  .ms-option{display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:6px;
+    font-size:11.5px;color:#EAF1FB;cursor:pointer;}
+  .ms-option:hover{background:rgba(45,212,191,.15);}
+  .ms-option input{accent-color:#2DD4BF;cursor:pointer;}
+  .ms-option.all-option{border-bottom:1px solid rgba(255,255,255,.12);margin-bottom:3px;padding-bottom:7px;font-weight:600;}
+  .ms-empty{padding:8px;font-size:11px;color:#8CA3C4;text-align:center;}
   .date-range-group{display:flex;align-items:center;gap:4px;}
   .date-range-group input[type="date"]{max-width:130px;}
   .date-range-group .to-label{font-size:10.5px;opacity:.75;}
@@ -188,14 +211,32 @@
       <span class="to-label">to</span>
       <input type="date" id="fDateTo">
     </div>
-    <div class="filter-group"><label>Category</label>
-      <select id="fCategory"><option value="All">All</option></select>
+    <div class="filter-group ms-group" id="msCategory"><label>Category</label>
+      <div class="ms-box">
+        <input type="text" class="ms-input" placeholder="All" readonly>
+        <div class="ms-panel">
+          <input type="text" class="ms-search" placeholder="Search...">
+          <div class="ms-options"></div>
+        </div>
+      </div>
     </div>
-    <div class="filter-group"><label>Machine No</label>
-      <select id="fMachine"><option value="All">All</option></select>
+    <div class="filter-group ms-group" id="msMachine"><label>Machine No</label>
+      <div class="ms-box">
+        <input type="text" class="ms-input" placeholder="All" readonly>
+        <div class="ms-panel">
+          <input type="text" class="ms-search" placeholder="Search...">
+          <div class="ms-options"></div>
+        </div>
+      </div>
     </div>
-    <div class="filter-group"><label>Site</label>
-      <select id="fSite"><option value="All">All</option></select>
+    <div class="filter-group ms-group" id="msSite"><label>Site</label>
+      <div class="ms-box">
+        <input type="text" class="ms-input" placeholder="All" readonly>
+        <div class="ms-panel">
+          <input type="text" class="ms-search" placeholder="Search...">
+          <div class="ms-options"></div>
+        </div>
+      </div>
     </div>
     <div class="tabs">
       <button class="tab-btn" data-view="avg">Average Analysis</button>
