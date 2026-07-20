@@ -37,7 +37,8 @@ import requests
 # Replace this if the sheet is ever re-published with a new link.
 # ---------------------------------------------------------------------------
 GOOGLE_SHEET_CSV_URL = (
-    "https://docs.google.com/spreadsheets/d/e/2PACX-1vQKygsnSF9wt3eBxzrJAvwG-gKbUrTEEuxDFT6BsRckeF8SW6k1pJdAsmfld_k1FnWXUBVMeMhZ0jgW/pub?output=csv"
+    "https://docs.google.com/spreadsheets/d/e/2PACX-1vQKygsnSF9wt3eBxzrJAvwG-gKbUrTEEuxDFT6BsRckeF8SW6k1pJdAsmfld_k1FnWXUBVMeMhZ0jgW"
+    "/pub?output=csv"
 )
 
 
