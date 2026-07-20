@@ -117,18 +117,23 @@ def prepare_fuel_analysis(df: pd.DataFrame) -> pd.DataFrame:
 
     df["Work Done"] = _get(df, "Work Done").astype(str).str.strip()
 
-    # Owner is not present in this report -> placeholder (see module docstring)
+    # ---------- Owner ----------
     owner_df = get_owner_data()
+    
+    df["Machine"] = df["Machine"].astype(str).str.strip().str.upper()
+    owner_df["Machine"] = owner_df["Machine"].astype(str).str.strip().str.upper()
+    
+    df = df.merge(
+        owner_df,
+        on="Machine",
+        how="left"
+    )
+    
+    df["Owner"] = df["Owner"].fillna("Not Defined")
+    
 
-df["Machine"] = df["Machine"].astype(str).str.strip().str.upper()
-
-df = df.merge(
-    owner_df,
-    on="Machine",
-    how="left"
-)
-
-df["Owner"] = df["Owner"].fillna("Not Defined")
+    
+    
 
     # ---------- Opening / Closing reading (auto pair-detect) ----------
     from_reading = _get(df, "From Reading", 0).apply(_to_float)
