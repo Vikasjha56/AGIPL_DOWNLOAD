@@ -152,7 +152,7 @@
       <select id="fOwned">
         <option value="All">All</option>
         {% for o in owned_options %}
-        <option value="{{ o }}">{{ o }}</option>
+        <option value="{{ o }}" {% if o == 'Owned' %}selected{% endif %}>{{ o }}</option>
         {% endfor %}
       </select>
     </div>
@@ -287,18 +287,29 @@ function wrapLabel(label, maxLen){
   return chunks;
 }
 
-const filters = {site:"All", owned:"All", category:null, siteClick:null, reason:null, range:null, critical:false};
+// Default filter state: Owned/Hired defaults to "Owned" until the user
+// explicitly changes it via the dropdown (or clears filters, which also
+// resets back to "Owned" rather than "All").
+const DEFAULT_OWNED = "Owned";
+const filters = {site:"All", owned:DEFAULT_OWNED, category:null, siteClick:null, reason:null, range:null, critical:false};
 
 const siteSel=document.getElementById('fSite');
 [...new Set(allData.map(d=>d.site))].sort().forEach(s=>siteSel.innerHTML+=`<option value="${s}">${s}</option>`);
 const ownedSel=document.getElementById('fOwned');
+
+// Keep filters.owned in sync with whatever the select is actually showing
+// as selected (the "Owned" <option selected> from the template, if that
+// value exists in owned_options — otherwise fall back to "All").
+if(ownedSel.value){ filters.owned = ownedSel.value; } else { filters.owned = "All"; ownedSel.value = "All"; }
 
 siteSel.addEventListener('change',()=>{ filters.site=siteSel.value; filters.siteClick=null; renderAll(); });
 ownedSel.addEventListener('change',()=>{ filters.owned=ownedSel.value; renderAll(); });
 
 document.getElementById('clearFilters').onclick=()=>{
   filters.category=null; filters.siteClick=null; filters.reason=null; filters.range=null; filters.critical=false;
-  filters.site="All"; filters.owned="All"; siteSel.value="All"; ownedSel.value="All";
+  filters.site="All"; filters.owned=DEFAULT_OWNED; siteSel.value="All";
+  ownedSel.value = [...ownedSel.options].some(o=>o.value===DEFAULT_OWNED) ? DEFAULT_OWNED : "All";
+  filters.owned = ownedSel.value;
   renderAll();
 };
 
@@ -409,7 +420,7 @@ function renderAnalysis(){
   });
   document.getElementById('kCriticalCard').classList.toggle('selected', filters.critical);
 
-  const anyFilter = filters.category||filters.siteClick||filters.reason||filters.range||filters.critical||filters.site!=="All"||filters.owned!=="All";
+  const anyFilter = filters.category||filters.siteClick||filters.reason||filters.range||filters.critical||filters.site!=="All"||filters.owned!==DEFAULT_OWNED;
   document.getElementById('clearFilters').disabled = !anyFilter;
 
   const gt15 = getBase('category').filter(d=>d.days>15);
