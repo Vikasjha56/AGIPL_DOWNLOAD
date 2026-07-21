@@ -481,9 +481,9 @@
     <div class="kpi-row" id="avgKpiRow">
       <div class="kpi"><div class="kpi-label">Last Working Date</div><div class="kpi-value" id="kLastDate" style="font-size:13px;">-</div><div class="kpi-sub" id="kLastDateSub">Select a Machine</div></div>
       <div class="kpi"><div class="kpi-label">Total Fuel Issued</div><div class="kpi-value" id="aFuel">0</div><div class="kpi-sub">Litres</div></div>
-      <div class="kpi"><div class="kpi-label">Total Hours Used</div><div class="kpi-value" id="aHours">0</div><div class="kpi-sub">Hrs</div></div>
-      <div class="kpi"><div class="kpi-label">Actual Average</div><div class="kpi-value" id="aAvg">0</div><div class="kpi-sub">Ltr/Hr</div></div>
-      <div class="kpi"><div class="kpi-label">Expected Average</div><div class="kpi-value" id="aExpAvg">0</div><div class="kpi-sub">Ltr/Hr (target)</div></div>
+      <div class="kpi"><div class="kpi-label">Total Running</div><div class="kpi-value" id="aHours">0</div><div class="kpi-sub" id="aBasisUnit">Hrs</div></div>
+      <div class="kpi"><div class="kpi-label">Actual Average</div><div class="kpi-value" id="aAvg">0</div><div class="kpi-sub">Ltr/Hr or Ltr/Km</div></div>
+      <div class="kpi"><div class="kpi-label">Expected Average</div><div class="kpi-value" id="aExpAvg">0</div><div class="kpi-sub">Ltr/Hr or Ltr/Km target</div></div>
       <div class="kpi"><div class="kpi-label">Machines</div><div class="kpi-value" id="aMachines">0</div></div>
     </div>
 
@@ -506,7 +506,7 @@
 
     <div class="month-table-panel" id="highAvgPanel">
       <div class="panel-head">
-        <h3>High Avg (&gt;4.5 Ltr/Hr)</h3>
+        <h3>High Average Consumption (&gt;4.5)</h3>
         <div class="inline-toolbar">
           <div class="range-slicer" id="varianceSlicer">
             <label>Variance</label>
@@ -533,7 +533,7 @@
       </div>
       <div class="mini-table-scroll">
         <table id="highAvgTable">
-          <thead><tr><th>Sr.No.</th><th>Site</th><th>Machine</th><th>Month</th><th>Average (Ltr/Hr)</th></tr></thead>
+          <thead><tr><th>Sr.No.</th><th>Site</th><th>Machine</th><th>Month</th><th>Average (Ltr/Hr or Ltr/Km)</th></tr></thead>
           <tbody id="highAvgTableBody"></tbody>
         </table>
       </div>
@@ -577,7 +577,26 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script>
-const allData = JSON.parse(document.getElementById("fuelData").textContent);
+/*
+  Average basis rule:
+  1) Time Op./Time Cls. pair has priority -> Ltr/Hr.
+  2) From/To is used only if the time pair is absent -> Ltr/Km.
+  avgBasis arrives from fuel_analysis.py; the fallback keeps older Flask
+  serializers working until they also send avgBasis and averageUnit.
+*/
+const allData = JSON.parse(document.getElementById("fuelData").textContent).map(row => {
+  const fuel = Number(row.fuel) || 0;
+  const hours = Number(row.hours) || 0;
+  const runReading = Number(row.runReading) || 0;
+  const type = String(row.readingType || '');
+  const category = String(row.category || '').toUpperCase();
+  const isFromTo = type.includes('From/To') || type.includes('Distance') ||
+    (category.includes('TIPPER') && runReading > 0 && hours === 0);
+  const avgBasis = Number(row.avgBasis) || (isFromTo ? runReading : (hours || runReading));
+  const averageUnit = row.averageUnit || (isFromTo ? 'Ltr/Km' : 'Ltr/Hr');
+  return {...row, fuel, hours, runReading, avgBasis, averageUnit,
+    avg: avgBasis > 0 ? Math.round((fuel / avgBasis + Number.EPSILON) * 100) / 100 : 0};
+});
 if(allData.length === 0){ document.getElementById('noDataBanner').classList.add('show'); }
 
 const round2 = v => Math.round((v + Number.EPSILON) * 100) / 100;
@@ -1197,29 +1216,29 @@ function buildAvgAnalysisRows(base, f){
   const map = {};
   base.forEach(r=>{
     const key = r.site+'|'+r.category+'|'+r.machine;
-    if(!map[key]) map[key] = {site:r.site, category:r.category, machine:r.machine, fuel:0, hours:0};
+    if(!map[key]) map[key] = {site:r.site, category:r.category, machine:r.machine, fuel:0, basis:0};
     map[key].fuel += r.fuel;
-    map[key].hours += r.hours;
+    map[key].basis += r.avgBasis;
   });
 
   const baselineData = applyBaselineFilters(allData, f);
   const baseMap = {};
   baselineData.forEach(r=>{
     const key = r.site+'|'+r.category+'|'+r.machine;
-    if(!baseMap[key]) baseMap[key] = {fuel:0, hours:0};
+    if(!baseMap[key]) baseMap[key] = {fuel:0, basis:0};
     baseMap[key].fuel += r.fuel;
-    baseMap[key].hours += r.hours;
+    baseMap[key].basis += r.avgBasis;
   });
 
   let rows = Object.entries(map).map(([key, v])=>{
-    const actualAvg = v.hours>0 ? round2(v.fuel/v.hours) : 0;
-    const b = baseMap[key] || {fuel:0, hours:0};
-    const expectedAvg = b.hours>0 ? round2(b.fuel/b.hours) : 0;
+    const actualAvg = v.basis>0 ? round2(v.fuel/v.basis) : 0;
+    const b = baseMap[key] || {fuel:0, basis:0};
+    const expectedAvg = b.basis>0 ? round2(b.fuel/b.basis) : 0;
     const variance = round2(actualAvg - expectedAvg);
     const alert = classifyAlert(Math.abs(variance));
     return {
       site:v.site, category:v.category, machine:v.machine,
-      fuel:round2(v.fuel), hours:round2(v.hours),
+      fuel:round2(v.fuel), hours:round2(v.basis),
       actualAvg, expectedAvg, variance,
       alertCls:alert.cls, alertLabel:alert.label, alertRgb:alert.rgb
     };
@@ -1279,7 +1298,7 @@ function renderAvgKpis(base, f){
       const r = perMachineLatest[0];
       kLastDate.textContent = r.date;
       kLastDate.title = r.readingType;
-      const readingLabel = r.readingType && r.readingType.startsWith('KM') ? 'To Reading' : 'Time Cls. Reading';
+      const readingLabel = r.readingType && (r.readingType.includes('From/To') || r.readingType.includes('Distance')) ? 'To Reading' : 'Time Cls. Reading';
       kLastDateSub.textContent = `${readingLabel}: ${round2(r.closing)}`;
     } else {
       perMachineLatest.sort((a,b)=> a.dateIso.localeCompare(b.dateIso));
@@ -1290,15 +1309,17 @@ function renderAvgKpis(base, f){
   }
 
   const totalFuel = base.reduce((a,r)=>a+r.fuel,0);
-  const totalHours = base.reduce((a,r)=>a+r.hours,0);
-  const actualAvg = totalHours>0 ? round2(totalFuel/totalHours) : 0;
+  const totalBasis = base.reduce((a,r)=>a+r.avgBasis,0);
+  const actualAvg = totalBasis>0 ? round2(totalFuel/totalBasis) : 0;
   const baseline = applyBaselineFilters(allData, f);
   const bFuel = baseline.reduce((a,r)=>a+r.fuel,0);
-  const bHours = baseline.reduce((a,r)=>a+r.hours,0);
-  const expectedAvg = bHours>0 ? round2(bFuel/bHours) : 0;
+  const bBasis = baseline.reduce((a,r)=>a+r.avgBasis,0);
+  const expectedAvg = bBasis>0 ? round2(bFuel/bBasis) : 0;
 
   document.getElementById('aFuel').textContent = round2(totalFuel);
-  document.getElementById('aHours').textContent = round2(totalHours);
+  const units = [...new Set(base.map(r=>r.averageUnit).filter(Boolean))];
+  document.getElementById('aHours').textContent = round2(totalBasis);
+  document.getElementById('aBasisUnit').textContent = units.length === 1 ? units[0].replace('Ltr/', '') : 'Hr / Km';
   document.getElementById('aAvg').textContent = actualAvg;
   document.getElementById('aExpAvg').textContent = expectedAvg;
   document.getElementById('aMachines').textContent = new Set(base.map(r=>r.machine)).size;
@@ -1310,9 +1331,9 @@ function buildOwnerTrendDatasets(rows){
   rows.forEach(r=>{
     monthSet.add(r.monthKey);
     if(!byMachine[r.machine]) byMachine[r.machine] = {};
-    if(!byMachine[r.machine][r.monthKey]) byMachine[r.machine][r.monthKey] = {fuel:0, hours:0, label:r.monthLabel};
+    if(!byMachine[r.machine][r.monthKey]) byMachine[r.machine][r.monthKey] = {fuel:0, basis:0, label:r.monthLabel};
     byMachine[r.machine][r.monthKey].fuel += r.fuel;
-    byMachine[r.machine][r.monthKey].hours += r.hours;
+    byMachine[r.machine][r.monthKey].basis += r.avgBasis;
   });
   const months = [...monthSet].sort();
   const monthLabels = months.map(mk=>{
@@ -1323,8 +1344,8 @@ function buildOwnerTrendDatasets(rows){
   const datasets = machines.map((m,i)=>{
     const data = months.map(mk=>{
       const cell = byMachine[m][mk];
-      if(!cell || cell.hours<=0) return null;
-      return round2(cell.fuel/cell.hours);
+      if(!cell || cell.basis<=0) return null;
+      return round2(cell.fuel/cell.basis);
     });
     return {
       label: m, data, borderColor: palette[i%palette.length], backgroundColor: palette[i%palette.length],
@@ -1361,13 +1382,13 @@ function renderOwnerTrendChart(canvasId, emptyElId, existingChart, rows, ownerLa
         tooltip:{
           callbacks:{
             title: function(items){ return items.length ? items[0].label : ''; },
-            label:(ctx)=> `${ctx.dataset.label}: ${ctx.formattedValue} Ltr/Hr`
+            label:(ctx)=> `${ctx.dataset.label}: ${ctx.formattedValue} (Ltr/Hr or Ltr/Km)`
           }
         },
         datalabels:{display:false}
       },
       scales:{
-        y:{beginAtZero:true, ticks:{color:'#8CA3C4', font:{size:11}}, grid:{color:'#1D3E68'}, title:{display:true, text:'Average (Ltr/Hr)', color:'#8CA3C4', font:{size:11}}},
+        y:{beginAtZero:true, ticks:{color:'#8CA3C4', font:{size:11}}, grid:{color:'#1D3E68'}, title:{display:true, text:'Average (Ltr/Hr or Ltr/Km)', color:'#8CA3C4', font:{size:11}}},
         x:{ticks:{color:'#EAF1FB', font:{size:10}, autoSkip:false, maxRotation:0, callback:function(v){ return wrapLabel(this.getLabelForValue(v),10); }}, grid:{display:false},
            title:{display:true, text:'Month', color:'#8CA3C4', font:{size:11}}}
       }}
@@ -1391,12 +1412,12 @@ function buildHighAvgMonthlyRows(base, f){
     const groupKey = r.site+'|'+r.category+'|'+r.machine;
     if(!allowedKeys.has(groupKey)) return;
     const key = r.site+'|'+r.machine+'|'+r.monthKey;
-    if(!map[key]) map[key] = {site:r.site, machine:r.machine, monthKey:r.monthKey, monthLabel:r.monthLabel, fuel:0, hours:0};
+    if(!map[key]) map[key] = {site:r.site, machine:r.machine, monthKey:r.monthKey, monthLabel:r.monthLabel, fuel:0, basis:0};
     map[key].fuel += r.fuel;
-    map[key].hours += r.hours;
+    map[key].basis += r.avgBasis;
   });
   return Object.values(map)
-    .map(m=>({...m, avg: m.hours>0 ? round2(m.fuel/m.hours) : 0}))
+    .map(m=>({...m, avg: m.basis>0 ? round2(m.fuel/m.basis) : 0}))
     .filter(m=>m.avg > 4.5)
     .sort((a,b)=> a.site.localeCompare(b.site) || a.machine.localeCompare(b.machine) || a.monthKey.localeCompare(b.monthKey));
 }
@@ -1406,7 +1427,7 @@ function renderHighAvgTable(){
   const rows = buildHighAvgMonthlyRows(base, avgBar.state);
   document.getElementById('highAvgTableBody').innerHTML = rows.map((r,i)=>`<tr>
     <td>${i+1}</td><td>${r.site}</td><td>${r.machine}</td><td>${r.monthLabel}</td><td>${r.avg}</td>
-  </tr>`).join('') || `<tr><td colspan="5" style="text-align:center;color:#8CA3C4;">No machines above 4.5 Ltr/Hr in current filter</td></tr>`;
+  </tr>`).join('') || `<tr><td colspan="5" style="text-align:center;color:#8CA3C4;">No machines above 4.5 in current filter</td></tr>`;
   window._highAvgExportRows = rows;
 }
 
@@ -1416,23 +1437,23 @@ function buildAllSitesReportRows(){
   const map = {};
   base.forEach(r=>{
     const key = r.site+'|'+r.category+'|'+r.machine+'|'+r.monthKey;
-    if(!map[key]) map[key] = {site:r.site, category:r.category, machine:r.machine, monthKey:r.monthKey, monthLabel:r.monthLabel, fuel:0, hours:0};
+    if(!map[key]) map[key] = {site:r.site, category:r.category, machine:r.machine, monthKey:r.monthKey, monthLabel:r.monthLabel, fuel:0, basis:0};
     map[key].fuel += r.fuel;
-    map[key].hours += r.hours;
+    map[key].basis += r.avgBasis;
   });
   const baselineData = applyBaselineFilters(allData, f);
   const baseMap = {};
   baselineData.forEach(r=>{
     const key = r.site+'|'+r.category+'|'+r.machine;
-    if(!baseMap[key]) baseMap[key] = {fuel:0, hours:0};
+    if(!baseMap[key]) baseMap[key] = {fuel:0, basis:0};
     baseMap[key].fuel += r.fuel;
-    baseMap[key].hours += r.hours;
+    baseMap[key].basis += r.avgBasis;
   });
   return Object.values(map).map(m=>{
-    const actualAvg = m.hours>0 ? round2(m.fuel/m.hours) : 0;
+    const actualAvg = m.basis>0 ? round2(m.fuel/m.basis) : 0;
     const bKey = m.site+'|'+m.category+'|'+m.machine;
-    const b = baseMap[bKey] || {fuel:0, hours:0};
-    const expectedAvg = b.hours>0 ? round2(b.fuel/b.hours) : 0;
+    const b = baseMap[bKey] || {fuel:0, basis:0};
+    const expectedAvg = b.basis>0 ? round2(b.fuel/b.basis) : 0;
     return {site:m.site, category:m.category, machine:m.machine, monthLabel:m.monthLabel, monthKey:m.monthKey, actualAvg, expectedAvg};
   }).sort((a,b)=> a.site.localeCompare(b.site) || a.category.localeCompare(b.category) || a.machine.localeCompare(b.machine) || a.monthKey.localeCompare(b.monthKey));
 }
