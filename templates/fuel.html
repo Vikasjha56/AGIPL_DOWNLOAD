@@ -177,8 +177,7 @@
   .alert-legend span{display:inline-flex;align-items:center;gap:5px;}
   .alert-legend i{width:9px;height:9px;border-radius:3px;display:inline-block;}
 
-  /* ===== Split export links (Excel / PDF separate) replacing the old
-     single-click marquee-does-everything link ===== */
+  /* ===== Split export links (Excel / PDF separate) ===== */
   .export-link-row{flex:0 0 auto;display:flex;gap:6px;}
   .export-link-row .marquee-link-wrap{flex:1 1 50%;overflow:hidden;border-radius:10px;
     border:1px dashed rgba(0,255,255,.5);background:rgba(0,255,255,.06);padding:6px 0;
@@ -187,7 +186,7 @@
   .export-link-row .marquee-link-wrap.pdf-link{border-color:rgba(229,72,77,.6);background:rgba(229,72,77,.08);}
   .export-link-row .marquee-link-wrap.pdf-link:hover{background:rgba(229,72,77,.15);}
   .marquee-track{display:inline-block;white-space:nowrap;padding-left:100%;animation:marqueeScroll linear infinite;
-    font-size:11px;font-weight:700;color:#2DD4BF;letter-spacing:.3px;}
+    font-size:11px;font-weight:700;color:#2DD4BF;letter-spacing:.3px;will-change:transform;}
   .export-link-row .pdf-link .marquee-track{color:#FF8A8A;}
   .marquee-link-wrap:hover .marquee-track{animation-play-state:paused;}
   @keyframes marqueeScroll{0%{transform:translateX(0);}100%{transform:translateX(-100%);}}
@@ -249,8 +248,6 @@
     .range-slicer{width:100%;}
     .range-slicer .rs-track{flex:1;}
 
-    /* Average Analysis tab on mobile: give the two trend charts a solid,
-       readable fixed height instead of squeezing into leftover flex space */
     #view-avg .grid2{min-height:0;}
     #view-avg .grid2 .panel{height:340px;flex:none;}
     #view-avg .grid2 .chart-wrap{height:300px;min-height:300px;max-height:300px;flex:none;}
@@ -535,10 +532,10 @@
 
     <div class="export-link-row">
       <div class="marquee-link-wrap excel-link" id="allSiteReportExcelLink">
-        <span class="marquee-track">➤ All Sites Average Analysis Report — download EXCEL ➤</span>
+        <div class="marquee-track">➤ All Sites Average Analysis Report — Export to Excel ➤</div>
       </div>
       <div class="marquee-link-wrap pdf-link" id="allSiteReportPdfLink">
-        <span class="marquee-track">➤ All Sites Average Analysis Report — download PDF ➤</span>
+        <div class="marquee-track">➤ All Sites Average Analysis Report — Export to PDF ➤</div>
       </div>
     </div>
   </div>
@@ -659,11 +656,6 @@ function statusColor(status){
 
 /* ==========================================================================
    ============  GENERIC PER-TAB FILTER ENGINE  ============================
-   Each tab (avg / dashboard / trend / details / utilization) gets its own
-   independent filter state object + its own multi-select widgets + its own
-   date pickers + its own Clear button. Chart clicks / cross-filtering
-   inside a tab only ever mutate THAT tab's own filter object and re-render
-   THAT tab — other tabs are completely unaffected.
    ========================================================================== */
 
 function makeFilterState(){
@@ -684,8 +676,6 @@ function applyFilters(data, f){
   });
 }
 
-// Baseline = same filter minus date/month restriction (used for "expected"
-// / historical-average calculations).
 function applyBaselineFilters(data, f){
   return data.filter(r=>{
     if(f.category.length && !f.category.includes(r.category)) return false;
@@ -697,9 +687,6 @@ function applyBaselineFilters(data, f){
   });
 }
 
-// Builds a full filter-bar (date range + category/machine/site multiselect +
-// clear button) wired to its own independent state object. Returns the
-// state object plus a `refreshWidgets()` helper (used after Clear).
 function buildFilterBar(prefix, onChange){
   const state = makeFilterState();
 
@@ -733,14 +720,14 @@ function buildFilterBar(prefix, onChange){
   function siteOptions(){ return uniqueSorted(allData,'site'); }
 
   let machHandle;
-  const catHandle = createMultiSelect(prefix+'MsCategory', state, 'category', 'Category', categoryOptions, ()=>{
+  const catHandle = document.getElementById(prefix+'MsCategory') ? createMultiSelect(prefix+'MsCategory', state, 'category', 'Category', categoryOptions, ()=>{
     const valid = new Set(machineOptions());
     state.machine = state.machine.filter(m=>valid.has(m));
     if(machHandle) machHandle.refresh();
     onChange();
-  });
-  machHandle = createMultiSelect(prefix+'MsMachine', state, 'machine', 'Machine No', machineOptions, ()=>{ onChange(); });
-  const siteHandle = createMultiSelect(prefix+'MsSite', state, 'site', 'Site', siteOptions, ()=>{ onChange(); });
+  }) : null;
+  machHandle = document.getElementById(prefix+'MsMachine') ? createMultiSelect(prefix+'MsMachine', state, 'machine', 'Machine No', machineOptions, ()=>{ onChange(); }) : null;
+  const siteHandle = document.getElementById(prefix+'MsSite') ? createMultiSelect(prefix+'MsSite', state, 'site', 'Site', siteOptions, ()=>{ onChange(); }) : null;
 
   const clearBtn = document.getElementById(prefix+'ClearFilters');
   if(clearBtn){
@@ -748,14 +735,16 @@ function buildFilterBar(prefix, onChange){
       state.dateFrom="All"; state.dateTo="All"; state.month="All";
       state.category=[]; state.machine=[]; state.owner="All"; state.site=[]; state.status="All";
       dFrom.value=""; dTo.value="";
-      catHandle.refresh(); machHandle.refresh(); siteHandle.refresh();
+      if(catHandle) catHandle.refresh();
+      if(machHandle) machHandle.refresh();
+      if(siteHandle) siteHandle.refresh();
       onChange();
     };
   }
 
   return {
     state,
-    refreshWidgets(){ catHandle.refresh(); machHandle.refresh(); siteHandle.refresh(); },
+    refreshWidgets(){ if(catHandle) catHandle.refresh(); if(machHandle) machHandle.refresh(); if(siteHandle) siteHandle.refresh(); },
     toggleValue(type, value){
       if(type === 'date'){
         if(state.dateFrom === value && state.dateTo === value){ state.dateFrom = "All"; state.dateTo = "All"; }
@@ -773,7 +762,9 @@ function buildFilterBar(prefix, onChange){
           const valid = new Set(machineOptions());
           state.machine = state.machine.filter(m=>valid.has(m));
         }
-        catHandle.refresh(); machHandle.refresh(); siteHandle.refresh();
+        if(catHandle) catHandle.refresh();
+        if(machHandle) machHandle.refresh();
+        if(siteHandle) siteHandle.refresh();
         onChange();
         return;
       }
@@ -789,7 +780,7 @@ function buildFilterBar(prefix, onChange){
   };
 }
 
-// ============ SEARCHABLE MULTI-SELECT SLICER COMPONENT (generic, bound to any state object) ============
+// ============ SEARCHABLE MULTI-SELECT SLICER COMPONENT ============
 function createMultiSelect(containerId, stateObj, filterKey, label, getOptions, onChange){
   const container = document.getElementById(containerId);
   const local = { search:'' };
@@ -876,7 +867,6 @@ function createMultiSelect(containerId, stateObj, filterKey, label, getOptions, 
   return { refresh(){ renderTrigger(); if(panel.classList.contains('open')) renderList(); } };
 }
 
-/* Add the base .ms-* styling once (shared visual style across all tab bars) */
 const msStyleTag = document.createElement('style');
 msStyleTag.textContent = `
   .ms-group{position:relative;z-index:55;}
@@ -1064,8 +1054,16 @@ function renderTrendTab(){
       {type:'line', label:'Hours Used', data:monthHours, borderColor:'#F2994A', backgroundColor:'#F2994A', yAxisID:'y1', tension:.3, pointRadius:3}
     ]},
     options:{responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'nearest', axis:'x', intersect:true},
       onClick:(evt,els)=>{ if(els.length){ trendBar.toggleValue('month', monthKeys[els[0].index]); } },
-      plugins:{legend:{position:'bottom', labels:{color:'#EAF1FB', boxWidth:10, font:{size:10}}}},
+      plugins:{legend:{position:'bottom', labels:{color:'#EAF1FB', boxWidth:10, font:{size:10}}},
+        tooltip:{
+          filter: function(tooltipItem){ return true; },
+          callbacks:{
+            title: function(items){ return items.length ? items[0].label : ''; },
+            label: function(ctx){ return `${ctx.dataset.label}: ${ctx.formattedValue}`; }
+          }
+        }},
       scales:{
         y:{beginAtZero:true, position:'left', ticks:{color:'#8CA3C4'}, grid:{color:'#1D3E68'}, title:{display:true, text:'Fuel (Ltr)', color:'#8CA3C4', font:{size:10}}},
         y1:{beginAtZero:true, position:'right', ticks:{color:'#8CA3C4'}, grid:{display:false}, title:{display:true, text:'Hours', color:'#8CA3C4', font:{size:10}}},
@@ -1090,8 +1088,15 @@ function renderTrendTab(){
       {type:'line', label:'Expected Avg (Ltr/Hr)', data:dayExpectedLine, borderColor:'#E5484D', borderDash:[6,4], pointRadius:0, yAxisID:'y1'}
     ]},
     options:{responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'nearest', axis:'x', intersect:true},
       onClick:(evt,els)=>{ if(els.length){ trendBar.toggleValue('date', dayKeys[els[0].index]); } },
-      plugins:{legend:{position:'bottom', labels:{color:'#EAF1FB', boxWidth:10, font:{size:10}}}},
+      plugins:{legend:{position:'bottom', labels:{color:'#EAF1FB', boxWidth:10, font:{size:10}}},
+        tooltip:{
+          callbacks:{
+            title: function(items){ return items.length ? items[0].label : ''; },
+            label: function(ctx){ return `${ctx.dataset.label}: ${ctx.formattedValue}`; }
+          }
+        }},
       scales:{
         y:{beginAtZero:true, position:'left', ticks:{color:'#8CA3C4'}, grid:{color:'#1D3E68'}, title:{display:true, text:'Fuel (Ltr)', color:'#8CA3C4', font:{size:10}}},
         y1:{beginAtZero:true, position:'right', ticks:{color:'#8CA3C4'}, grid:{display:false}, title:{display:true, text:'Avg (Ltr/Hr)', color:'#8CA3C4', font:{size:10}}},
@@ -1338,13 +1343,18 @@ function renderOwnerTrendChart(canvasId, emptyElId, existingChart, rows, ownerLa
     type:'line',
     data:{labels:monthLabels, datasets},
     options:{responsive:true, maintainAspectRatio:false,
-      interaction:{mode:'nearest', axis:'x', intersect:false},
+      interaction:{mode:'nearest', axis:'x', intersect:true},
       onClick:(evt,els)=>{
         if(els.length){ avgBar.toggleValue('machine', machines[els[0].datasetIndex]); }
       },
       plugins:{
         legend:{display:false},
-        tooltip:{callbacks:{label:(ctx)=> `${ctx.dataset.label}: ${ctx.formattedValue} Ltr/Hr`}},
+        tooltip:{
+          callbacks:{
+            title: function(items){ return items.length ? items[0].label : ''; },
+            label:(ctx)=> `${ctx.dataset.label}: ${ctx.formattedValue} Ltr/Hr`
+          }
+        },
         datalabels:{display:false}
       },
       scales:{
@@ -1428,8 +1438,7 @@ function renderAvgTab(){
 }
 
 /* ==========================================================================
-   ============ Site x Category x Machine x Month x Status matrix (used by
-   the Monthly Summary Excel/PDF export on Trend tab) ============ */
+   ============ Site x Category x Machine x Month x Status matrix ============ */
 function buildMachineMonthMatrix(base){
   const map = {};
   base.forEach(r=>{
@@ -1739,7 +1748,6 @@ function exportAllSitesPdf(){
   doc.save(`All_Sites_Average_Report_${new Date().toISOString().slice(0,10)}.pdf`);
 }
 
-// Two SEPARATE marquee links: one does Excel only, the other does PDF only.
 document.getElementById('allSiteReportExcelLink').addEventListener('click', async ()=>{
   await exportAllSitesExcel();
 });
@@ -1772,15 +1780,9 @@ const TIPPER_GROUP = {key:'tipper', label:'Tipper', match:['TIPPER']};
 const EXPECTED_HOURS_PER_MONTH = 240;
 const EXPECTED_DAYS_PER_MONTH_TIPPER = 27;
 
-let currentUtilGroup = 'backhoe'; // any UTIL_GROUPS key, or 'tipper'
+let currentUtilGroup = 'backhoe';
 let utilPieChart;
 const utilBar = buildFilterBar('util', ()=>renderUtilization());
-// Utilization tab intentionally has no Category/Machine multiselect in its
-// bar (the chip/dropdown row already IS the category selector) — only
-// Date Range + Site are wired via buildFilterBar's generic inputs; the
-// unused category/machine widgets simply have no matching DOM elements so
-// buildFilterBar quietly does nothing for them. We still need a Site
-// multiselect box, present in the HTML.
 
 function groupForCategory(category){
   const upper = String(category).toUpperCase();
@@ -1788,7 +1790,7 @@ function groupForCategory(category){
   for(const g of UTIL_GROUPS){
     if(g.match.some(m=>upper.includes(m))) return g.key;
   }
-  return null; // does not belong to ANY tracked group — excluded entirely
+  return null;
 }
 
 function currentGroupMeta(){
@@ -1858,8 +1860,6 @@ function buildUtilMonthly(rows){
   return { rows: Object.values(map), monthKeys, monthLabels };
 }
 
-// Tipper is tracked in DAYS worked vs 27 expected days (no hours anywhere
-// for Tipper); every other group is tracked in HOURS vs 240 expected.
 function buildLowUtilRows(rows, monthKeys, isTipper){
   const out = [];
   rows.forEach(r=>{
@@ -2025,7 +2025,6 @@ function renderUtilization(){
   const {rows: utilRows, monthKeys, monthLabels} = buildUtilMonthly(groupRows);
   const lowUtilRows = buildLowUtilRows(utilRows, monthKeys, isTipper);
 
-  // KPI + Pie always shown (per spec: "Graph or KPI show ho hmesa")
   const machineCount = new Set(groupRows.map(r=>r.machine)).size;
   const bySite = {};
   groupRows.forEach(r=>{ bySite[r.site] = bySite[r.site] || new Set(); bySite[r.site].add(r.machine); });
@@ -2093,17 +2092,20 @@ function renderUtilization(){
   utilBar.updateClearBtnState();
 }
 
-// ============ MARQUEE SPEED — proportional to text length ====
+// ============ MARQUEE SPEED — proportional to text length, keeps a steady moderate speed ====
 function setMarqueeSpeed(trackEl, pxPerSecond){
-  pxPerSecond = pxPerSecond || 60;
-  const textWidth = trackEl.scrollWidth - trackEl.parentElement.clientWidth;
-  const totalTravel = trackEl.parentElement.clientWidth + Math.max(textWidth, 100);
-  const duration = Math.max(6, totalTravel / pxPerSecond);
-  trackEl.style.animationDuration = duration.toFixed(1) + 's';
+  pxPerSecond = pxPerSecond || 55;
+  requestAnimationFrame(()=>{
+    const wrapWidth = trackEl.parentElement.clientWidth || 300;
+    const textWidth = trackEl.scrollWidth || wrapWidth;
+    const totalTravel = wrapWidth + textWidth;
+    const duration = Math.max(8, totalTravel / pxPerSecond);
+    trackEl.style.animationDuration = duration.toFixed(1) + 's';
+  });
 }
 function initAllMarquees(){
   document.querySelectorAll('.marquee-track').forEach(track=>{
-    setMarqueeSpeed(track, 70);
+    setMarqueeSpeed(track, 55);
   });
 }
 window.addEventListener('resize', ()=>{ initAllMarquees(); });
@@ -2117,6 +2119,7 @@ renderAvgTab();       // default active tab
 renderDashboardTab(); // pre-render so switching tabs feels instant
 renderTrendTab();
 renderDetailsTab();
-setTimeout(initAllMarquees, 50);
+setTimeout(initAllMarquees, 100);
+setTimeout(initAllMarquees, 400);
 </script>
 {% endblock %}
