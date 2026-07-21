@@ -46,6 +46,7 @@
 
   .view{display:none;flex:1 1 auto;min-height:0;flex-direction:column;gap:6px;overflow:hidden;}
   .view.active{display:flex;}
+  #view-avg.active{overflow-y:auto;overflow-x:hidden;}
 
   .kpi-row{flex:0 0 auto;display:grid;grid-template-columns:repeat(6,1fr);gap:6px;}
   .kpi{background:rgba(255,255,255,.1);border:1px solid rgba(0,255,255,.35);border-radius:10px;
@@ -56,6 +57,14 @@
   .kpi-sub{font-size:9px;color:#8CA3C4;margin-top:1px;}
   .kpi-value.up{color:#5CE68A;text-shadow:0 0 8px #5CE68A;}
   .kpi-value.down{color:#FF8A8A;text-shadow:0 0 8px #FF8A8A;}
+
+  /* Compact KPI row specifically for the Average Analysis tab, to free up
+     vertical room for the trend charts below without ever overlapping. */
+  #avgKpiRow .kpi{padding:4px 6px;}
+  #avgKpiRow .kpi-label{font-size:8px;}
+  #avgKpiRow .kpi-value{font-size:13px;}
+  #avgKpiRow .kpi-sub{font-size:8px;}
+  #kLastDate{font-size:11px !important;}
 
   .grid2{flex:1 1 50%;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:6px;}
   .panel{background:rgba(255,255,255,.12);border:1px solid rgba(0,255,255,.35);border-radius:12px;
@@ -119,10 +128,10 @@
   .avg-compare-note{flex:0 0 auto;font-size:10px;color:#8CA3C4;text-align:center;margin-top:2px;}
 
   .avg-toolbar{flex:0 0 auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center;
-    padding:6px 10px;border-radius:11px;background:rgba(255,255,255,.08);margin-bottom:2px;
+    padding:5px 10px;border-radius:11px;background:rgba(255,255,255,.08);margin-bottom:2px;
     position:relative;z-index:40;}
 
-  .range-slicer{display:flex;align-items:center;gap:8px;padding:5px 10px;border-radius:9px;
+  .range-slicer{display:flex;align-items:center;gap:8px;padding:4px 10px;border-radius:9px;
     background:rgba(255,255,255,.1);border:1px solid rgba(0,255,255,.5);}
   .range-slicer label{font-size:10.5px;font-weight:600;opacity:.85;white-space:nowrap;}
   .range-slicer .rs-track{position:relative;width:150px;height:26px;display:flex;align-items:center;}
@@ -137,7 +146,7 @@
   .range-slicer .rs-val{font-size:10.5px;color:#2DD4BF;font-weight:700;min-width:78px;text-align:center;}
 
   .alert-legend{flex:0 0 auto;display:flex;gap:14px;justify-content:center;flex-wrap:wrap;
-    font-size:10px;color:#8CA3C4;padding:2px 0;}
+    font-size:10px;color:#8CA3C4;padding:1px 0;}
   .alert-legend span{display:inline-flex;align-items:center;gap:5px;}
   .alert-legend i{width:9px;height:9px;border-radius:3px;display:inline-block;}
 
@@ -223,6 +232,14 @@
     .range-slicer{width:100%;}
     .range-slicer .rs-track{flex:1;}
     .avg-toolbar .export-btns{width:100%;margin-left:0;}
+
+    /* Average Analysis tab on mobile: give the two trend charts a solid,
+       readable fixed height instead of squeezing into leftover flex space */
+    #view-avg .grid2{min-height:0;}
+    #view-avg .grid2 .panel{height:300px;flex:none;}
+    #view-avg .grid2 .chart-wrap{height:260px;min-height:260px;max-height:260px;flex:none;}
+    #avgKpiRow{grid-template-columns:repeat(3,1fr);}
+    .month-table-panel[style]{flex:none !important;height:320px;}
   }
 </style>
 
@@ -389,7 +406,7 @@
       <div class="kpi"><div class="kpi-label">Machines</div><div class="kpi-value" id="aMachines">0</div></div>
     </div>
 
-    <div class="grid2">
+    <div class="grid2" style="flex:1 1 62%;">
       <div class="panel">
         <h3>Hire Machines — Average Trend (Month × Machine)</h3>
         <div class="chart-wrap"><canvas id="hireTrendChart"></canvas><div class="chart-empty" id="hireTrendEmpty" style="display:none;"></div></div>
@@ -428,7 +445,7 @@
       <span><i style="background:#E5484D"></i> Red Alert (beyond ±1.5 Ltr/Hr)</span>
     </div>
 
-    <div class="month-table-panel" style="flex:1 1 40%;">
+    <div class="month-table-panel" style="flex:1 1 32%;min-height:180px;">
       <div class="panel-head">
         <h3>High Average Machines (Avg &gt; 4.5 Ltr/Hr) — Month-wise</h3>
         <div class="export-btns">
@@ -1116,6 +1133,11 @@ function renderAvgKpis(base){
 // hover. Owner comes straight from the `owner` field on each record (see
 // fuel_analysis.py — now reads a real "Owner" column from the sheet, so
 // these charts populate as soon as rows are tagged Hire/Self).
+//
+// Legends are intentionally OFF on both charts (too many machines to list
+// readably) — hover/tap a line to see its name + value in the tooltip
+// instead. This also frees up the panel height so the chart itself renders
+// large and clearly instead of being squeezed by a legend block.
 let hireTrendChart, selfTrendChart;
 
 function buildOwnerTrendDatasets(rows){
@@ -1168,7 +1190,7 @@ function renderOwnerTrendChart(canvasId, emptyElId, existingChart, rows, ownerLa
     options:{responsive:true, maintainAspectRatio:false,
       interaction:{mode:'nearest', axis:'x', intersect:false},
       plugins:{
-        legend:{position:'bottom', labels:{color:'#EAF1FB', boxWidth:9, font:{size:9}}},
+        legend:{display:false},
         tooltip:{callbacks:{label:(ctx)=> `${ctx.dataset.label}: ${ctx.formattedValue} Ltr/Hr`}},
         datalabels:{display:false}
       },
