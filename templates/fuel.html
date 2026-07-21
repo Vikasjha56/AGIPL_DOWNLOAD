@@ -9,7 +9,7 @@
 
 {% block content %}
 <style>
-  html, body { overflow: visible; }
+  html, body { overflow: hidden; }
 
   .fl-wrap{flex:1 1 auto;min-height:0;height:100%;display:flex;flex-direction:column;gap:6px;overflow:hidden;
     margin-top:-10px;}
@@ -192,20 +192,36 @@
   @keyframes marqueeScroll{0%{transform:translateX(0);}100%{transform:translateX(-100%);}}
 
   /* ===== Utilization tab ===== */
+  .util-scroller{flex:0 0 auto;display:flex;gap:6px;overflow-x:auto;padding:4px 2px;align-items:center;position:relative;overflow:visible;}
+  .util-scroller::-webkit-scrollbar{height:5px;}
+  .util-scroller::-webkit-scrollbar-thumb{background:rgba(45,212,191,.5);border-radius:4px;}
+  .util-chip{flex:0 0 auto;padding:7px 16px;border-radius:20px;font-size:11.5px;font-weight:700;
+    background:rgba(255,255,255,.08);border:1px solid rgba(0,255,255,.35);color:#EAF1FB;cursor:pointer;
+    white-space:nowrap;transition:.2s;}
+  .util-chip:hover{background:rgba(45,212,191,.15);}
+  .util-chip.active{background:linear-gradient(135deg,#0077ff,#00c6ff);border-color:transparent;box-shadow:0 0 12px cyan;}
+  .util-chip.has-dropdown{display:inline-flex;align-items:center;gap:6px;}
+  .util-chip.has-dropdown .dd-arrow{font-size:8px;opacity:.8;}
   .util-other-box{position:relative;flex:0 0 auto;overflow:visible;}
-  .util-scroller{overflow:visible;}
+  /* Panel is appended to <body> and positioned with JS (position:fixed) so it
+     always renders above chart canvases and is never clipped by any parent's
+     overflow:hidden / overflow-x:auto (e.g. .util-scroller, .panel). */
   .util-other-panel{display:none;position:fixed;z-index:9999;min-width:230px;max-width:80vw;
-      background:#0C2A54;border:1px solid rgba(0,255,255,.5);border-radius:11px;box-shadow:0 16px 40px #000c;padding:7px;
-      max-height:260px;}
+    background:#0C2A54;border:1px solid rgba(0,255,255,.5);border-radius:11px;box-shadow:0 16px 40px #000c;padding:7px;
+    max-height:260px;}
   .util-other-panel.open{display:block;}
   .util-other-search{width:100%;box-sizing:border-box;padding:6px 8px;border-radius:8px;border:1px solid rgba(0,255,255,.35);
-      background:rgba(255,255,255,.08);color:#fff;font-size:11.5px;outline:none;margin-bottom:6px;}
+    background:rgba(255,255,255,.08);color:#fff;font-size:11.5px;outline:none;margin-bottom:6px;}
   .util-other-search::placeholder{color:#8CA3C4;}
   .util-other-list{max-height:190px;overflow-y:auto;}
   .util-other-item{padding:7px 10px;border-radius:8px;cursor:pointer;font-size:11.5px;color:#EAF1FB;white-space:nowrap;}
   .util-other-item:hover{background:rgba(45,212,191,.15);}
   .util-other-item.active{background:linear-gradient(135deg,#0077ff,#00c6ff);color:#fff;}
   .util-other-empty{font-size:10.5px;color:#8CA3C4;text-align:center;padding:8px 0;}
+  .util-section-title{flex:0 0 auto;font-size:12px;font-weight:700;color:#2DD4BF;text-align:center;
+    text-transform:uppercase;letter-spacing:.4px;padding:2px 0;}
+  .util-body{flex:1 1 auto;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px;}
+  .util-kpi-pie-row{flex:0 0 auto;display:grid;grid-template-columns:1fr 2fr;gap:6px;min-height:220px;}
 
   @media(max-width:900px){
     .kpi-row{grid-template-columns:repeat(3,1fr);}
@@ -1752,11 +1768,22 @@ document.getElementById('allSiteReportPdfLink').addEventListener('click', ()=>{
    ============================================================
    ============ UTILIZATION TAB (own filter bar) =============
    ============================================================
-   Chips: only "Tipper" and "Other (All Machines)" are shown directly.
-   Clicking "Other (All Machines)" opens a small dropdown listing the 6
-   named categories (Backhoe Loader, Excavator, Transit Mixer, Motor
-   Grader, Hydra Crane, Tractor) - those are the ONLY machines that ever
-   appear under "Other"; nothing else falls into it.
+   Chips: only "Tipper" and "Other Machines" are shown directly.
+   Clicking "Other Machines" opens a searchable slicer-style dropdown
+   (positioned above every chart, never clipped) listing the 6 named
+   categories (Backhoe Loader, Excavator, Transit Mixer, Motor Grader,
+   Hydra Crane, Tractor) - those are the ONLY machines that ever appear
+   under "Other"; nothing else falls into it.
+
+   Reading auto-detect (mirrors fuel_analysis.py's use_from_to concept):
+   Tipper rows populate "From Reading"/"To Reading" (km) while most other
+   categories populate "Time Op. Reading"/"Time Cls. Reading" (hour-meter).
+   fuel_analysis.py already auto-picks whichever pair has data per row, so
+   Opening/Closing/Run Reading are correct for every machine regardless of
+   category. Utilization's "days worked" detection additionally honors a
+   non-zero Run Reading (not just hours/fuel), so Tipper's km-based data is
+   treated consistently with hour-meter machines everywhere in this tab.
+
    Expected Utilization = 240 hours/month for every machine EXCEPT Tipper,
    which is tracked in DAYS worked vs an expected 27 days (no hour
    conversion — days is its own unit for Tipper).
@@ -1797,37 +1824,90 @@ function initUtilScroller(){
     <button class="util-chip ${currentUtilGroup==='tipper'?'active':''}" data-group="tipper">Tipper</button>
     <div class="util-other-box" id="utilOtherBox">
       <button class="util-chip has-dropdown ${currentUtilGroup!=='tipper'?'active':''}" id="utilOtherChip">
-        <span id="utilOtherChipLabel">${currentUtilGroup!=='tipper' ? currentGroupMeta().label : 'Other (All Machines)'}</span>
+        <span id="utilOtherChipLabel">${currentUtilGroup!=='tipper' ? currentGroupMeta().label : 'Other Machines'}</span>
         <span class="dd-arrow">▾</span>
       </button>
-      <div class="util-other-panel" id="utilOtherPanel">
-        ${UTIL_GROUPS.map(g=>`<div class="util-other-item ${g.key===currentUtilGroup?'active':''}" data-group="${g.key}">${g.label}</div>`).join('')}
-      </div>
     </div>
   `;
 
+  // Panel is appended to <body> (outside the scroller / any panel's
+  // overflow:hidden) and positioned with fixed coordinates computed from
+  // the trigger's live bounding rect, so it renders above chart canvases
+  // and is never clipped, exactly like a normal slicer dropdown.
+  let panel = document.getElementById('utilOtherPanel');
+  if(!panel){
+    panel = document.createElement('div');
+    panel.id = 'utilOtherPanel';
+    panel.className = 'util-other-panel';
+    document.body.appendChild(panel);
+  }
+
+  function renderPanelList(searchTerm){
+    const term = (searchTerm||'').toLowerCase();
+    const opts = UTIL_GROUPS.filter(g=> g.label.toLowerCase().includes(term));
+    const listEl = panel.querySelector('.util-other-list');
+    if(opts.length === 0){
+      listEl.innerHTML = `<div class="util-other-empty">No matches</div>`;
+      return;
+    }
+    listEl.innerHTML = opts.map(g=>
+      `<div class="util-other-item ${g.key===currentUtilGroup?'active':''}" data-group="${g.key}">${g.label}</div>`
+    ).join('');
+    listEl.querySelectorAll('.util-other-item').forEach(item=>{
+      item.addEventListener('click', ()=>{
+        currentUtilGroup = item.dataset.group;
+        closePanel();
+        initUtilScroller();
+        renderUtilization();
+      });
+    });
+  }
+
+  function openPanel(){
+    const otherChip = document.getElementById('utilOtherChip');
+    const rect = otherChip.getBoundingClientRect();
+    panel.innerHTML = `
+      <input type="text" class="util-other-search" placeholder="Search machine type...">
+      <div class="util-other-list"></div>
+    `;
+    const estHeight = 250;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    if(spaceBelow < estHeight && rect.top > estHeight){
+      panel.style.top = 'auto';
+      panel.style.bottom = (window.innerHeight - rect.top + 6) + 'px';
+    } else {
+      panel.style.bottom = 'auto';
+      panel.style.top = (rect.bottom + 6) + 'px';
+    }
+    panel.style.left = rect.left + 'px';
+    panel.classList.add('open');
+    const searchInput = panel.querySelector('.util-other-search');
+    searchInput.addEventListener('input', ()=> renderPanelList(searchInput.value));
+    searchInput.addEventListener('click', e=>e.stopPropagation());
+    renderPanelList('');
+    searchInput.focus();
+  }
+
+  function closePanel(){
+    panel.classList.remove('open');
+  }
+
   scroller.querySelector('[data-group="tipper"]').addEventListener('click', ()=>{
     currentUtilGroup = 'tipper';
+    closePanel();
     initUtilScroller();
     renderUtilization();
   });
 
   const otherChip = document.getElementById('utilOtherChip');
-  const otherPanel = document.getElementById('utilOtherPanel');
   otherChip.addEventListener('click', (e)=>{
     e.stopPropagation();
-    otherPanel.classList.toggle('open');
+    if(panel.classList.contains('open')) closePanel(); else openPanel();
   });
-  document.addEventListener('click', ()=>{ otherPanel.classList.remove('open'); });
-  otherPanel.addEventListener('click', e=>e.stopPropagation());
-  otherPanel.querySelectorAll('.util-other-item').forEach(item=>{
-    item.addEventListener('click', ()=>{
-      currentUtilGroup = item.dataset.group;
-      otherPanel.classList.remove('open');
-      initUtilScroller();
-      renderUtilization();
-    });
-  });
+  panel.addEventListener('click', e=>e.stopPropagation());
+  document.addEventListener('click', closePanel);
+  window.addEventListener('scroll', closePanel, true);
+  window.addEventListener('resize', closePanel);
 }
 
 function utilRowsForGroup(base, groupKey){
@@ -1843,7 +1923,11 @@ function buildUtilMonthly(rows){
     if(!map[key]) map[key] = {site:r.site, category:r.category, machine:r.machine, months:{}};
     if(!map[key].months[r.monthKey]) map[key].months[r.monthKey] = {hours:0, days:new Set(), label:r.monthLabel};
     map[key].months[r.monthKey].hours += r.hours;
-    if(r.hours > 0 || r.fuel > 0) map[key].months[r.monthKey].days.add(r.dateIso);
+    // A day counts as "worked" if fuel was issued, hours were logged, OR the
+    // reading advanced — covers Tipper (From/To Reading, km-based) the same
+    // way Time Op./Cls. Reading machines are covered, mirroring the
+    // use_from_to auto-detect concept from fuel_analysis.py.
+    if(r.hours > 0 || r.fuel > 0 || (r.runReading && r.runReading > 0)) map[key].months[r.monthKey].days.add(r.dateIso);
   });
   const monthKeys = [...monthSet].sort();
   const monthLabels = monthKeys.map(mk=>{
