@@ -116,8 +116,7 @@ def prepare_fuel_analysis(df: pd.DataFrame) -> pd.DataFrame:
 
     df["Work Done"] = _get(df, "Work Done").astype(str).str.strip()
 
-    # Owner is not present in this report -> placeholder (see module docstring)
-    df["Owner"] = "Not Defined"
+   
 
     # ---------- Opening / Closing reading (auto pair-detect) ----------
     from_reading = _get(df, "From Reading", 0).apply(_to_float)
