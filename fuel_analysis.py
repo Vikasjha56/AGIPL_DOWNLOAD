@@ -1,26 +1,12 @@
-"""
-fuel_analysis.py
-================
-Turns the raw Fuel / Machine Working Report DataFrame (from fuel_reader.py)
-into an analysis-ready DataFrame with:
+"""Prepare the live fuel report for every dashboard tab.
 
-  - Opening Reading / Closing Reading  -> auto-picked from whichever pair
-    actually has data: "From Reading"/"To Reading" OR
-    "Time Op. Reading"/"Time Cls. Reading" (most machines only populate one
-    of the two pairs; the other stays 0,0).
-  - Run Reading   = Closing - Opening (km OR hour-meter units, per machine)
-  - Run Hours     = parsed from "Hours Run (0.1=6 min)" column (format H:MM)
-  - Fuel Used     = "Fuel Issue" column
-  - Fuel Average  = Fuel Used / Run Hours
-  - Month / Working Date / Site Name (derived from Log Book No. prefix,
-    e.g. "AMO-723" -> "AMO", "HEAD OFFICE-12" -> "HEAD OFFICE")
-  - KPI summary dict attached to df.attrs['kpi']
+The selected reading pair always follows this order:
+1. Time Op. Reading / Time Cls. Reading (hour-meter) when both values exist.
+2. From Reading / To Reading (distance) only when the time pair is absent.
 
-NOTE ON "Owner" (Self / Hire):
-This report does not contain an Owner column (that lives only in the
-separate "Fuel Tracker" sheet). Owner is set to "Not Defined" here so the
-dashboard/slicer still works; wire in a real Owner column/lookup later if
-you publish it alongside this sheet.
+Hour-meter consumption is Ltr/Hr. Distance consumption is Ltr/Km. This
+prevents valid fallback records from becoming zero merely because Hours Run
+is blank.
 """
 
 import re
@@ -28,144 +14,143 @@ import re
 import numpy as np
 import pandas as pd
 
+
 _NUMERIC_CLEAN_RE = re.compile(r"[^0-9.\-]")
 
 
 def _to_float(value) -> float:
+    """Convert sheet values such as ``1,250.50 km`` to a float."""
     if value is None:
         return 0.0
-    s = str(value).strip()
-    if s == "":
+    text = str(value).strip()
+    if not text:
         return 0.0
-    s = _NUMERIC_CLEAN_RE.sub("", s)
-    if s in ("", "-", "."):
+    text = _NUMERIC_CLEAN_RE.sub("", text)
+    if text in ("", "-", "."):
         return 0.0
     try:
-        return float(s)
+        return float(text)
     except ValueError:
         return 0.0
 
 
 def _hours_text_to_decimal(value) -> float:
-    """'6:30' -> 6.5 hours. Falls back to plain float if no colon."""
+    """Convert ``H:MM`` (or a plain numeric value) to decimal hours."""
     if value is None:
         return 0.0
-    s = str(value).strip()
-    if s == "":
+    text = str(value).strip()
+    if not text:
         return 0.0
-    if ":" in s:
-        parts = s.split(":")
-        try:
-            h = float(parts[0]) if parts[0] != "" else 0.0
-            m = float(parts[1]) if len(parts) > 1 and parts[1] != "" else 0.0
-            return round(h + m / 60.0, 3)
-        except ValueError:
-            return 0.0
-    return _to_float(s)
+    if ":" not in text:
+        return _to_float(text)
+    parts = text.split(":", 1)
+    try:
+        hours = float(parts[0]) if parts[0] else 0.0
+        minutes = float(parts[1]) if parts[1] else 0.0
+        return round(hours + minutes / 60, 3)
+    except ValueError:
+        return 0.0
 
 
 def _derive_site(log_book_no) -> str:
-    """
-    Site name = everything BEFORE the first "-" in the Log Book No.,
-    not just the leading alphabet run. So:
-        "AMO-723"        -> "AMO"
-        "HEAD OFFICE-12" -> "HEAD OFFICE"
-        "RJ NAGAUR-04"   -> "RJ NAGAUR"
-    If there's no "-" at all, the whole (trimmed) value is used as-is.
-    """
-    s = str(log_book_no).strip()
-    if not s:
+    text = str(log_book_no).strip()
+    if not text:
         return "Not Defined"
-    if "-" in s:
-        prefix = s.split("-", 1)[0].strip()
-        return prefix.upper() if prefix else "Not Defined"
-    return s.upper()
+    return text.split("-", 1)[0].strip().upper() or "Not Defined"
 
 
-def _get(df: pd.DataFrame, name: str, default=""):
-    return df[name] if name in df.columns else pd.Series([default] * len(df))
+def _get(df: pd.DataFrame, name: str, default="") -> pd.Series:
+    """Get a column safely, including sheets that omit an optional column."""
+    if name in df.columns:
+        return df[name]
+    return pd.Series([default] * len(df), index=df.index)
+
+
+def _has_number(value) -> bool:
+    """True for a supplied numeric cell, including a genuine zero reading."""
+    if value is None:
+        return False
+    text = _NUMERIC_CLEAN_RE.sub("", str(value).strip())
+    if text in ("", "-", "."):
+        return False
+    try:
+        float(text)
+        return True
+    except ValueError:
+        return False
 
 
 def prepare_fuel_analysis(df: pd.DataFrame) -> pd.DataFrame:
+    """Return cleaned records, with a correct per-row consumption basis."""
     df = df.copy()
 
-    # ---------- Date / Month ----------
-    working_date_raw = _get(df, "Working Date", "")
-    parsed_date = pd.to_datetime(working_date_raw, format="%d-%m-%Y", errors="coerce")
-    # fallback to a looser parse for any rows that don't match dd-mm-yyyy
-    fallback = pd.to_datetime(working_date_raw, errors="coerce", dayfirst=True)
-    parsed_date = parsed_date.fillna(fallback)
-
+    date_raw = _get(df, "Working Date")
+    parsed_date = pd.to_datetime(date_raw, format="%d-%m-%Y", errors="coerce")
+    parsed_date = parsed_date.fillna(pd.to_datetime(date_raw, dayfirst=True, errors="coerce"))
     df["_ParsedDate"] = parsed_date
-    df = df[df["_ParsedDate"].notna()].copy()
+    df = df.loc[df["_ParsedDate"].notna()].copy()
 
     df["Working Date"] = df["_ParsedDate"].dt.strftime("%d-%m-%Y")
     df["Date ISO"] = df["_ParsedDate"].dt.strftime("%Y-%m-%d")
     df["Month Key"] = df["_ParsedDate"].dt.strftime("%Y-%m")
     df["Month Label"] = df["_ParsedDate"].dt.strftime("%b %Y")
 
-    # ---------- Identity columns ----------
     df["Log Book No."] = _get(df, "Log Book No.").astype(str).str.strip()
-    df["Site Name"] = df["Log Book No."].apply(_derive_site)
+    df["Site Name"] = df["Log Book No."].map(_derive_site)
     df["Machine Category"] = _get(df, "Machine Category").astype(str).str.strip()
     df["Machine"] = _get(df, "Machine").astype(str).str.strip()
-
-    status_col = "Machine Status " if "Machine Status " in df.columns else "Machine Status"
-    df["Machine Status"] = _get(df, status_col).astype(str).str.strip()
-    df.loc[df["Machine Status"] == "", "Machine Status"] = "Not Defined"
-
     df["Work Done"] = _get(df, "Work Done").astype(str).str.strip()
 
-   
+    status_name = "Machine Status " if "Machine Status " in df.columns else "Machine Status"
+    df["Machine Status"] = _get(df, status_name).astype(str).str.strip().replace("", "Not Defined")
 
-    # ---------- Opening / Closing reading (auto pair-detect) ----------
-    from_reading = _get(df, "From Reading", 0).apply(_to_float)
-    to_reading = _get(df, "To Reading", 0).apply(_to_float)
-    time_op = _get(df, "Time Op. Reading", 0).apply(_to_float)
-    time_cls = _get(df, "Time Cls. Reading", 0).apply(_to_float)
+    # Keep both original pairs visible to the Fuel Details dashboard.
+    from_raw = _get(df, "From Reading", "")
+    to_raw = _get(df, "To Reading", "")
+    time_op_raw = _get(df, "Time Op. Reading", "")
+    time_cls_raw = _get(df, "Time Cls. Reading", "")
+    df["From Reading"] = from_raw.map(_to_float)
+    df["To Reading"] = to_raw.map(_to_float)
+    df["Time Op. Reading"] = time_op_raw.map(_to_float)
+    df["Time Cls. Reading"] = time_cls_raw.map(_to_float)
 
-    use_from_to = (from_reading != 0) | (to_reading != 0)
+    # Source priority is intentional. A machine can have old From/To values
+    # as well as current hour-meter values: always use Time Op./Cls. first.
+    # Both cells must exist; a one-sided value must never create an average.
+    from_to_distance = (df["To Reading"] - df["From Reading"]).clip(lower=0)
+    time_reading_run = (df["Time Cls. Reading"] - df["Time Op. Reading"]).clip(lower=0)
+    has_time_pair = time_op_raw.map(_has_number) & time_cls_raw.map(_has_number)
+    has_from_to_pair = from_raw.map(_has_number) & to_raw.map(_has_number)
+    uses_distance = ~has_time_pair & has_from_to_pair
 
-    df["Opening Reading"] = np.where(use_from_to, from_reading, time_op)
-    df["Closing Reading"] = np.where(use_from_to, to_reading, time_cls)
-    df["Reading Type"] = np.where(
-        use_from_to, "KM (From/To Reading)", "Hour-Meter (Time Op./Cls. Reading)"
+    df["Opening Reading"] = np.where(has_time_pair, df["Time Op. Reading"], df["From Reading"])
+    df["Closing Reading"] = np.where(has_time_pair, df["Time Cls. Reading"], df["To Reading"])
+    df["Run Reading"] = np.where(has_time_pair, time_reading_run, from_to_distance)
+    df["Reading Type"] = np.select(
+        [has_time_pair, uses_distance],
+        ["Hour-Meter (Time Op./Cls. Reading)", "Distance (From/To Reading)"],
+        default="No complete reading pair",
     )
-    df["Run Reading"] = (df["Closing Reading"] - df["Opening Reading"]).clip(lower=0)
 
-    # ---------- Fuel / Hours / Average ----------
-    df["Fuel Used"] = _get(df, "Fuel Issue", 0).apply(_to_float)
-    df["Run Hours"] = _get(df, "Hours Run (0.1=6 min)", "").apply(_hours_text_to_decimal)
+    df["Fuel Used"] = _get(df, "Fuel Issue", 0).map(_to_float)
+    df["Run Hours"] = _get(df, "Hours Run (0.1=6 min)", "").map(_hours_text_to_decimal)
 
+    # Critical fix: From/To records use their travelled distance.  Other
+    # records use logged hours; if those are absent, an advancing hour meter
+    # is a safe fallback.  A zero denominator always remains zero.
+    df["Average Denominator"] = np.select(
+        [has_time_pair, uses_distance],
+        [np.where(df["Run Hours"].gt(0), df["Run Hours"], time_reading_run), from_to_distance],
+        default=0.0,
+    )
+    df["Average Unit"] = np.select(
+        [has_time_pair, uses_distance], ["Ltr/Hr", "Ltr/Km"], default="N/A"
+    )
     df["Fuel Average"] = np.where(
-        df["Run Hours"] > 0, df["Fuel Used"] / df["Run Hours"], 0.0
-    )
-    df["Fuel Average"] = df["Fuel Average"].round(2)
+        df["Average Denominator"].gt(0),
+        df["Fuel Used"] / df["Average Denominator"],
+        0.0,
+    ).round(2)
 
-    df = df.sort_values(["Machine", "_ParsedDate"]).reset_index(drop=True)
-    df = df.drop(columns=["_ParsedDate"])
-
-    # ---------- KPI summary ----------
-    total_fuel = float(df["Fuel Used"].sum())
-    total_hours = float(df["Run Hours"].sum())
-    working_mask = df["Machine Status"].str.lower() == "working"
-    idle_mask = df["Machine Status"].str.lower() == "idle"
-
-    kpi = {
-        "total_records": int(len(df)),
-        "total_machines": int(df["Machine"].nunique()),
-        "total_sites": int(df["Site Name"].nunique()),
-        "total_fuel_issued": round(total_fuel, 2),
-        "total_hours_used": round(total_hours, 2),
-        "overall_average": round(total_fuel / total_hours, 2) if total_hours > 0 else 0.0,
-        "working_entries": int(working_mask.sum()),
-        "idle_entries": int(idle_mask.sum()),
-        "utilization_pct": round(
-            (working_mask.sum() / len(df) * 100.0), 1
-        )
-        if len(df) > 0
-        else 0.0,
-    }
-    df.attrs["kpi"] = kpi
-
+    df = df.sort_values(["Machine", "_ParsedDate"]).drop(columns="_ParsedDate").reset_index(drop=True)
     return df
