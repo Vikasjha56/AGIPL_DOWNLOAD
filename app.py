@@ -31,6 +31,41 @@ except Exception as _sched_err:
 app = Flask(__name__)
 
 
+def build_fuel_records(df):
+    """Build browser-safe JSON and preserve the correct average denominator."""
+    def number(value):
+        try:
+            return round(float(value), 2)
+        except (TypeError, ValueError):
+            return 0.0
+
+    return [
+        {
+            "srNo": i + 1,
+            "date": str(row.get("Working Date", "")),
+            "dateIso": str(row.get("Date ISO", "")),
+            "monthKey": str(row.get("Month Key", "")),
+            "monthLabel": str(row.get("Month Label", "")),
+            "site": str(row.get("Site Name", "Not Defined")),
+            "category": str(row.get("Machine Category", "")),
+            "machine": str(row.get("Machine", "")),
+            "owner": str(row.get("Owner", "Not Defined")),
+            "opening": number(row.get("Opening Reading")),
+            "closing": number(row.get("Closing Reading")),
+            "runReading": number(row.get("Run Reading")),
+            "fuel": number(row.get("Fuel Used")),
+            "hours": number(row.get("Run Hours")),
+            "avgBasis": number(row.get("Average Denominator")),
+            "averageUnit": str(row.get("Average Unit", "N/A")),
+            "avg": number(row.get("Fuel Average")),
+            "readingType": str(row.get("Reading Type", "")),
+            "status": str(row.get("Machine Status", "Not Defined")),
+            "work": str(row.get("Work Done", "")),
+        }
+        for i, (_, row) in enumerate(df.iterrows())
+    ]
+
+
 # ==========================
 # CACHE SYSTEM
 # ==========================
@@ -405,29 +440,9 @@ def fuel():
 
         df = prepare_fuel_analysis(raw)
 
-        fuel_records = [
-            {
-                "srNo": i + 1,
-                "date": row["Working Date"],
-                "dateIso": row["Date ISO"],
-                "monthKey": row["Month Key"],
-                "monthLabel": row["Month Label"],
-                "site": row["Site Name"],
-                "category": row["Machine Category"],
-                "machine": row["Machine"],
-                "owner": row["Owner"],
-                "opening": round(float(row["Opening Reading"]), 2),
-                "closing": round(float(row["Closing Reading"]), 2),
-                "readingType": row["Reading Type"],
-                "runReading": round(float(row["Run Reading"]), 2),
-                "fuel": round(float(row["Fuel Used"]), 2),
-                "hours": round(float(row["Run Hours"]), 2),
-                "avg": round(float(row["Fuel Average"]), 2),
-                "status": row["Machine Status"] if row["Machine Status"] else "Not Defined",
-                "work": row["Work Done"],
-            }
-            for i, row in df.iterrows()
-        ]
+        # Includes avgBasis + averageUnit, which fuel.html needs to calculate
+        # Time Op./Cls. rows as Ltr/Hr and From/To fallback rows as Ltr/Km.
+        fuel_records = build_fuel_records(df)
 
         return render_template("fuel.html", fuel_records=fuel_records, error=None)
 
