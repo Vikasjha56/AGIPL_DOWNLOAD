@@ -100,6 +100,9 @@ def prepare_fuel_analysis(df: pd.DataFrame) -> pd.DataFrame:
     df["Machine Category"] = _get(df, "Machine Category").astype(str).str.strip()
     df["Machine"] = _get(df, "Machine").astype(str).str.strip()
     df["Work Done"] = _get(df, "Work Done").astype(str).str.strip()
+    # The published working report has no Owner column. Keep a safe value so
+    # the Hire/Self chart code never fails; replace with a real lookup later.
+    df["Owner"] = _get(df, "Owner", "Not Defined").astype(str).str.strip().replace("", "Not Defined")
 
     status_name = "Machine Status " if "Machine Status " in df.columns else "Machine Status"
     df["Machine Status"] = _get(df, status_name).astype(str).str.strip().replace("", "Not Defined")
