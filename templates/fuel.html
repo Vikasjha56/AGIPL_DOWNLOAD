@@ -1768,21 +1768,27 @@ document.getElementById('allSiteReportPdfLink').addEventListener('click', ()=>{
    ============================================================
    ============ UTILIZATION TAB (own filter bar) =============
    ============================================================
-   Chips: only "Tipper" and "Other Machines" are shown directly.
-   Clicking "Other Machines" opens a searchable slicer-style dropdown
-   (positioned above every chart, never clipped) listing the 6 named
-   categories (Backhoe Loader, Excavator, Transit Mixer, Motor Grader,
-   Hydra Crane, Tractor) - those are the ONLY machines that ever appear
-   under "Other"; nothing else falls into it.
+   Chips: only "Tipper" and "Other Categories" are shown directly.
+   Clicking "Other Categories" opens a searchable slicer-style dropdown
+   (positioned above every chart via position:fixed + live bounding-rect
+   coordinates, so it is never clipped by any parent's overflow:hidden /
+   overflow-x:auto and always renders above the chart canvases — same
+   pattern as the searchable multi-select filters used everywhere else in
+   this dashboard) listing the 6 named categories (Backhoe Loader,
+   Excavator, Transit Mixer, Motor Grader, Hydra Crane, Tractor) - those
+   are the ONLY machines that ever appear under "Other Categories";
+   nothing else falls into it.
 
    Reading auto-detect (mirrors fuel_analysis.py's use_from_to concept):
    Tipper rows populate "From Reading"/"To Reading" (km) while most other
    categories populate "Time Op. Reading"/"Time Cls. Reading" (hour-meter).
-   fuel_analysis.py already auto-picks whichever pair has data per row, so
-   Opening/Closing/Run Reading are correct for every machine regardless of
-   category. Utilization's "days worked" detection additionally honors a
-   non-zero Run Reading (not just hours/fuel), so Tipper's km-based data is
-   treated consistently with hour-meter machines everywhere in this tab.
+   fuel_analysis.py already auto-picks whichever pair has data PER ROW
+   (Opening/Closing Reading = From/To Reading when either is non-zero,
+   else Time Op./Cls. Reading), so Run Reading = Closing - Opening is
+   always correct for every machine regardless of category — Tipper
+   included. Utilization's "days worked" detection additionally honors a
+   non-zero Run Reading (not just hours/fuel), so Tipper's km-based data
+   is treated consistently with hour-meter machines everywhere in this tab.
 
    Expected Utilization = 240 hours/month for every machine EXCEPT Tipper,
    which is tracked in DAYS worked vs an expected 27 days (no hour
@@ -1797,6 +1803,11 @@ const UTIL_GROUPS = [
   {key:'tractor', label:'Tractor', match:['TRACTOR']}
 ];
 const TIPPER_GROUP = {key:'tipper', label:'Tipper', match:['TIPPER']};
+
+// Renamed from "Other Machines" -> "Other Categories" (change this one
+// string if a different label is wanted).
+const OTHER_CHIP_DEFAULT_LABEL = 'Other Categories';
+
 const EXPECTED_HOURS_PER_MONTH = 240;
 const EXPECTED_DAYS_PER_MONTH_TIPPER = 27;
 
@@ -1820,11 +1831,14 @@ function currentGroupMeta(){
 
 function initUtilScroller(){
   const scroller = document.getElementById('utilScroller');
+  const otherActive = currentUtilGroup !== 'tipper';
+  const otherLabel = otherActive ? currentGroupMeta().label : OTHER_CHIP_DEFAULT_LABEL;
+
   scroller.innerHTML = `
     <button class="util-chip ${currentUtilGroup==='tipper'?'active':''}" data-group="tipper">Tipper</button>
     <div class="util-other-box" id="utilOtherBox">
-      <button class="util-chip has-dropdown ${currentUtilGroup!=='tipper'?'active':''}" id="utilOtherChip">
-        <span id="utilOtherChipLabel">${currentUtilGroup!=='tipper' ? currentGroupMeta().label : 'Other Machines'}</span>
+      <button class="util-chip has-dropdown ${otherActive?'active':''}" id="utilOtherChip">
+        <span id="utilOtherChipLabel">${otherLabel}</span>
         <span class="dd-arrow">▾</span>
       </button>
     </div>
@@ -1832,8 +1846,8 @@ function initUtilScroller(){
 
   // Panel is appended to <body> (outside the scroller / any panel's
   // overflow:hidden) and positioned with fixed coordinates computed from
-  // the trigger's live bounding rect, so it renders above chart canvases
-  // and is never clipped, exactly like a normal slicer dropdown.
+  // the trigger's live bounding rect, so it always renders above chart
+  // canvases and is never clipped, exactly like a normal slicer dropdown.
   let panel = document.getElementById('utilOtherPanel');
   if(!panel){
     panel = document.createElement('div');
@@ -1863,14 +1877,11 @@ function initUtilScroller(){
     });
   }
 
-  function openPanel(){
+  function positionPanel(){
     const otherChip = document.getElementById('utilOtherChip');
+    if(!otherChip) return;
     const rect = otherChip.getBoundingClientRect();
-    panel.innerHTML = `
-      <input type="text" class="util-other-search" placeholder="Search machine type...">
-      <div class="util-other-list"></div>
-    `;
-    const estHeight = 250;
+    const estHeight = 260;
     const spaceBelow = window.innerHeight - rect.bottom;
     if(spaceBelow < estHeight && rect.top > estHeight){
       panel.style.top = 'auto';
@@ -1879,7 +1890,20 @@ function initUtilScroller(){
       panel.style.bottom = 'auto';
       panel.style.top = (rect.bottom + 6) + 'px';
     }
-    panel.style.left = rect.left + 'px';
+    const panelWidth = Math.min(260, window.innerWidth * 0.8);
+    let left = rect.left;
+    if(left + panelWidth > window.innerWidth - 8){
+      left = Math.max(8, window.innerWidth - panelWidth - 8);
+    }
+    panel.style.left = left + 'px';
+  }
+
+  function openPanel(){
+    panel.innerHTML = `
+      <input type="text" class="util-other-search" placeholder="Search machine type...">
+      <div class="util-other-list"></div>
+    `;
+    positionPanel();
     panel.classList.add('open');
     const searchInput = panel.querySelector('.util-other-search');
     searchInput.addEventListener('input', ()=> renderPanelList(searchInput.value));
@@ -1906,8 +1930,12 @@ function initUtilScroller(){
   });
   panel.addEventListener('click', e=>e.stopPropagation());
   document.addEventListener('click', closePanel);
-  window.addEventListener('scroll', closePanel, true);
-  window.addEventListener('resize', closePanel);
+  window.addEventListener('scroll', ()=>{
+    if(panel.classList.contains('open')) positionPanel();
+  }, true);
+  window.addEventListener('resize', ()=>{
+    if(panel.classList.contains('open')) positionPanel(); else closePanel();
+  });
 }
 
 function utilRowsForGroup(base, groupKey){
@@ -1926,8 +1954,12 @@ function buildUtilMonthly(rows){
     // A day counts as "worked" if fuel was issued, hours were logged, OR the
     // reading advanced — covers Tipper (From/To Reading, km-based) the same
     // way Time Op./Cls. Reading machines are covered, mirroring the
-    // use_from_to auto-detect concept from fuel_analysis.py.
-    if(r.hours > 0 || r.fuel > 0 || (r.runReading && r.runReading > 0)) map[key].months[r.monthKey].days.add(r.dateIso);
+    // use_from_to auto-detect concept from fuel_analysis.py. r.runReading
+    // is already correctly populated for every category (Tipper included)
+    // by fuel_analysis.py's per-row auto-pick, so no extra column lookup
+    // is needed here.
+    const readingMoved = r.runReading && r.runReading > 0;
+    if(r.hours > 0 || r.fuel > 0 || readingMoved) map[key].months[r.monthKey].days.add(r.dateIso);
   });
   const monthKeys = [...monthSet].sort();
   const monthLabels = monthKeys.map(mk=>{
