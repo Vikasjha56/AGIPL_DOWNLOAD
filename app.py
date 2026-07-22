@@ -23,10 +23,12 @@ from pdf_export import create_pdf
 
 try:
     from reminder_scheduler import start_scheduler, send_reminder_for_row
+    _sched_import_error = None
 except Exception as _sched_err:
-    print("WARNING: reminder_scheduler not available, WhatsApp reminders disabled:", _sched_err)
+    print("WARNING: reminder_scheduler not available, WhatsApp reminders disabled:", repr(_sched_err))
     start_scheduler = None
     send_reminder_for_row = None
+    _sched_import_error = str(_sched_err)
 
 
 app = Flask(__name__)
@@ -308,7 +310,10 @@ def critical_pending():
 @app.route("/send-reminder/<sno>", methods=["POST"])
 def send_reminder(sno):
     if send_reminder_for_row is None:
-        return jsonify({"ok": False, "error": "reminder_scheduler not available"}), 500
+        return jsonify({
+            "ok": False,
+            "error": f"reminder_scheduler not available: {_sched_import_error or 'unknown import error'}"
+        }), 500
     try:
         records = get_cached_critical_records()
         record = next((r for r in records if str(r.get("sno")) == str(sno)), None)
