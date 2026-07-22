@@ -64,6 +64,19 @@
   .pill{padding:3px 10px;border-radius:12px;font-size:10.5px;font-weight:700;color:#fff;display:inline-block;}
   .pill.High{background:#E5484D;} .pill.Medium{background:#F2994A;} .pill.Low{background:#1E9E63;}
 
+  .send-btn{
+    border:1px solid rgba(0,255,255,.5);
+    background:rgba(255,255,255,.1);
+    color:#fff;
+    border-radius:8px;
+    padding:4px 10px;
+    cursor:pointer;
+    font-size:14px;
+    transition:.2s;
+  }
+  .send-btn:hover{ background:rgba(45,212,191,.25); }
+  .send-btn:disabled{ opacity:.5; cursor:wait; }
+
   @media(max-width:900px){
     .kpi-row{grid-template-columns:repeat(2,1fr);}
     .mid-row{grid-template-columns:1fr;}
@@ -133,6 +146,7 @@
               <th data-key="allotted_by">Allotted By</th>
               <th data-key="days">Pending Since (Days)</th>
               <th data-key="alert">Alert</th>
+              <th style="cursor:default">Send</th>
             </tr>
           </thead>
           <tbody id="cpBody"></tbody>
@@ -248,14 +262,41 @@ function renderTable(){
     <td>${i+1}</td><td>${d.assigned_to}</td><td>${d.details}</td>
     <td>${d.date}</td><td>${d.allotted_by}</td><td>${d.days}</td>
     <td><span class="pill ${alertFor(d.days)}">${alertLabel(d.days)}</span></td>
+    <td style="text-align:center">
+      <button class="send-btn" data-sno="${d.sno}" title="Send WhatsApp now">📱</button>
+    </td>
   </tr>`).join('');
 
   document.querySelectorAll('#cpTable thead th').forEach(th=>{
     const base = th.textContent.replace(' ▲','').replace(' ▼','').trim();
-    th.textContent = base + (th.dataset.key===sortKey ? (sortDir===1?' ▲':' ▼') : '');
+    if(th.dataset.key) th.textContent = base + (th.dataset.key===sortKey ? (sortDir===1?' ▲':' ▼') : '');
+  });
+
+  // wire up the send buttons every time the table re-renders
+  document.querySelectorAll('.send-btn').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const sno = btn.dataset.sno;
+      btn.disabled = true;
+      btn.textContent = '…';
+      try{
+        const res = await fetch(`/send-reminder/${sno}`, {method:'POST'});
+        const data = await res.json();
+        if(data.ok){
+          btn.textContent = '✅';
+        }else{
+          btn.textContent = '⚠';
+          alert('Send failed: ' + (data.error || 'unknown error'));
+        }
+      }catch(e){
+        btn.textContent = '⚠';
+        alert('Send failed: ' + e);
+      }
+      setTimeout(()=>{ btn.disabled=false; btn.textContent='📱'; }, 3000);
+    });
   });
 }
 document.querySelectorAll('#cpTable thead th').forEach(th=>{
+  if(!th.dataset.key) return;
   th.addEventListener('click',()=>{
     const key = th.dataset.key;
     if(sortKey===key) sortDir*=-1; else { sortKey=key; sortDir=1; }
