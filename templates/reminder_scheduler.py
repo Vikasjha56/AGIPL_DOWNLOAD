@@ -35,8 +35,13 @@ from apscheduler.triggers.cron import CronTrigger
 # CONFIG
 # ==========================
 
+# WA_BOT_URL must point to wherever whatsapp-bot/index.js is actually running.
+# If Flask and the bot run on the SAME machine, "http://localhost:4000" is correct.
+# If Flask is deployed online (e.g. Render) and the bot runs on your own PC/VPS,
+# this MUST be that machine's public address, e.g. "http://123.45.67.89:4000"
+# — set it as an environment variable named WA_BOT_URL wherever Flask is hosted.
 WA_BOT_URL = os.environ.get("WA_BOT_URL", "http://localhost:4000")
-WA_BOT_API_KEY = os.environ.get("WA_BOT_API_KEY", "change-this-secret")
+WA_BOT_API_KEY = os.environ.get("WA_BOT_API_KEY", "agipl-secret-key-2026")
 
 # "Allotted By" names -> their WhatsApp number.
 # TODO: add every supervisor name that appears in your sheet.
