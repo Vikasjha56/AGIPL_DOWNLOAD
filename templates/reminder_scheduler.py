@@ -42,8 +42,8 @@ TWILIO_WHATSAPP_FROM = os.environ.get("TWILIO_WHATSAPP_FROM", "whatsapp:+1415523
 # "Allotted By" names -> their WhatsApp number.
 # TODO: add every supervisor name that appears in your sheet.
 SUPERVISOR_CONTACTS = {
-    "Asfiya": "whatsapp:+91XXXXXXXXXX",
-    "Abhishek Agrawal": "whatsapp:+91XXXXXXXXXX",
+    "Asfiya": "whatsapp:+917987410451",
+    "Abhishek Agrawal": "whatsapp:+917987410451",
 }
 
 _client = None
