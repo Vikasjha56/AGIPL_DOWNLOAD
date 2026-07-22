@@ -164,26 +164,41 @@ def send_reminder_for_row(record, notified=None, save=True):
 
         if contact:
             ok, info = send_whatsapp(contact, completed_message(record))
-            results.append({"to": "assignee", "ok": ok})
+            results.append({"to": "assignee", "ok": ok, "info": info})
         if supervisor_number:
             ok, info = send_whatsapp(supervisor_number, completed_message_for_supervisor(record))
-            results.append({"to": "supervisor", "ok": ok})
+            results.append({"to": "supervisor", "ok": ok, "info": info})
 
-        notified.add(key)
-        if save:
-            _save_notified(notified)
-        return {"skipped": False, "status": "completed", "sno": key, "results": results}
+        any_ok = any(r["ok"] for r in results)
+        if any_ok:
+            notified.add(key)
+            if save:
+                _save_notified(notified)
+        return {
+            "skipped": False,
+            "ok": any_ok,
+            "status": "completed",
+            "sno": key,
+            "results": results,
+        }
 
     else:
         # Pending -> reminder every time this is called (daily job, or manual button)
         if contact:
             ok, info = send_whatsapp(contact, pending_message(record))
-            results.append({"to": "assignee", "ok": ok})
+            results.append({"to": "assignee", "ok": ok, "info": info})
         if supervisor_number:
             ok, info = send_whatsapp(supervisor_number, pending_message_for_supervisor(record))
-            results.append({"to": "supervisor", "ok": ok})
+            results.append({"to": "supervisor", "ok": ok, "info": info})
 
-        return {"skipped": False, "status": "pending", "sno": key, "results": results}
+        any_ok = any(r["ok"] for r in results) if results else False
+        return {
+            "skipped": False,
+            "ok": any_ok,
+            "status": "pending",
+            "sno": key,
+            "results": results,
+        }
 
 
 # ==========================
