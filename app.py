@@ -320,6 +320,23 @@ def send_reminder(sno):
         if not record:
             return jsonify({"ok": False, "error": f"Task {sno} not found"}), 404
         result = send_reminder_for_row(record)
+
+        if result.get("skipped"):
+            return jsonify({"ok": True, "result": result})
+
+        if not result.get("ok"):
+            # Every attempted send failed — surface the real reason(s).
+            reasons = [
+                str(r.get("info")) for r in result.get("results", []) if not r.get("ok")
+            ]
+            reason_text = "; ".join(reasons) if reasons else "whatsapp-bot did not confirm delivery"
+            return jsonify({
+                "ok": False,
+                "error": f"WhatsApp send failed — {reason_text}. Check that whatsapp-bot "
+                         f"(node index.js) is running and logged in, and WA_BOT_URL/WA_BOT_API_KEY "
+                         f"match on both sides."
+            }), 502
+
         return jsonify({"ok": True, "result": result})
     except Exception as e:
         print("SEND REMINDER ERROR:", e)
