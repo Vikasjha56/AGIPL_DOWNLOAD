@@ -1,111 +1,138 @@
-# WhatsApp Reminder Setup — Step by Step
+# AGIPL WhatsApp Reminder — Final Setup Guide
 
-## ⚠️ IMPORTANT if your Flask app is deployed online (e.g. Render)
+No Twilio. Uses your own WhatsApp via `whatsapp-web.js`.
 
-Your dashboard URL looks like `agipl-download-system.onrender.com` — Render
-cannot run the whatsapp-bot (it needs a persistent Chrome browser + a
-WhatsApp session that stays logged in 24x7, which free/most web hosts
-don't support).
+---
 
-So you must run `whatsapp-bot/index.js` on a machine you control — your
-own PC (keep it on) or a small VPS — and then tell your Render app where
-to find it:
+## FILES IN THIS DELIVERY (all ready to paste, nothing to edit inside them
+## except the 2 things marked "EDIT THIS" below)
 
-1. On that PC/VPS: `cd whatsapp-bot && npm install && node index.js`,
-   scan the QR code once.
-2. Make port 4000 reachable from the internet (port-forward your router,
-   or use a tunnel like `ngrok http 4000` for a quick public URL, or
-   deploy the bot to a small always-on VPS like a $5 DigitalOcean droplet).
-3. In Render's dashboard → your service → Environment → add:
-   - `WA_BOT_URL` = the public address from step 2 (e.g. `https://xxxx.ngrok.io` or `http://your-vps-ip:4000`)
-   - `WA_BOT_API_KEY` = `agipl-secret-key-2026` (must match whatsapp-bot's `.env`)
-4. Redeploy on Render.
+```
+app.py                          -> replaces your existing app.py
+critical_pending.html           -> replaces templates/critical_pending.html
+reminder_scheduler.py           -> replaces your existing reminder_scheduler.py
+requirements.txt                -> replaces your existing requirements.txt
+whatsapp-bot/index.js           -> new folder, the WhatsApp automation service
+whatsapp-bot/package.json       -> new folder
+whatsapp-bot/.env               -> new folder, already filled in, ready to use
+```
 
-If you'd rather keep everything simple, run BOTH Flask and whatsapp-bot on
-the same always-on PC/VPS instead of Render — then `WA_BOT_URL` can stay
-as the default `http://localhost:4000` and you don't need step 2/3 at all.
+---
 
+## PART 1 — Your Flask project (app.py, templates, requirements.txt)
 
-No Twilio. Uses `whatsapp-web.js` — your own WhatsApp Web session, automated.
+Just replace the files. Nothing to type for this part except reinstalling
+Python packages, run this in your Flask project's terminal:
 
-## 1. Install Node.js dependencies
+```
+pip install -r requirements.txt
+```
+
+That single command installs everything Flask needs (`apscheduler` and
+`requests` are already listed inside `requirements.txt` — you do NOT need
+to `pip install` them separately, and `twilio` has been removed since it's
+no longer used).
+
+---
+
+## PART 2 — The WhatsApp bot (a separate Node.js service)
+
+This is a **different program** that must run 24x7 on a machine you
+control — your own PC, or a small always-on VPS. It CANNOT run on Render
+(Render can't keep a logged-in WhatsApp browser session alive).
+
+On that machine, open a terminal and run these commands one by one:
 
 ```
 cd whatsapp-bot
 npm install
-```
-
-## 2. Set your secret API key
-
-Copy `.env.example` to `.env` and change `WA_BOT_API_KEY` to any random string.
-Then either `export` the same values before starting Flask, or hardcode the
-same string in `reminder_scheduler.py` (`WA_BOT_API_KEY`).
-
-## 3. Start the WhatsApp bot (keep this running 24x7)
-
-```
 node index.js
 ```
 
-A QR code will print in the terminal. Open WhatsApp on your phone ->
-Settings -> Linked Devices -> Link a Device -> scan it. Once you see
-`WhatsApp client is READY` in the logs, it's live.
+- `cd whatsapp-bot` → go into the folder
+- `npm install` → downloads the WhatsApp automation library (one-time)
+- `node index.js` → starts the bot
 
-**Important:** this process must stay running all the time (use `pm2`,
-`screen`, `tmux`, or a systemd service) — if it stops, the 10:30 AM job
-and the dashboard button won't be able to send anything until it's
-restarted (and if the session ever logs out, you'll need to re-scan).
-
-## 4. Update your Flask app
-
-- Replace your old `reminder_scheduler.py` with the new one in this folder.
-- Apply the 3 small edits in `app_py_additions.py` to your `app.py`
-  (add `status` field, add the import, add the `/send-reminder/<sno>` route).
-- Apply the edits in `critical_pending_html_additions.txt` to
-  `templates/critical_pending.html` (adds the 📱 button column).
-- Fill in real phone numbers for every name in `SUPERVISOR_CONTACTS`
-  inside `reminder_scheduler.py`.
-- Make sure your Google Sheet's "Status" column only ever contains
-  exactly `Pending` or `Completed` (case doesn't matter, the code lowercases
-  it, but avoid typos like "Compelted" — those will be treated as Pending).
-
-## 5. Install the new Python dependency
+The first time you run `node index.js`, a QR code will print right in
+the terminal. Open WhatsApp on your phone → Settings → Linked Devices →
+Link a Device → scan it. Once the terminal shows:
 
 ```
-pip install apscheduler requests
+[whatsapp-bot] WhatsApp client is READY. Logged in and listening.
 ```
 
-(`twilio` is no longer needed — you can remove it if it was in
-requirements.txt.)
+...it's live. Leave this terminal/process running all the time (use
+`pm2 start index.js` instead of `node index.js` if you want it to
+survive terminal closes and auto-restart on crashes — install pm2 with
+`npm install -g pm2` first).
 
-## 6. Run Flask as usual
+---
+
+## PART 3 — EDIT THIS (only 2 things, both quick)
+
+### 1. Supervisor phone numbers
+Open `reminder_scheduler.py`, find this block near the top, and put in
+real WhatsApp numbers (with country code, no spaces/dashes):
+
+```python
+SUPERVISOR_CONTACTS = {
+    "Asfiya": "917987410451",
+    "Abhishek Agrawal": "917987410451",
+}
+```
+Add one line per name exactly as it appears in your sheet's "Allotted By"
+column.
+
+### 2. Where is the bot running, relative to Flask?
+
+**Case A — Flask and whatsapp-bot on the SAME machine:** do nothing, the
+default already works (`WA_BOT_URL=http://localhost:4000`).
+
+**Case B — Flask is on Render (e.g. `agipl-download-system.onrender.com`)
+and whatsapp-bot runs on your own PC/VPS:** Render needs a public address
+to reach your bot. Easiest free option — run this on the SAME machine as
+the bot, in a new terminal, while `node index.js` is still running:
 
 ```
-python app.py
+npx ngrok http 4000
 ```
 
-You should see: `[reminder_scheduler] Daily 10:30 AM WhatsApp reminder job started.`
+It will print a URL like `https://abcd1234.ngrok-free.app`. Then in
+Render's dashboard → your service → Environment → add:
 
-## How it behaves
+```
+WA_BOT_URL = https://abcd1234.ngrok-free.app
+WA_BOT_API_KEY = agipl-secret-key-2026
+```
 
-- **Every day at 10:30 AM**: every row where Status = "Pending" gets a
-  reminder sent to the assignee's Contact No AND the supervisor
-  (from SUPERVISOR_CONTACTS, matched by "Allotted By" name).
-- **When Status flips to "Completed"**: the very next time the daily job
-  (or you) checks that row, it sends ONE completion message to both
-  people — then remembers it in `completed_notified.json` and never
-  sends that completion message again, even after restarts.
-- **Dashboard 📱 button**: sends the same message immediately for that
-  one row, without waiting for 10:30 AM. Uses the exact same logic, so
-  it respects the one-time-completed rule too — clicking it on an
-  already-notified completed task will just skip silently (marked
-  `skipped: true` in the response).
+Redeploy on Render. (Note: free ngrok URLs change every restart — for a
+permanent setup later, a small always-on VPS running both Flask and the
+bot together is simpler long-term.)
 
-## Files in this folder
+---
 
-- `whatsapp-bot/index.js` + `package.json` + `.env.example` — the Node
-  service that actually talks to WhatsApp.
-- `reminder_scheduler.py` — replaces your old Twilio-based one.
-- `app_py_additions.py` — exact lines to add to your existing `app.py`.
-- `critical_pending_html_additions.txt` — exact lines to add to your
-  existing `critical_pending.html`.
+## How it behaves once everything is running
+
+- **Daily at 10:30 AM**: every task with Status = "Pending" gets a
+  WhatsApp reminder sent to the assignee (Contact No column) AND their
+  supervisor.
+- **When Status flips to "Completed"**: one "task completed" message
+  goes to both people, one time only — never repeated, even after
+  restarts.
+- **📱 button on each row**: sends that task's message immediately.
+- **Click a slice of the pie chart**: sends reminders for every pending
+  task belonging to that person, all at once.
+- **Status banner at the top of the page**: shows what happened after
+  every send (success / already-notified / failed with the real reason).
+
+---
+
+## If "Send failed" still shows
+
+Open the browser console or the banner message — it now shows the real
+reason (not just "not available"). Common causes:
+- whatsapp-bot isn't running / QR not scanned yet → check that terminal
+- `WA_BOT_URL` / `WA_BOT_API_KEY` don't match between Flask and the bot's
+  `.env`
+- if Flask is on Render, `WA_BOT_URL` isn't reachable from the internet
+  (see Case B above)
