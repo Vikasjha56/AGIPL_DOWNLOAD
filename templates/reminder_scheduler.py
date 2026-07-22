@@ -1,107 +1,214 @@
 """
-24-hour WhatsApp reminder scheduler for Critical Pending Task.
+Daily WhatsApp reminder scheduler for Critical Pending Task.
 
-Sends a WhatsApp message to:
-  1) the assignee ("Work Allotted To") — using the "Contact No" column
-     that is now in the Google Sheet, and
-  2) their supervisor ("Allotted By") — using the SUPERVISOR_CONTACTS
-     dict below, since the sheet only has names for this column, not
-     phone numbers.
+Uses the LOCAL whatsapp-bot service (whatsapp-web.js — NOT Twilio) that
+must be running separately: see whatsapp-bot/index.js.
+
+Behaviour:
+  - Every day at 10:30 AM: for every row where Status == "Pending",
+    sends a reminder to BOTH the assignee (Contact No) and the
+    supervisor (Allotted By -> SUPERVISOR_CONTACTS).
+  - When a row's Status flips to "Completed": sends ONE "task completed"
+    message to both assignee and supervisor, then remembers (in
+    completed_notified.json) that it already sent it, so it never sends
+    that completion message again — even after the scheduler restarts.
+  - The dashboard "send now" button (Flask route below) reuses the same
+    send_reminder_for_row() function, so manual sends and the daily job
+    behave identically.
 
 BEFORE THIS WORKS YOU MUST:
-  1. pip install twilio apscheduler
-  2. Sign up at https://www.twilio.com, get a WhatsApp-enabled sender
-     (sandbox for testing, or an approved business number for production).
-  3. Fill in TWILIO_SID / TWILIO_AUTH_TOKEN / TWILIO_WHATSAPP_FROM below
-     (ideally via environment variables, not hardcoded).
-  4. Fill in real phone numbers in SUPERVISOR_CONTACTS — one entry per
-     name that appears in your sheet's "Allotted By" column.
-
-This is a starting scaffold — Twilio is used here because it's the most
-common WhatsApp API for this kind of use case, but if you're already using
-a different provider (Gupshup, official WhatsApp Business API, etc.) let
-me know and I'll swap send_whatsapp() to match it.
+  1. cd whatsapp-bot && npm install && node index.js
+     -> scan the QR code once with WhatsApp (Linked Devices)
+  2. Fill in SUPERVISOR_CONTACTS below with real numbers.
+  3. Set WA_BOT_API_KEY the same in whatsapp-bot/.env and here
+     (or export it as an environment variable in both places).
 """
-pip install twilio apscheduler
+
 import os
+import json
+import requests
 from apscheduler.schedulers.background import BackgroundScheduler
-
-try:
-    from twilio.rest import Client
-except ImportError:
-    Client = None  # scheduler will still start; sends will just fail loudly until installed
+from apscheduler.triggers.cron import CronTrigger
 
 
 # ==========================
-# TODO: fill these in (use environment variables in production)
+# CONFIG
 # ==========================
-TWILIO_SID = os.environ.get("TWILIO_SID", "YOUR_TWILIO_ACCOUNT_SID")
-TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "YOUR_TWILIO_AUTH_TOKEN")
-TWILIO_WHATSAPP_FROM = os.environ.get("TWILIO_WHATSAPP_FROM", "whatsapp:+14155238886")  # Twilio sandbox by default
+
+WA_BOT_URL = os.environ.get("WA_BOT_URL", "http://localhost:4000")
+WA_BOT_API_KEY = os.environ.get("WA_BOT_API_KEY", "change-this-secret")
 
 # "Allotted By" names -> their WhatsApp number.
 # TODO: add every supervisor name that appears in your sheet.
+# Format: plain number with country code works fine, e.g. "919876543210"
 SUPERVISOR_CONTACTS = {
-    "Asfiya": "whatsapp:+917987410451",
-    "Abhishek Agrawal": "whatsapp:+917987410451",
+    "Asfiya": "917987410451",
+    "Abhishek Agrawal": "917987410451",
 }
 
-_client = None
-if Client and "YOUR_TWILIO" not in TWILIO_SID:
-    _client = Client(TWILIO_SID, TWILIO_AUTH_TOKEN)
+# Where we remember "completion message already sent for this task" so it
+# is never sent twice, even across restarts of this scheduler.
+NOTIFIED_STORE_PATH = os.path.join(os.path.dirname(__file__), "completed_notified.json")
 
+
+# ==========================
+# "ALREADY NOTIFIED" STORE
+# (flat file is enough here — one row per task; swap for a DB if the
+#  sheet grows very large)
+# ==========================
+
+def _load_notified():
+    if not os.path.exists(NOTIFIED_STORE_PATH):
+        return set()
+    try:
+        with open(NOTIFIED_STORE_PATH, "r") as f:
+            return set(json.load(f))
+    except Exception:
+        return set()
+
+
+def _save_notified(notified_set):
+    with open(NOTIFIED_STORE_PATH, "w") as f:
+        json.dump(sorted(notified_set), f, indent=2)
+
+
+def _task_key(record):
+    """Stable identity for a task row. S.No. is enough since it's the
+    sheet's own row identifier."""
+    return str(record.get("sno", ""))
+
+
+# ==========================
+# SENDING
+# ==========================
 
 def send_whatsapp(to_number, message):
+    """Calls the local whatsapp-bot HTTP API. Returns (ok, info)."""
     if not to_number:
-        return
-    if _client is None:
-        print("[reminder_scheduler] Twilio not configured — would have sent to", to_number, ":", message)
-        return
-    to = to_number if to_number.startswith("whatsapp:") else f"whatsapp:{to_number}"
+        return False, "no number"
     try:
-        _client.messages.create(from_=TWILIO_WHATSAPP_FROM, to=to, body=message)
-        print(f"[reminder_scheduler] WhatsApp sent to {to}")
+        resp = requests.post(
+            f"{WA_BOT_URL}/send",
+            json={"to": to_number, "message": message},
+            headers={"x-api-key": WA_BOT_API_KEY},
+            timeout=20,
+        )
+        data = resp.json()
+        if resp.status_code == 200 and data.get("ok"):
+            print(f"[reminder_scheduler] WhatsApp sent to {to_number}")
+            return True, data
+        print(f"[reminder_scheduler] WhatsApp send FAILED for {to_number}:", data)
+        return False, data
     except Exception as e:
-        print(f"[reminder_scheduler] WhatsApp send failed for {to}:", e)
+        print(f"[reminder_scheduler] WhatsApp send error for {to_number}:", e)
+        return False, str(e)
 
+
+def pending_message(record):
+    return (
+        f"⏳ Reminder: Task '{record.get('details','')}' is still PENDING "
+        f"since {record.get('days',0)} day(s). Please complete it and update the status."
+    )
+
+
+def pending_message_for_supervisor(record):
+    return (
+        f"⏳ Reminder: The task '{record.get('details','')}' allotted to "
+        f"{record.get('assigned_to','')} is still PENDING "
+        f"({record.get('days',0)} day(s))."
+    )
+
+
+def completed_message(record):
+    return (
+        f"✅ Update: Task '{record.get('details','')}' has been marked COMPLETED. "
+        f"No further action needed."
+    )
+
+
+def completed_message_for_supervisor(record):
+    return (
+        f"✅ Update: The task '{record.get('details','')}' allotted to "
+        f"{record.get('assigned_to','')} has been marked COMPLETED."
+    )
+
+
+def send_reminder_for_row(record, notified=None, save=True):
+    """Sends the right message (pending or one-time-completed) for a
+    single task record. Used by BOTH the daily job and the dashboard
+    'send now' button, so behaviour is always identical.
+
+    record must have: sno, assigned_to, contact_no, details, allotted_by,
+    days, status ("Pending" or "Completed").
+    """
+    if notified is None:
+        notified = _load_notified()
+
+    status = str(record.get("status", "")).strip().lower()
+    key = _task_key(record)
+    contact = (record.get("contact_no") or "").strip()
+    allotted_by = record.get("allotted_by", "")
+    supervisor_number = SUPERVISOR_CONTACTS.get(allotted_by)
+
+    results = []
+
+    if status == "completed":
+        if key in notified:
+            # Already told everyone once — do nothing.
+            return {"skipped": True, "reason": "completion already notified", "sno": key}
+
+        if contact:
+            ok, info = send_whatsapp(contact, completed_message(record))
+            results.append({"to": "assignee", "ok": ok})
+        if supervisor_number:
+            ok, info = send_whatsapp(supervisor_number, completed_message_for_supervisor(record))
+            results.append({"to": "supervisor", "ok": ok})
+
+        notified.add(key)
+        if save:
+            _save_notified(notified)
+        return {"skipped": False, "status": "completed", "sno": key, "results": results}
+
+    else:
+        # Pending -> reminder every time this is called (daily job, or manual button)
+        if contact:
+            ok, info = send_whatsapp(contact, pending_message(record))
+            results.append({"to": "assignee", "ok": ok})
+        if supervisor_number:
+            ok, info = send_whatsapp(supervisor_number, pending_message_for_supervisor(record))
+            results.append({"to": "supervisor", "ok": ok})
+
+        return {"skipped": False, "status": "pending", "sno": key, "results": results}
+
+
+# ==========================
+# DAILY JOB (10:30 AM)
+# ==========================
 
 def run_daily_reminders(get_records_fn):
-    """Called once every 24 hours. Reminds the assignee and the
-    supervisor about every task that is still pending."""
+    """Called once a day at 10:30 AM. Pending tasks get a fresh reminder
+    every day; Completed tasks get exactly one lifetime notification."""
     try:
         records = get_records_fn()
     except Exception as e:
         print("[reminder_scheduler] could not load records:", e)
         return
 
+    notified = _load_notified()
     for r in records:
-        days = r.get("days", 0)
-        assignee = r.get("assigned_to", "")
-        contact = (r.get("contact_no") or "").strip()
-        allotted_by = r.get("allotted_by", "")
-        details = r.get("details", "")
-
-        if contact:
-            send_whatsapp(
-                contact,
-                f"Reminder: '{details}' assigned to you is still pending since {days} day(s). "
-                f"Please complete it and update the status.",
-            )
-
-        supervisor_number = SUPERVISOR_CONTACTS.get(allotted_by)
-        if supervisor_number:
-            send_whatsapp(
-                supervisor_number,
-                f"Reminder: The task '{details}' you allotted to {assignee} is still pending "
-                f"({days} day(s)).",
-            )
+        send_reminder_for_row(r, notified=notified, save=False)
+    _save_notified(notified)
+    print(f"[reminder_scheduler] Daily run complete — processed {len(records)} task(s).")
 
 
 def start_scheduler(get_records_fn):
-    """Starts a background job that fires every 24 hours.
-    Change 'hours=24' to e.g. hour='10' (cron trigger) for a fixed daily time instead."""
+    """Starts a background job that fires every day at 10:30 AM local time."""
     scheduler = BackgroundScheduler()
-    scheduler.add_job(lambda: run_daily_reminders(get_records_fn), "interval", hours=24)
+    scheduler.add_job(
+        lambda: run_daily_reminders(get_records_fn),
+        CronTrigger(hour=10, minute=30),
+        id="daily_whatsapp_reminder",
+    )
     scheduler.start()
-    print("[reminder_scheduler] 24-hour WhatsApp reminder job started.")
+    print("[reminder_scheduler] Daily 10:30 AM WhatsApp reminder job started.")
     return scheduler
