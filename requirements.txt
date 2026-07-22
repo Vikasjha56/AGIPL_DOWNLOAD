@@ -9,5 +9,4 @@ gunicorn==21.2.0
 pytz==2026.2
 apscheduler
 twilio
-cd whatsapp-bot
-npm install
+
