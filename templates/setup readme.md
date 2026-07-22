@@ -1,5 +1,31 @@
 # WhatsApp Reminder Setup — Step by Step
 
+## ⚠️ IMPORTANT if your Flask app is deployed online (e.g. Render)
+
+Your dashboard URL looks like `agipl-download-system.onrender.com` — Render
+cannot run the whatsapp-bot (it needs a persistent Chrome browser + a
+WhatsApp session that stays logged in 24x7, which free/most web hosts
+don't support).
+
+So you must run `whatsapp-bot/index.js` on a machine you control — your
+own PC (keep it on) or a small VPS — and then tell your Render app where
+to find it:
+
+1. On that PC/VPS: `cd whatsapp-bot && npm install && node index.js`,
+   scan the QR code once.
+2. Make port 4000 reachable from the internet (port-forward your router,
+   or use a tunnel like `ngrok http 4000` for a quick public URL, or
+   deploy the bot to a small always-on VPS like a $5 DigitalOcean droplet).
+3. In Render's dashboard → your service → Environment → add:
+   - `WA_BOT_URL` = the public address from step 2 (e.g. `https://xxxx.ngrok.io` or `http://your-vps-ip:4000`)
+   - `WA_BOT_API_KEY` = `agipl-secret-key-2026` (must match whatsapp-bot's `.env`)
+4. Redeploy on Render.
+
+If you'd rather keep everything simple, run BOTH Flask and whatsapp-bot on
+the same always-on PC/VPS instead of Render — then `WA_BOT_URL` can stay
+as the default `http://localhost:4000` and you don't need step 2/3 at all.
+
+
 No Twilio. Uses `whatsapp-web.js` — your own WhatsApp Web session, automated.
 
 ## 1. Install Node.js dependencies
