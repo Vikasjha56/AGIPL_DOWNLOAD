@@ -22,10 +22,11 @@ from excel_export import create_excel
 from pdf_export import create_pdf
 
 try:
-    from reminder_scheduler import start_scheduler
+    from reminder_scheduler import start_scheduler, send_reminder_for_row
 except Exception as _sched_err:
     print("WARNING: reminder_scheduler not available, WhatsApp reminders disabled:", _sched_err)
     start_scheduler = None
+    send_reminder_for_row = None
 
 
 app = Flask(__name__)
@@ -269,6 +270,7 @@ def fetch_critical_records():
             "allotted_by": (row.get("Allotted By") or "").strip(),
             "days": days,
             "alert": task_alert_level(days),
+            "status": (row.get("Status") or "Pending").strip(),
         })
     return records
 
@@ -295,6 +297,28 @@ def critical_pending():
     except Exception as e:
         print("CRITICAL PENDING ERROR:", e)
         return "Critical Pending Task Error : " + str(e)
+
+
+# ==========================
+# MANUAL "SEND NOW" BUTTON
+# (called by the 📱 button on the Critical Pending dashboard —
+#  reuses the exact same logic as the daily 10:30 AM job)
+# ==========================
+
+@app.route("/send-reminder/<sno>", methods=["POST"])
+def send_reminder(sno):
+    if send_reminder_for_row is None:
+        return jsonify({"ok": False, "error": "reminder_scheduler not available"}), 500
+    try:
+        records = get_cached_critical_records()
+        record = next((r for r in records if str(r.get("sno")) == str(sno)), None)
+        if not record:
+            return jsonify({"ok": False, "error": f"Task {sno} not found"}), 404
+        result = send_reminder_for_row(record)
+        return jsonify({"ok": True, "result": result})
+    except Exception as e:
+        print("SEND REMINDER ERROR:", e)
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 
 # ==========================
@@ -490,8 +514,10 @@ def it():
 # WHATSAPP REMINDER SCHEDULER
 # Sends a WhatsApp reminder to the assignee (Contact No) and their
 # supervisor (manually maintained list in reminder_scheduler.py) every
-# 24 hours for as long as a task stays pending. See reminder_scheduler.py
-# to plug in your Twilio credentials and supervisor phone numbers.
+# day at 10:30 AM for as long as a task stays "Pending". When a task's
+# Status flips to "Completed", a one-time completion message is sent
+# instead and never repeated. See reminder_scheduler.py — it talks to
+# the local whatsapp-bot service (whatsapp-web.js), not Twilio.
 # ==========================
 
 if start_scheduler and (not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true"):
