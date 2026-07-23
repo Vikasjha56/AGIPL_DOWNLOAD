@@ -244,6 +244,27 @@ def task_alert_level(days):
     return "Low Alert"
 
 
+def _find_col(row, *candidates):
+    """Looks up a value from a CSV DictReader row, tolerant of exact
+    column-name mismatches (extra spaces, different case, punctuation).
+    Tries each candidate name first (exact match), then falls back to a
+    normalized (lowercased, stripped, no-punctuation) comparison against
+    every actual header in the row so a sheet header like 'Contact No.'
+    or 'Contact  Number' still matches 'Contact No'."""
+    for c in candidates:
+        if c in row and (row.get(c) or "").strip():
+            return (row.get(c) or "").strip()
+
+    def norm(s):
+        return "".join(ch for ch in s.lower() if ch.isalnum())
+
+    normalized_candidates = {norm(c) for c in candidates}
+    for key, value in row.items():
+        if key and norm(key) in normalized_candidates and (value or "").strip():
+            return (value or "").strip()
+    return ""
+
+
 def fetch_critical_records():
     """Fetches + parses the Critical Pending Task sheet.
     Skips blank/incomplete rows (e.g. a row that only has 'Allotted By' filled in)."""
@@ -252,7 +273,12 @@ def fetch_critical_records():
     reader = csv.DictReader(io.StringIO(resp.text))
 
     records = []
+    first_row_logged = False
     for row in reader:
+        if not first_row_logged:
+            print("CRITICAL SHEET — actual column headers found:", list(row.keys()))
+            first_row_logged = True
+
         sno = (row.get("S.No.") or "").strip()
         assigned_to = (row.get("Work Allotted To") or "").strip()
         if not sno or not assigned_to:
@@ -263,17 +289,30 @@ def fetch_critical_records():
         except ValueError:
             days = 0
 
-        records.append({
+        contact_no = _find_col(
+            row,
+            "Contact No", "Contact No.", "Contact Number",
+            "Contact no", "Contact number", "WhatsApp No", "WhatsApp Number",
+            "Mobile No", "Mobile Number", "Phone No", "Phone Number",
+        )
+
+        record = {
             "sno": sno,
             "assigned_to": assigned_to,
-            "contact_no": (row.get("Contact No") or "").strip(),
+            "contact_no": contact_no,
             "details": (row.get("Details of work") or "").strip(),
             "date": (row.get("Allotted on Date") or "").strip(),
             "allotted_by": (row.get("Allotted By") or "").strip(),
             "days": days,
             "alert": task_alert_level(days),
             "status": (row.get("Status") or "Pending").strip(),
-        })
+        }
+
+        if not contact_no:
+            print(f"WARNING: no contact number found for S.No. {sno} ({assigned_to}) — "
+                  f"check the 'Contact No' column in the Google Sheet for this row.")
+
+        records.append(record)
     return records
 
 
@@ -302,6 +341,20 @@ def critical_pending():
 
 
 # ==========================
+# DEBUG: view exactly what the sheet is returning for every row,
+# including contact_no, without going through the dashboard UI.
+# Visit http://localhost:5000/debug-critical-records in your browser.
+# ==========================
+
+@app.route("/debug-critical-records")
+def debug_critical_records():
+    global CRITICAL_CACHE, CRITICAL_CACHE_TIME
+    CRITICAL_CACHE = None  # force a fresh fetch so this always shows live data
+    records = get_cached_critical_records()
+    return jsonify(records)
+
+
+# ==========================
 # MANUAL "SEND NOW" BUTTON
 # (called by the 📱 button on the Critical Pending dashboard —
 #  reuses the exact same logic as the daily 10:30 AM job)
@@ -319,6 +372,15 @@ def send_reminder(sno):
         record = next((r for r in records if str(r.get("sno")) == str(sno)), None)
         if not record:
             return jsonify({"ok": False, "error": f"Task {sno} not found"}), 404
+
+        if not record.get("contact_no"):
+            return jsonify({
+                "ok": False,
+                "error": f"Task {sno} ({record.get('assigned_to')}) has no Contact No "
+                         f"filled in on the Google Sheet — add a WhatsApp number for "
+                         f"this row and try again."
+            }), 400
+
         result = send_reminder_for_row(record)
 
         if result.get("skipped"):
@@ -539,7 +601,7 @@ def it():
 # day at 10:30 AM for as long as a task stays "Pending". When a task's
 # Status flips to "Completed", a one-time completion message is sent
 # instead and never repeated. See reminder_scheduler.py — it talks to
-# the local whatsapp-bot service (whatsapp-web.js), not Twilio.
+# the local whatsapp-bot service (Baileys), not Twilio.
 # ==========================
 
 if start_scheduler and (not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true"):
