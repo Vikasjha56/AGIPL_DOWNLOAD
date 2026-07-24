@@ -45,10 +45,10 @@ WA_BOT_API_KEY = os.environ.get("WA_BOT_API_KEY", "agipl-secret-key-2026")
 
 # "Allotted By" names -> their WhatsApp number.
 # TODO: add every supervisor name that appears in your sheet.
-# Format: plain number with country code works fine, e.g. "919876543210"
+# Format: plain number with country code works fine, e.g. "91xxxxxxxx"
 SUPERVISOR_CONTACTS = {
-    "Asfiya": "918962861774",
-    "Abhishek Agrawal": "917987410451",
+    "Asfiya": "91xxxxxxxxx",
+    "Abhishek Agrawal": "91xxxxxxxx",
 }
 
 # Where we remember "completion message already sent for this task" so it
