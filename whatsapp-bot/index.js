@@ -155,6 +155,35 @@ app.post('/send-bulk', checkApiKey, async (req, res) => {
   res.json({ ok: true, results });
 });
 
+const multer = require('multer');
+const upload = multer({ storage: multer.memoryStorage() });
+
+app.post('/send-image', checkApiKey, upload.single('image'), async (req, res) => {
+  if (!isReady || !sock) {
+    return res.status(503).json({ ok: false, error: 'WhatsApp client not ready yet' });
+  }
+  const { to, caption } = req.body || {};
+  const jid = toJid(to);
+  if (!jid || !req.file) {
+    return res.status(400).json({ ok: false, error: 'to and image file are required' });
+  }
+  try {
+    const [result] = await sock.onWhatsApp(jid);
+    if (!result || !result.exists) {
+      return res.status(404).json({ ok: false, error: `${to} is not on WhatsApp` });
+    }
+    await sock.sendMessage(jid, {
+      image: req.file.buffer,
+      caption: caption || '',
+    });
+    console.log(`[whatsapp-bot] Sent image to ${jid}`);
+    return res.json({ ok: true, to: jid });
+  } catch (err) {
+    console.error('[whatsapp-bot] send-image failed:', err);
+    return res.status(500).json({ ok: false, error: String(err) });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`[whatsapp-bot] HTTP API listening on http://localhost:${PORT}`);
   console.log('[whatsapp-bot] Waiting for WhatsApp to initialize (QR will print if needed)...');
